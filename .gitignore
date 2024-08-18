@@ -1,0 +1,8 @@
+bin/
+int/
+*.exe
+*.old
+*.nasm
+*.obj
+test.c
+
