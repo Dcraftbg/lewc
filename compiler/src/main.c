@@ -263,7 +263,7 @@ void compile_nasm_x86_64_windows(CompileState* state) {
             nprintfln(".%zu:",j);
             for(size_t k = 0; k < block->len; ++k) {
                 BuildInst* inst = &block->items[k];
-                static_assert(BUILD_INST_COUNT == 3);
+                static_assert(BUILD_INST_COUNT == 4);
                 switch(inst->kind) {
                 case BUILD_LOAD_ARG: {
                     assert(inst->arg < sig->input.len);

@@ -4,7 +4,7 @@ enum {
     BUILD_LOAD_ARG,
     BUILD_ADD_INT,
     BUILD_RETURN,
-
+    BUILD_ALLOCA,
 
     BUILD_INST_COUNT
 };
@@ -15,6 +15,7 @@ typedef struct {
         struct { 
             size_t v0, v1; // ID's of Instructions
         };
+        size_t size;       // Size for alloca
     };
 } BuildInst;
 typedef struct {

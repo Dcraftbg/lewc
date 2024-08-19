@@ -3,6 +3,7 @@
 #define state_add_return(state, id) build_add_return((state)->build, (state)->fid, (state)->head, id)
 #define state_add_int_add(state, v0, v1) build_add_int_add((state)->build, (state)->fid, (state)->head, v0, v1) 
 #define state_add_load_arg(state, arg) build_add_load_arg((state)->build, (state)->fid, (state)->head, arg) 
+#define state_add_alloca(state, size) build_add_alloca((state)->build, (state)->fid, (state)->head, size)
 
 #define INVALID_SYMBOLID ((size_t)-1)
 size_t build_symbol_table_lookup(BuildSymbolTable* symbols, Atom* symbol) {
@@ -66,6 +67,15 @@ size_t build_add_load_arg(Build* build, size_t fid, size_t head, size_t arg) {
     block->items[id].arg = arg;
     return id;
 }
+size_t build_add_alloca(Build* build, size_t fid, size_t head, size_t size) {
+    Block *block = build_get_block(build, fid, head);
+    da_reserve(block, 1);
+    size_t id = block->len++;
+    block->items[id].kind = BUILD_ALLOCA;
+    block->items[id].size = size;
+    return id;
+}
+
 
 size_t build_astvalue(BuildState* state, ASTValue value);
 size_t build_ast(BuildState* state, AST* ast) {
