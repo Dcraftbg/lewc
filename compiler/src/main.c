@@ -298,8 +298,7 @@ void compile_nasm_x86_64_windows(CompileState* state) {
                     CompileValue  result = compile_value_alloc(state, v0->regsize);
                     assert(result.kind == CVALUE_REGISTER);
 
-                    nprintfln("   xor %s, %s", nasm_gpr_to_str(result.reg, result.regsize), nasm_gpr_to_str(result.reg, result.regsize));
-                    nprintfln("   add %s, %s", nasm_gpr_to_str(result.reg, result.regsize), nasm_gpr_to_str(v0->reg   , v0->regsize   ));
+                    nprintfln("   mov %s, %s", nasm_gpr_to_str(result.reg, result.regsize), nasm_gpr_to_str(v0->reg   , v0->regsize   ));
                     nprintfln("   add %s, %s", nasm_gpr_to_str(result.reg, result.regsize), nasm_gpr_to_str(v1->reg   , v1->regsize   ));
                     vals[k] = result;
                 } break;
