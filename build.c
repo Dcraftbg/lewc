@@ -50,7 +50,7 @@ bool nob_mkdir_if_not_exists_silent(const char *path) {
 bool make_build_dirs() {
     if(!nob_mkdir_if_not_exists_silent("./bin"             )) return false;
     if(!nob_mkdir_if_not_exists_silent("./int"             )) return false;
-    if(!nob_mkdir_if_not_exists_silent("./int/cprotoc"     )) return false;
+    if(!nob_mkdir_if_not_exists_silent("./int/compiler"     )) return false;
     return true;
 }
 bool remove_objs(const char* dirpath) {
@@ -89,8 +89,8 @@ bool remove_objs(const char* dirpath) {
    return true;
 }
 bool clean() {
-    if(nob_file_exists("./bin/cprotoc")) {
-        if (!remove_objs("./bin/cprotoc")) return false;
+    if(nob_file_exists("./bin/compiler")) {
+        if (!remove_objs("./bin/compiler")) return false;
     }
     return true;
 }
@@ -194,9 +194,9 @@ defer:
 static bool build_dir(const char* rootdir, const char* build_dir, bool forced) {
    return _build_dir(rootdir, build_dir, rootdir, forced);
 }
-bool build_cprotoc(bool forced) {
-    if(!build_dir("./cprotoc/src"  , "./int/cprotoc", forced)) return false;
-    nob_log(NOB_INFO, "Built cprotoc successfully");
+bool build_compiler(bool forced) {
+    if(!build_dir("./compiler/src"  , "./int/compiler", forced)) return false;
+    nob_log(NOB_INFO, "Built compiler successfully");
     return true;
 }
 bool find_objs(const char* dirpath, Nob_File_Paths *paths) {
@@ -263,18 +263,18 @@ bool ld(Nob_File_Paths* paths, const char* opath) {
     nob_log(NOB_INFO, "Linked %s successfully", opath);
     return true;
 }
-bool link_cprotoc() {
-    nob_log(NOB_INFO, "Linking cprotoc");
+bool link_compiler() {
+    nob_log(NOB_INFO, "Linking compiler");
     Nob_File_Paths paths = {0};
-    if(!find_objs("./int/cprotoc",&paths)) {
+    if(!find_objs("./int/compiler",&paths)) {
         return false;
     }
-    if(!ld(&paths, "./bin/cprotoc")) {
+    if(!ld(&paths, "./bin/compiler")) {
         nob_da_free(paths);
         return false;
     }
     nob_da_free(paths);
-    nob_log(NOB_INFO, "Linked cprotoc successfully");
+    nob_log(NOB_INFO, "Linked compiler successfully");
     return true;
 }
 typedef struct {
@@ -325,15 +325,15 @@ bool build(Build* build) {
         forced = true;
         shift_args(&build->argc, &build->argv);
     }
-    if(!build_cprotoc(forced)) return false;
-    if(!link_cprotoc()) return false;
+    if(!build_compiler(forced)) return false;
+    if(!link_compiler()) return false;
     return true;
 }
 bool run(Build* build) {
     Nob_Cmd cmd = {0};
     nob_cmd_append(
         &cmd,
-        "./bin/cprotoc"
+        "./bin/compiler"
     );
     nob_da_append_many(&cmd, build->argv, build->argc);
     if (!nob_cmd_run_sync(cmd)) {
