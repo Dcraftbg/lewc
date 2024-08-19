@@ -1,7 +1,7 @@
 #include "build.h"
 
 #define state_add_return(state, id) build_add_return((state)->build, (state)->fid, (state)->head, id)
-#define state_add_sint_add(state, v0, v1) build_add_sint_add((state)->build, (state)->fid, (state)->head, v0, v1) 
+#define state_add_int_add(state, v0, v1) build_add_int_add((state)->build, (state)->fid, (state)->head, v0, v1) 
 #define state_add_load_arg(state, arg) build_add_load_arg((state)->build, (state)->fid, (state)->head, arg) 
 
 #define INVALID_SYMBOLID ((size_t)-1)
@@ -39,11 +39,11 @@ size_t build_add_block(Build* build, size_t fid) {
     memset(&func->blocks.items[id], 0, sizeof(func->blocks.items[0]));
     return id;
 }
-size_t build_add_sint_add(Build* build, size_t fid, size_t head, size_t v0, size_t v1) {
+size_t build_add_int_add(Build* build, size_t fid, size_t head, size_t v0, size_t v1) {
     Block *block = build_get_block(build, fid, head);
     da_reserve(block, 1);
     size_t id = block->len++;
-    block->items[id].kind = BUILD_ADD_INT_SIGNED;
+    block->items[id].kind = BUILD_ADD_INT;
     block->items[id].v0 = v0;
     block->items[id].v1 = v1;
     return id;
@@ -73,7 +73,7 @@ size_t build_ast(BuildState* state, AST* ast) {
     case '+':
         size_t v0 = build_astvalue(state, ast->left);
         size_t v1 = build_astvalue(state, ast->right);
-        return state_add_sint_add(state, v0, v1);
+        return state_add_int_add(state, v0, v1);
     default:
         eprintfln("Unsupported ast->kind in build_ast: %d\n",ast->kind);
         if(ast->kind < 256) {

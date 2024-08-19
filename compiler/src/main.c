@@ -287,7 +287,7 @@ void compile_nasm_x86_64_windows(CompileState* state) {
                        exit(1);
                     }
                 } break;
-                case BUILD_ADD_INT_SIGNED: {
+                case BUILD_ADD_INT: {
                     assert(inst->v0 < k && inst->v1 < k); // It is a previous instruction.
                     CompileValue* v0 = &vals[inst->v0];
                     CompileValue* v1 = &vals[inst->v1];

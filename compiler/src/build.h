@@ -2,7 +2,7 @@
 #include "parser.h"
 enum {
     BUILD_LOAD_ARG,
-    BUILD_ADD_INT_SIGNED,
+    BUILD_ADD_INT,
     BUILD_RETURN,
 
 
