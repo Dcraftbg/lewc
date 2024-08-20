@@ -221,7 +221,7 @@ typedef struct {
     int kind;
     union {
         struct { size_t regsize; size_t reg; };
-        struct { size_t stack_ptr; Type type; };
+        struct { size_t stack_ptr; typeid_t type; };
     };
 } CompileValue;
 int WINDOWS_GPR_ARGS[] = {

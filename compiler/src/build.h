@@ -19,7 +19,7 @@ typedef struct {
         };
         struct {
             size_t size;       // Size for alloca
-            Type type;
+            typeid_t type;
         };
     };
 } BuildInst;
