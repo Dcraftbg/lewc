@@ -5,6 +5,8 @@ enum {
     BUILD_ADD_INT,
     BUILD_RETURN,
     BUILD_ALLOCA,
+    BUILD_LOAD,
+    BUILD_STORE,
 
     BUILD_INST_COUNT
 };
@@ -15,7 +17,10 @@ typedef struct {
         struct { 
             size_t v0, v1; // ID's of Instructions
         };
-        size_t size;       // Size for alloca
+        struct {
+            size_t size;       // Size for alloca
+            Type type;
+        };
     };
 } BuildInst;
 typedef struct {
@@ -46,6 +51,7 @@ typedef struct {
     } funcs;
     AtomTable* atom_table;
     TypeTable type_table;
+    const char* path;
 } Build;
 typedef struct {
     Build* build;

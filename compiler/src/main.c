@@ -192,7 +192,9 @@ const char* nasm_gpr_to_str(int reg, int regsize) {
 typedef struct {
     Build* build;
     Target* target;
+    BuildOptions* options;
     FILE* f;
+    const char* srcfile;
     Arena* arena;
     NasmGPRegsAlloc regs;
 } CompileState;
@@ -217,7 +219,7 @@ typedef struct {
     int kind;
     union {
         struct { size_t regsize; size_t reg; };
-        size_t stack_ptr;
+        struct { size_t stack_ptr; Type type; };
     };
 } CompileValue;
 int WINDOWS_GPR_ARGS[] = {
@@ -230,6 +232,11 @@ CompileValue compile_value_alloc(CompileState* state, size_t size) {
     return (CompileValue){.kind=CVALUE_REGISTER, .reg=nasm_gpr_alloc(&state->regs), .regsize=size};
 }
 void compile_nasm_x86_64_windows(CompileState* state) {
+    if(!build_options.experimental_windows) {
+        eprintfln("ERROR: compile_nasm_x86_64_windows is still very much not supported as there's quite a few differences between windows and linux. Please use something like WSL until we have this all sorted. Or you could add the --experimental-windows flag which will allow you to continue with this janky and unfinished target");
+        exit(1);
+    }
+
     state->f = fopen(state->target->opath, "wb");
     if(!state->f) {
         eprintfln("ERROR: Could not open output file %s: %s",state->target->opath,strerror(errno));
@@ -269,7 +276,7 @@ void compile_nasm_x86_64_windows(CompileState* state) {
             nprintfln(".%zu:",j);
             for(size_t k = 0; k < block->len; ++k, ++ip) {
                 BuildInst* inst = &block->items[k];
-                static_assert(BUILD_INST_COUNT == 4);
+                static_assert(BUILD_INST_COUNT == 6);
                 switch(inst->kind) {
                 case BUILD_LOAD_ARG: {
                     assert(inst->arg < sig->input.len);
@@ -303,9 +310,9 @@ void compile_nasm_x86_64_windows(CompileState* state) {
                     assert(v0->regsize == v1->regsize);
                     CompileValue  result = compile_value_alloc(state, v0->regsize);
                     assert(result.kind == CVALUE_REGISTER);
-
-                    nprintfln("   mov %s, %s", nasm_gpr_to_str(result.reg, result.regsize), nasm_gpr_to_str(v0->reg   , v0->regsize   ));
-                    nprintfln("   add %s, %s", nasm_gpr_to_str(result.reg, result.regsize), nasm_gpr_to_str(v1->reg   , v1->regsize   ));
+                    nprintfln("   lea %s, [%s+%s]", nasm_gpr_to_str(result.reg, result.regsize), nasm_gpr_to_str(v0->reg, REG_SIZE_64), nasm_gpr_to_str(v1->reg, REG_SIZE_64));
+                    // nprintfln("   mov %s, %s", nasm_gpr_to_str(result.reg, result.regsize), nasm_gpr_to_str(v0->reg   , v0->regsize   ));
+                    // nprintfln("   add %s, %s", nasm_gpr_to_str(result.reg, result.regsize), nasm_gpr_to_str(v1->reg   , v1->regsize   ));
                     vals[ip] = result;
                 } break;
                 case BUILD_RETURN: {
@@ -329,6 +336,7 @@ void compile_nasm_x86_64_windows(CompileState* state) {
                     CompileValue* result = &vals[ip];
                     result->kind = CVALUE_STACK_PTR;
                     result->stack_ptr = rsp;
+                    result->type = inst->type;
                     rsp+=inst->size;
                 } break;
                 default:
@@ -373,6 +381,9 @@ int main(int argc, const char** argv) {
                 exit(1);
             }
         }
+        else if (strcmp(arg, "--experimental-windows") == 0) {
+            build_options.experimental_windows = true;
+        }
         else {
             fprintf(stderr, "Unknown argument: '%s'\n", arg);
             usage();
@@ -400,6 +411,7 @@ int main(int argc, const char** argv) {
     parse(&parser, &lexer, &arena);
     
     Build build={0};
+    build.path = build_options.ipath;
     build_build(&build, &parser);
 
     Target target={0};
