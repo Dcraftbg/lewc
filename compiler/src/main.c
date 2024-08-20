@@ -327,7 +327,7 @@ void compile_nasm_x86_64_windows(CompileState* state) {
                 case BUILD_ALLOCA: {
                     nprintfln("   sub rsp, %zu",inst->size);
                     CompileValue* result = &vals[ip];
-                    result->kind = CVALUE_REGISTER;
+                    result->kind = CVALUE_STACK_PTR;
                     result->stack_ptr = rsp;
                     rsp+=inst->size;
                 } break;
