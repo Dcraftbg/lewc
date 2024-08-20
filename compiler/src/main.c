@@ -250,18 +250,23 @@ void compile_nasm_x86_64_windows(CompileState* state) {
         }
         nprintfln("global %s",func->name->data);
         nprintfln("%s:",func->name->data);
+        size_t vals_count = 0;
+        for(size_t j = 0; j < func->blocks.len; ++j) { 
+            Block* block = &func->blocks.items[j];
+            vals_count+=block->len;
+        }
+        CompileValue* vals = (CompileValue*)arena_alloc(state->arena, sizeof(CompileValue)*vals_count);
+        if(!vals) {
+            eprintfln("ERROR: Failed to allocate temporary vals buffer");
+            exit(1);
+        }
+        memset(vals, 0, sizeof(CompileValue)*vals_count);
+        size_t ip = 0;
         for(size_t j = 0; j < func->blocks.len; ++j) {
-           
             // TODO: Deallocate this at the end since its at the top of the arena
             Block* block = &func->blocks.items[j];
-            CompileValue* vals = (CompileValue*)arena_alloc(state->arena, sizeof(CompileValue)*block->len);
-            if(!vals) {
-                eprintfln("ERROR: Failed to allocate temporary vals buffer");
-                exit(1);
-            }
-            memset(vals, 0, sizeof(CompileValue)*block->len);
             nprintfln(".%zu:",j);
-            for(size_t k = 0; k < block->len; ++k) {
+            for(size_t k = 0; k < block->len; ++k, ++ip) {
                 BuildInst* inst = &block->items[k];
                 static_assert(BUILD_INST_COUNT == 4);
                 switch(inst->kind) {
@@ -280,7 +285,7 @@ void compile_nasm_x86_64_windows(CompileState* state) {
                            exit(1);
                        }
                        regsize = REG_SIZE_32;
-                       vals[k] = (CompileValue){.kind=CVALUE_REGISTER, .reg=WINDOWS_GPR_ARGS[inst->arg], .regsize=regsize};
+                       vals[ip] = (CompileValue){.kind=CVALUE_REGISTER, .reg=WINDOWS_GPR_ARGS[inst->arg], .regsize=regsize};
                        break; 
                     default:
                        eprintfln("Argument %zu is not implemented",inst->arg);
@@ -288,7 +293,7 @@ void compile_nasm_x86_64_windows(CompileState* state) {
                     }
                 } break;
                 case BUILD_ADD_INT: {
-                    assert(inst->v0 < k && inst->v1 < k); // It is a previous instruction.
+                    assert(inst->v0 < ip && inst->v1 < ip); // It is a previous instruction.
                     CompileValue* v0 = &vals[inst->v0];
                     CompileValue* v1 = &vals[inst->v1];
 
@@ -300,10 +305,10 @@ void compile_nasm_x86_64_windows(CompileState* state) {
 
                     nprintfln("   mov %s, %s", nasm_gpr_to_str(result.reg, result.regsize), nasm_gpr_to_str(v0->reg   , v0->regsize   ));
                     nprintfln("   add %s, %s", nasm_gpr_to_str(result.reg, result.regsize), nasm_gpr_to_str(v1->reg   , v1->regsize   ));
-                    vals[k] = result;
+                    vals[ip] = result;
                 } break;
                 case BUILD_RETURN: {
-                    assert(inst->arg < k); // It is a previous instruction.
+                    assert(inst->arg < ip); // It is a previous instruction.
                     CompileValue value = {0};
                     CompileValue* arg = &vals[inst->arg];
                     if(arg->kind == CVALUE_REGISTER && arg->reg == REG_A) {
