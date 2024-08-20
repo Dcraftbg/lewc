@@ -209,13 +209,15 @@ typedef struct {
    } while(0)
 
 enum {
-    CVALUE_REGISTER
+    CVALUE_REGISTER,
+    CVALUE_STACK_PTR,
 };
 
 typedef struct {
     int kind;
     union {
         struct { size_t regsize; size_t reg; };
+        size_t stack_ptr;
     };
 } CompileValue;
 int WINDOWS_GPR_ARGS[] = {
@@ -250,6 +252,8 @@ void compile_nasm_x86_64_windows(CompileState* state) {
         }
         nprintfln("global %s",func->name->data);
         nprintfln("%s:",func->name->data);
+        nprintfln("   push rbp");
+        nprintfln("   mov rbp, rsp");
         size_t vals_count = func->ip;
         CompileValue* vals = (CompileValue*)arena_alloc(state->arena, sizeof(CompileValue)*vals_count);
         if(!vals) {
@@ -258,6 +262,7 @@ void compile_nasm_x86_64_windows(CompileState* state) {
         }
         memset(vals, 0, sizeof(CompileValue)*vals_count);
         size_t ip = 0;
+        size_t rsp = 0;
         for(size_t j = 0; j < func->blocks.len; ++j) {
             // TODO: Deallocate this at the end since its at the top of the arena
             Block* block = &func->blocks.items[j];
@@ -308,6 +313,7 @@ void compile_nasm_x86_64_windows(CompileState* state) {
                     CompileValue value = {0};
                     CompileValue* arg = &vals[inst->arg];
                     if(arg->kind == CVALUE_REGISTER && arg->reg == REG_A) {
+                        nprintfln("   pop rbp");
                         nprintfln("   ret");
                         break;
                     }
@@ -315,7 +321,15 @@ void compile_nasm_x86_64_windows(CompileState* state) {
                     value.reg = REG_A;
                     value.regsize = arg->regsize;
                     nprintfln("   mov %s, %s",nasm_gpr_to_str(value.reg, value.regsize), nasm_gpr_to_str(arg->reg, arg->regsize));
+                    nprintfln("   pop rbp");
                     nprintfln("   ret");
+                } break;
+                case BUILD_ALLOCA: {
+                    nprintfln("   sub rsp, %zu",inst->size);
+                    CompileValue* result = &vals[ip];
+                    result->kind = CVALUE_REGISTER;
+                    result->stack_ptr = rsp;
+                    rsp+=inst->size;
                 } break;
                 default:
                     eprintfln("Unhandled instruction %d", inst->kind);
