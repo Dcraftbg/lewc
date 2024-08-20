@@ -32,7 +32,7 @@ size_t build_add_func(Build* build, Atom* name, typeid_t type) {
     build->funcs.items[id].typeid = type;
     return id;
 }
-#define build_get_block(build, fid, head) &build->funcs.items[fid].blocks.items[head]
+#define build_get_func(build, fid) &build->funcs.items[fid]
 size_t build_add_block(Build* build, size_t fid) {
     BuildFunc* func = &build->funcs.items[fid];
     da_reserve(&func->blocks, 1);
@@ -40,40 +40,40 @@ size_t build_add_block(Build* build, size_t fid) {
     memset(&func->blocks.items[id], 0, sizeof(func->blocks.items[0]));
     return id;
 }
-size_t build_add_int_add(Build* build, size_t fid, size_t head, size_t v0, size_t v1) {
-    Block *block = build_get_block(build, fid, head);
+size_t build_add_inst(Build* build, size_t fid, size_t head, BuildInst inst) {
+    BuildFunc* func = build_get_func(build, fid);
+    Block *block = &func->blocks.items[head];//
     da_reserve(block, 1);
-    size_t id = block->len++;
-    block->items[id].kind = BUILD_ADD_INT;
-    block->items[id].v0 = v0;
-    block->items[id].v1 = v1;
+    size_t id = func->ip++;
+    block->items[block->len++] = inst;
     return id;
+}
+size_t build_add_int_add(Build* build, size_t fid, size_t head, size_t v0, size_t v1) {
+    BuildInst inst = {0};
+    inst.kind = BUILD_ADD_INT;
+    inst.v0 = v0;
+    inst.v1 = v1;
+    return build_add_inst(build, fid, head, inst);
 }
 
 size_t build_add_return(Build* build, size_t fid, size_t head, size_t arg) {
-    Block *block = build_get_block(build, fid, head);
-    da_reserve(block, 1);
-    size_t id = block->len++;
-    block->items[id].kind = BUILD_RETURN;
-    block->items[id].arg = arg;
-    return id;
+    BuildInst inst = {0};
+    inst.kind = BUILD_RETURN;
+    inst.arg = arg;
+    return build_add_inst(build, fid, head, inst);
 }
 
 size_t build_add_load_arg(Build* build, size_t fid, size_t head, size_t arg) {
-    Block *block = build_get_block(build, fid, head);
-    da_reserve(block, 1);
-    size_t id = block->len++;
-    block->items[id].kind = BUILD_LOAD_ARG;
-    block->items[id].arg = arg;
-    return id;
+    BuildInst inst = {0};
+    inst.kind = BUILD_LOAD_ARG;
+    inst.arg = arg;
+    return build_add_inst(build, fid, head, inst);
 }
 size_t build_add_alloca(Build* build, size_t fid, size_t head, size_t size) {
-    Block *block = build_get_block(build, fid, head);
-    da_reserve(block, 1);
-    size_t id = block->len++;
-    block->items[id].kind = BUILD_ALLOCA;
-    block->items[id].size = size;
-    return id;
+    BuildInst inst = {0};
+    inst.kind = BUILD_ALLOCA;
+    inst.size = size;
+    return build_add_inst(build, fid, head, inst);
 }
 
 

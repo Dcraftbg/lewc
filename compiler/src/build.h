@@ -30,6 +30,7 @@ typedef struct {
     size_t len, cap;
 } BuildSymbolTable;
 typedef struct {
+    size_t ip;
     struct {
        Block* items;
        size_t len, cap;

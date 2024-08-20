@@ -250,11 +250,7 @@ void compile_nasm_x86_64_windows(CompileState* state) {
         }
         nprintfln("global %s",func->name->data);
         nprintfln("%s:",func->name->data);
-        size_t vals_count = 0;
-        for(size_t j = 0; j < func->blocks.len; ++j) { 
-            Block* block = &func->blocks.items[j];
-            vals_count+=block->len;
-        }
+        size_t vals_count = func->ip;
         CompileValue* vals = (CompileValue*)arena_alloc(state->arena, sizeof(CompileValue)*vals_count);
         if(!vals) {
             eprintfln("ERROR: Failed to allocate temporary vals buffer");
