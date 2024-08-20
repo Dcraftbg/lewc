@@ -46,6 +46,7 @@ typedef enum {
 } Architecture;
 typedef enum {
     OS_WINDOWS,
+    OS_LINUX,
 
     PLATFORM_COUNT
 } Platform;
@@ -75,9 +76,10 @@ const char* arch_str(Architecture kind) {
 }
 
 
-static_assert(PLATFORM_COUNT == 1, "Update platform_map");
+static_assert(PLATFORM_COUNT == 2, "Update platform_map");
 const char* platform_map[PLATFORM_COUNT] = {
-    "Windows" 
+    [OS_WINDOWS] = "Windows",
+    [OS_LINUX] = "Linux"
 };
 const char* platform_str(Platform kind) {
     assert(kind >= 0 && kind < ARRAY_LEN(platform_map));
@@ -362,6 +364,16 @@ void compile(Build* build, Target* target, Arena* arena) {
         exit(1);
     }
 }
+
+static Platform default_platform = 
+#ifdef _WIN32
+  OS_WINDOWS
+#elif __linux__
+  OS_LINUX
+#endif
+;
+// TODO: Default arch detection
+static Architecture default_arch = ARCH_X86_64;
 int main(int argc, const char** argv) {
     build_options.exe = shift_args(&argc, &argv);
     assert(build_options.exe);
@@ -416,8 +428,8 @@ int main(int argc, const char** argv) {
 
     Target target={0};
     target.opath = build_options.opath;
-    target.platform = OS_WINDOWS;
-    target.arch = ARCH_X86_64;
+    target.platform = default_platform;
+    target.arch = default_arch;
     compile(&build, &target, &arena);
 
     lexer_cleanup(parser.lexer);
