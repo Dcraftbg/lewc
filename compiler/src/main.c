@@ -366,9 +366,9 @@ void compile(Build* build, Target* target, Arena* arena) {
 }
 
 static Platform default_platform = 
-#ifdef _WIN32
+#if defined(_WIN32)
   OS_WINDOWS
-#elif __linux__
+#elif defined(__linux__)
   OS_LINUX
 #endif
 ;
