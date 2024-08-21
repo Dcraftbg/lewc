@@ -1,0 +1,5 @@
+./bin/compiler examples/sum.prot -o ./int/tests/sum.nasm
+nasm -f elf64 ./int/tests/sum.nasm -o ./int/tests/sum.o
+gcc ./examples/sum.c ./int/tests/sum.o -o ./bin/tests/sum
+./bin/tests/sum
+

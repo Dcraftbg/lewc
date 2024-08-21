@@ -48,9 +48,10 @@ bool nob_mkdir_if_not_exists_silent(const char *path) {
      return nob_mkdir_if_not_exists(path);
 }
 bool make_build_dirs() {
-    if(!nob_mkdir_if_not_exists_silent("./bin"             )) return false;
-    if(!nob_mkdir_if_not_exists_silent("./int"             )) return false;
-    if(!nob_mkdir_if_not_exists_silent("./int/compiler"     )) return false;
+    if(!nob_mkdir_if_not_exists_silent("./bin"         )) return false;
+    if(!nob_mkdir_if_not_exists_silent("./int"         )) return false;
+    if(!nob_mkdir_if_not_exists_silent("./int/compiler")) return false;
+    if(!nob_mkdir_if_not_exists_silent("./int/testsys" )) return false;
     return true;
 }
 bool remove_objs(const char* dirpath) {
@@ -87,12 +88,6 @@ bool remove_objs(const char* dirpath) {
    }
    if (dir) closedir(dir);
    return true;
-}
-bool clean() {
-    if(nob_file_exists("./bin/compiler")) {
-        if (!remove_objs("./bin/compiler")) return false;
-    }
-    return true;
 }
 // TODO: cc but async
 bool cc(const char* ipath, const char* opath) {
@@ -199,6 +194,12 @@ bool build_compiler(bool forced) {
     nob_log(NOB_INFO, "Built compiler successfully");
     return true;
 }
+
+bool compile_testsys(bool forced) {
+    if(!build_dir("./testsys/src"  , "./int/testsys", forced)) return false;
+    nob_log(NOB_INFO, "Built testsys successfully");
+    return true;
+}
 bool find_objs(const char* dirpath, Nob_File_Paths *paths) {
     Nob_String_Builder sb={0};
     bool result = true;
@@ -277,6 +278,22 @@ bool link_compiler() {
     nob_log(NOB_INFO, "Linked compiler successfully");
     return true;
 }
+
+
+bool link_testsys() {
+    nob_log(NOB_INFO, "Linking testsys");
+    Nob_File_Paths paths = {0};
+    if(!find_objs("./int/testsys",&paths)) {
+        return false;
+    }
+    if(!ld(&paths, "./bin/testsys")) {
+        nob_da_free(paths);
+        return false;
+    }
+    nob_da_free(paths);
+    nob_log(NOB_INFO, "Linked testsys successfully");
+    return true;
+}
 typedef struct {
     char* exe;
     int argc;
@@ -291,12 +308,14 @@ bool help(Build* build);
 bool build(Build* build);
 bool run(Build* build);
 bool bruh(Build* build);
+bool test(Build* build);
 
 Cmd commands[] = {
    { .name = "help"       , .run=help       , .desc="Help command that explains either what a specific subcommand does or lists all subcommands" },
-   { .name = "build"      , .run=build      , .desc="Build the kernel and make iso" },
-   { .name = "run"        , .run=run        , .desc="Run iso using qemu" },
-   { .name = "bruh"       , .run=bruh       , .desc="Build+Run iso using qemu" },
+   { .name = "build"      , .run=build      , .desc="Build to compiler" },
+   { .name = "run"        , .run=run        , .desc="Run the compiler" },
+   { .name = "bruh"       , .run=bruh       , .desc="Build+Run the compiler" },
+   { .name = "test"       , .run=test       , .desc="Run test suite or test command" },
 };
 
 bool help(Build* build) {
@@ -343,9 +362,43 @@ bool run(Build* build) {
     nob_cmd_free(cmd);
     return true;
 }
+
+bool run_testsys(Build* build) {
+    Nob_Cmd cmd = {0};
+    nob_cmd_append(
+        &cmd,
+        "./bin/testsys"
+    );
+    nob_da_append_many(&cmd, build->argv, build->argc);
+    if (!nob_cmd_run_sync(cmd)) {
+        nob_cmd_free(cmd);
+        return false;
+    }
+    nob_cmd_free(cmd);
+    return true;
+}
+
+
 bool bruh(Build* b) {
     if(!build(b)) return false;
     if(!run(b)) return false;
+    return true;
+}
+
+bool build_testsys(Build* build) {
+    if(!make_build_dirs()) return false;
+    bool forced = false;
+    if(build->argc > 0 && strcmp(build->argv[0], "-f")==0) {
+        forced = true;
+        shift_args(&build->argc, &build->argv);
+    }
+    if(!compile_testsys(forced)) return false;
+    if(!link_testsys()) return false;
+    return true;
+}
+bool test(Build* b) {
+    if(!build_testsys(b)) return false; 
+    if(!run_testsys(b)) return false;
     return true;
 }
 int main(int argc, char** argv) {

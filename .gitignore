@@ -6,4 +6,4 @@ int/
 *.obj
 test.c
 build
-
+testsys/
