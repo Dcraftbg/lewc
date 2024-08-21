@@ -32,3 +32,12 @@ void type_table_move(TypeTable* into, TypeTable* from) {
     *into = *from;
     memset(from, 0, sizeof(*from));
 }
+
+size_t type_get_size(Type* type) {
+    switch(type->core) {
+    case CORE_I32:
+        return 4;
+    default:
+        return 0;
+    }
+}

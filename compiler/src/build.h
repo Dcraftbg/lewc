@@ -18,7 +18,6 @@ typedef struct {
             size_t v0, v1; // ID's of Instructions
         };
         struct {
-            size_t size;       // Size for alloca
             typeid_t type;
         };
     };

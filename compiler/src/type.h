@@ -29,3 +29,4 @@ Type* type_table_get(TypeTable* t, typeid_t id);
 typeid_t type_table_create(TypeTable* t, Type type);
 void type_table_move(TypeTable* into, TypeTable* from);
 void type_table_init(TypeTable* t);
+size_t type_get_size(Type* type);

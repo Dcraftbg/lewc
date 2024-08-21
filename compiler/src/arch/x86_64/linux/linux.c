@@ -106,12 +106,26 @@ void compile_nasm_x86_64_linux(CompileState* state) {
                     nprintfln("   ret");
                 } break;
                 case BUILD_ALLOCA: {
-                    nprintfln("   sub rsp, %zu",inst->size);
+                    Type* t = type_table_get(&state->build->type_table, inst->type);
+                    size_t size = type_get_size(t);
+                    assert(size && "Unsupported types with size=0 for alloca");
+                    nprintfln("   sub rsp, %zu", size);
                     CompileValue* result = &vals[ip];
                     result->kind = CVALUE_STACK_PTR;
                     result->stack_ptr = rsp;
                     result->type = inst->type;
-                    rsp+=inst->size;
+                    rsp+=size;
+                } break;
+                case BUILD_LOAD: {
+                    assert(inst->arg < ip);
+                    CompileValue* ptr = &vals[inst->arg];
+                    assert(ptr->kind == CVALUE_STACK_PTR);
+                    Type* t = type_table_get(&state->build->type_table, ptr->type);
+                    assert(t->core == CORE_I32 && "Unsupported types in load");
+                    CompileValue* result = &vals[ip];
+                    *result = compile_value_alloc(state, REG_SIZE_32);
+                    assert(result->kind == CVALUE_REGISTER);
+                    nprintfln("   mov %s, [rbp+%zu]",nasm_gpr_to_str(result->reg, result->regsize),ptr->stack_ptr);
                 } break;
                 default:
                     eprintfln("Unhandled instruction %d", inst->kind);
