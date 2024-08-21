@@ -2,25 +2,29 @@
 
 #define state_add_return(state, id) build_add_return((state)->build, (state)->fid, (state)->head, id)
 #define state_add_int_add(state, v0, v1) build_add_int_add((state)->build, (state)->fid, (state)->head, v0, v1) 
+#define state_add_store_int(state, v0, v1) build_add_store_int((state)->build, (state)->fid, (state)->head, v0, v1) 
+#define state_add_load_int(state, v0) build_add_load_int((state)->build, (state)->fid, (state)->head, v0) 
+
 #define state_add_load_arg(state, arg) build_add_load_arg((state)->build, (state)->fid, (state)->head, arg) 
 #define state_add_alloca(state, typeid) build_add_alloca((state)->build, (state)->fid, (state)->head, typeid)
 
 #define INVALID_SYMBOLID ((size_t)-1)
-size_t build_symbol_table_lookup(BuildSymbolTable* symbols, Atom* symbol) {
+// #define INVALID_SYMBOL (BuildSymbol){.id=INVALID_SYMBOLID, .allocation=0}
+BuildSymbol* build_symbol_table_lookup(BuildSymbolTable* symbols, Atom* symbol) {
     for(size_t i = 0; i < symbols->len; ++i) {
         if(symbols->items[i].name->len == symbol->len && memcmp(symbols->items[i].name->data, symbol->data, symbol->len) == 0) {
-            return symbols->items[i].id;
+            return &symbols->items[i].symbol;
         }
     }
-    return INVALID_SYMBOLID;
+    return NULL;
 }
-void build_symbol_table_add(BuildSymbolTable* symbols, Atom* symbol, size_t id) {
+void build_symbol_table_add(BuildSymbolTable* symbols, Atom* symbol, BuildSymbol bs) {
     da_reserve(symbols, 1);
     size_t i = symbols->len++;
     symbols->items[i].name = symbol;
-    symbols->items[i].id = id;
+    symbols->items[i].symbol = bs;
 }
-static size_t state_lookup_symbol(BuildState* state, Atom* symbol)  {
+static BuildSymbol* state_lookup_symbol(BuildState* state, Atom* symbol)  {
     BuildFunc* func = &state->build->funcs.items[state->fid];
     return build_symbol_table_lookup(&func->local_table, symbol);
 }
@@ -55,6 +59,22 @@ size_t build_add_int_add(Build* build, size_t fid, size_t head, size_t v0, size_
     inst.v1 = v1;
     return build_add_inst(build, fid, head, inst);
 }
+
+size_t build_add_store_int(Build* build, size_t fid, size_t head, size_t v0, size_t v1) {
+    BuildInst inst = {0};
+    inst.kind = BUILD_STORE_INT;
+    inst.v0 = v0;
+    inst.v1 = v1;
+    return build_add_inst(build, fid, head, inst);
+}
+size_t build_add_load_int(Build* build, size_t fid, size_t head, size_t arg) {
+    BuildInst inst = {0};
+    inst.kind = BUILD_LOAD_INT;
+    inst.arg = arg;
+    return build_add_inst(build, fid, head, inst);
+}
+
+
 
 size_t build_add_return(Build* build, size_t fid, size_t head, size_t arg) {
     BuildInst inst = {0};
@@ -96,7 +116,17 @@ size_t build_astvalue(BuildState* state, ASTValue value) {
     static_assert(AST_VALUE_COUNT == 2, "Update build_astvalue");
     switch(value.kind) {
     case AST_VALUE_SYMBOL: {
-        return state_lookup_symbol(state, value.symbol);
+        BuildSymbol* sym = state_lookup_symbol(state, value.symbol);
+        static_assert(BUILD_SYM_ALLOC_COUNT == 3);
+        switch(sym->allocation) {
+        case BUILD_SYM_ALLOC_DIRECT:
+            return sym->id;
+        case BUILD_SYM_ALLOC_PTR:
+            return state_add_load_int(state, sym->id);
+        default:
+            eprintfln("Unhandled allocation mechanism %d",sym->allocation);
+            abort();
+        }
     } break;
     case AST_VALUE_EXPR: {
         return build_ast(state, value.ast);
@@ -123,8 +153,25 @@ void build_build(Build* build, Parser* parser) {
         state.head = build_add_block(build, state.fid);
 
         for(size_t j=0; j < type->signature.input.len; ++j) {
-            if(type->signature.input.items[j].name) 
-                build_symbol_table_add(&state.build->funcs.items[state.fid].local_table, type->signature.input.items[j].name, state_add_load_arg(&state, j));
+            if(type->signature.input.items[j].name) {
+                Type* argt = type_table_get(&build->type_table, type->signature.input.items[j].typeid);
+                size_t alloca = state_add_alloca(&state, type->signature.input.items[j].typeid);
+
+                switch(argt->core) {
+                case CORE_I32:
+                    size_t larg = state_add_load_arg(&state, j);
+                    state_add_store_int(&state, alloca, larg);
+                    BuildSymbol sym = {
+                        .allocation = BUILD_SYM_ALLOC_PTR,
+                        .id = alloca,
+                    };
+                    build_symbol_table_add(&state.build->funcs.items[state.fid].local_table, type->signature.input.items[j].name, sym);
+                    break;
+                default:
+                    eprintfln("Unhandled type in signature loading in build_build: %d", argt->core);
+                    exit(1);
+                }
+            }
         }
         for(size_t j=0; j < scope->insts.len; ++j) {
             Instruction* inst = &scope->insts.items[j];

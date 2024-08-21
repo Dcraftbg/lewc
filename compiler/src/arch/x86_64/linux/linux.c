@@ -94,6 +94,7 @@ void compile_nasm_x86_64_linux(CompileState* state) {
                     CompileValue value = {0};
                     CompileValue* arg = &vals[inst->arg];
                     if(arg->kind == CVALUE_REGISTER && arg->reg == REG_A) {
+                        nprintfln("   add rsp, %zu",rsp);
                         nprintfln("   pop rbp");
                         nprintfln("   ret");
                         break;
@@ -102,6 +103,7 @@ void compile_nasm_x86_64_linux(CompileState* state) {
                     value.reg = REG_A;
                     value.regsize = arg->regsize;
                     nprintfln("   mov %s, %s",nasm_gpr_to_str(value.reg, value.regsize), nasm_gpr_to_str(arg->reg, arg->regsize));
+                    nprintfln("   add rsp, %zu",rsp);
                     nprintfln("   pop rbp");
                     nprintfln("   ret");
                 } break;
@@ -111,21 +113,29 @@ void compile_nasm_x86_64_linux(CompileState* state) {
                     assert(size && "Unsupported types with size=0 for alloca");
                     nprintfln("   sub rsp, %zu", size);
                     CompileValue* result = &vals[ip];
+                    rsp+=size;
                     result->kind = CVALUE_STACK_PTR;
                     result->stack_ptr = rsp;
                     result->type = inst->type;
-                    rsp+=size;
                 } break;
-                case BUILD_LOAD: {
+                case BUILD_LOAD_INT: {
                     assert(inst->arg < ip);
                     CompileValue* ptr = &vals[inst->arg];
                     assert(ptr->kind == CVALUE_STACK_PTR);
                     Type* t = type_table_get(&state->build->type_table, ptr->type);
-                    assert(t->core == CORE_I32 && "Unsupported types in load");
+                    assert(t->core == CORE_I32 && "Unsupported types in iload");
                     CompileValue* result = &vals[ip];
                     *result = compile_value_alloc(state, REG_SIZE_32);
                     assert(result->kind == CVALUE_REGISTER);
-                    nprintfln("   mov %s, [rbp+%zu]",nasm_gpr_to_str(result->reg, result->regsize),ptr->stack_ptr);
+                    nprintfln("   mov %s, [rbp-%zu]",nasm_gpr_to_str(result->reg, result->regsize),ptr->stack_ptr);
+                } break;
+                case BUILD_STORE_INT: {
+                    assert(inst->arg < ip);
+                    CompileValue* ptr = &vals[inst->v0];
+                    CompileValue* source = &vals[inst->v1];
+                    assert(source->kind == CVALUE_REGISTER);
+                    assert(ptr->kind == CVALUE_STACK_PTR);
+                    nprintfln("   mov [rbp-%zu], %s",ptr->stack_ptr,nasm_gpr_to_str(source->reg, source->regsize));
                 } break;
                 default:
                     eprintfln("Unhandled instruction %d", inst->kind);

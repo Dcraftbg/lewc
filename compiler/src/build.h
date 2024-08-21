@@ -5,8 +5,8 @@ enum {
     BUILD_ADD_INT,
     BUILD_RETURN,
     BUILD_ALLOCA,
-    BUILD_LOAD,
-    BUILD_STORE,
+    BUILD_LOAD_INT,
+    BUILD_STORE_INT,
 
     BUILD_INST_COUNT
 };
@@ -26,10 +26,20 @@ typedef struct {
     BuildInst* items;
     size_t len, cap;
 } Block;
+enum {
+    BUILD_SYM_ALLOC_INVALID,
+    BUILD_SYM_ALLOC_DIRECT,
+    BUILD_SYM_ALLOC_PTR,
+    BUILD_SYM_ALLOC_COUNT,
+};
+typedef struct {
+    size_t id;
+    int allocation;
+} BuildSymbol;
 typedef struct {
     struct {
         Atom* name;
-        size_t id;
+        BuildSymbol symbol;
     } *items;
     size_t len, cap;
 } BuildSymbolTable;

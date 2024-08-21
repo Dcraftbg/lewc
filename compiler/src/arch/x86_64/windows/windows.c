@@ -13,7 +13,9 @@ void compile_nasm_x86_64_windows(CompileState* state) {
         eprintfln("ERROR: compile_nasm_x86_64_windows is still very much not supported as there's quite a few differences between windows and linux. Please use something like WSL until we have this all sorted. Or you could add the --experimental-windows flag which will allow you to continue with this janky and unfinished target");
         exit(1);
     }
-
+    eprintfln("ERROR: Windows support has been completely removed for now");
+    exit(1);
+#if 0
     state->f = fopen(state->target->opath, "wb");
     if(!state->f) {
         eprintfln("ERROR: Could not open output file %s: %s",state->target->opath,strerror(errno));
@@ -124,4 +126,5 @@ void compile_nasm_x86_64_windows(CompileState* state) {
         }
     }
     fclose(state->f);
+#endif
 }
