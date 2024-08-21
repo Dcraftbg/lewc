@@ -10,6 +10,7 @@ const char* NASM_GPR_U8_MAP [REG_GPR_COUNT] = {
     "sll",
     "r8b",
     "r9b",
+    "r10b",
 };
 const char* NASM_GPR_U16_MAP [REG_GPR_COUNT] = {
     "ax",
@@ -20,6 +21,7 @@ const char* NASM_GPR_U16_MAP [REG_GPR_COUNT] = {
     "si",
     "r8w",
     "r9w",
+    "r10w",
 };
 const char* NASM_GPR_U32_MAP [REG_GPR_COUNT] = {
     "eax",
@@ -30,6 +32,7 @@ const char* NASM_GPR_U32_MAP [REG_GPR_COUNT] = {
     "esi",
     "r8d",
     "r9d",
+    "r10d",
 };
 const char* NASM_GPR_U64_MAP [REG_GPR_COUNT] = {
     "rax",
@@ -40,6 +43,7 @@ const char* NASM_GPR_U64_MAP [REG_GPR_COUNT] = {
     "rsi",
     "r8" ,
     "r9" ,
+    "r10",
 };
 
 void nasm_gpr_occupy(NasmGPRegsAlloc* alloc, size_t reg) {

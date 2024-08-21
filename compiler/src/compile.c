@@ -37,6 +37,8 @@ void compile(Build* build, Target* target, Arena* arena) {
     state.arena = arena;
     if(target->arch == ARCH_X86_64 && target->platform == OS_WINDOWS) {
         compile_nasm_x86_64_windows(&state);
+    } else if (target->arch == ARCH_X86_64 && target->platform == OS_LINUX) {
+        compile_nasm_x86_64_linux(&state);
     } else 
     {
         eprintfln("Unsupported target %s:%s outputing to %s", platform_str(target->platform), arch_str(target->arch), outputkind_str(target->outputKind));

@@ -13,6 +13,7 @@ enum {
     REG_SI,
     REG_R8,
     REG_R9,
+    REG_R10,
     // r1->r15?
     REG_GPR_COUNT
 };

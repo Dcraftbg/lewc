@@ -3,6 +3,8 @@
 #include "arena.h"
 #include "arch/x86_64/nasm.h"
 #include "arch/x86_64/windows/windows.h"
+#include "arch/x86_64/linux/linux.h"
+
 typedef enum {
     OUTPUT_NASM,
 
