@@ -20,6 +20,10 @@ typedef struct {
         struct {
             typeid_t type;
         };
+        struct {
+            typeid_t type;
+            Atom* name;
+        } func;
     };
 } BuildInst;
 typedef struct {

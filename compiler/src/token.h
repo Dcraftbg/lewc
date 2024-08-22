@@ -9,6 +9,7 @@ enum {
     TOKEN_ATOM=256,
     TOKEN_ARROW,
     TOKEN_RETURN,
+    TOKEN_EXTERN,
     // Tokens to stop 
     TOKEN_EOF,
     TOKEN_END=TOKEN_EOF,

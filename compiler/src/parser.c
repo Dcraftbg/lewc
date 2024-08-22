@@ -192,7 +192,7 @@ void parse(Parser* parser, Lexer* lexer, Arena* arena) {
             eprintfln("ERROR:%s: Lexer: %s", tloc(t), tdisplay(t));
             exit(1);
         }
-        static_assert(TOKEN_COUNT == 261, "Update parser");
+        static_assert(TOKEN_COUNT == 262, "Update parser");
         switch(t.kind) {
         case '}': {
             if(parser->head->parent == NULL) {
@@ -215,6 +215,33 @@ void parse(Parser* parser, Lexer* lexer, Arena* arena) {
             ASTValue astvalue = parse_astvalue(parser);
             Instruction inst = { INST_RETURN, .astvalue=astvalue };
             da_push(&s->insts, inst);
+        } break;
+        case TOKEN_EXTERN: {
+            ;
+            if((t = lexer_next(parser->lexer)).kind == TOKEN_ATOM && lexer_peak_next(parser->lexer).kind == ':' && lexer_peak(parser->lexer, 1).kind == ':' && lexer_peak(parser->lexer, 2).kind == '(') {
+                Atom* name = t.atom;
+                lexer_eat(parser->lexer, 2);
+                if(parser->head->parent != NULL) {
+                    eprintfln("ERROR:%s: Nested `extern` definitions are not allowed. Please use `extern` in the global scope", tloc(t));
+                    exit(1);
+                }
+
+                Type functype={0};
+                functype.core = CORE_FUNC;
+
+                parse_func_signature(parser, &functype.signature);
+                if(parser->head->parent != NULL) {
+                    eprintfln("ERROR:%s: Nested function definitions are not yet implemented", tloc(t));
+                    exit(1);
+                }
+                typeid_t fid = type_table_create(&parser->type_table, functype);
+                Symbol* sym = new_symbol(parser->arena, (Symbol){SYMBOL_FUNC, .typeid=fid});
+                symtab_insert(&parser->head->symtab, name, sym);
+            } else {
+                eprintfln("ERROR:%s: Expected signature of external function to follow the syntax:", tloc(t));
+                eprintfln("  extern <func name> :: <(<Arguments>)> (-> <Output Type>)");
+                exit(1);
+            }
         } break;
         case TOKEN_ATOM: {
             if(lexer_peak_next(parser->lexer).kind == ':' && lexer_peak(parser->lexer, 1).kind == ':' && lexer_peak(parser->lexer, 2).kind == '(') {

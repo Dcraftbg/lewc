@@ -97,7 +97,8 @@ Token lexer_next(Lexer* lexer) {
     default:
         if(c == '_' || isalpha(c)) {
             Word word = lexer_parse_word(lexer);
-            if(wordeq(word, "return")) return MAKE_TOKEN(TOKEN_RETURN);
+                 if (wordeq(word, "return")) return MAKE_TOKEN(TOKEN_RETURN);
+            else if (wordeq(word, "extern")) return MAKE_TOKEN(TOKEN_EXTERN);
             return MAKE_TOKEN(TOKEN_ATOM, .atom = atom_alloc(lexer->atom_table,word.start, (size_t)(word.end-word.start)));
         }
     }
