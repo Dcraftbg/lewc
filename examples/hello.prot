@@ -1,0 +1,5 @@
+extern puts :: (cstr: *u8);
+main :: (argc: i32) -> i32 {
+    puts(c"Hello World!");
+    return argc;
+}
