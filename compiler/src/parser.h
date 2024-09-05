@@ -24,6 +24,7 @@ static void _example_dump() {
 }
 enum {
     INST_RETURN,
+    INST_EVAL,
     INST_COUNT
 };
 typedef struct {

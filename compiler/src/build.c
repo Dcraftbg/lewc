@@ -8,6 +8,11 @@
 #define state_add_load_arg(state, arg) build_add_load_arg((state)->build, (state)->fid, (state)->head, arg) 
 #define state_add_alloca(state, typeid) build_add_alloca((state)->build, (state)->fid, (state)->head, typeid)
 
+#define state_add_global_arr(state, typeid, data, len) build_add_global_arr((state)->build, typeid, data, len)
+#define state_add_get_addr_of(state, globalid) build_add_get_addr_of((state)->build, (state)->fid, (state)->head, globalid)
+
+#define state_add_directcall(state, what, args) build_add_directcall((state)->build, (state)->fid, (state)->head, what, args)
+
 #define INVALID_SYMBOLID ((size_t)-1)
 // #define INVALID_SYMBOL (BuildSymbol){.id=INVALID_SYMBOLID, .allocation=0}
 BuildSymbol* build_symbol_table_lookup(BuildSymbolTable* symbols, Atom* symbol) {
@@ -36,6 +41,12 @@ size_t build_add_func(Build* build, Atom* name, typeid_t type) {
     build->funcs.items[id].typeid = type;
     return id;
 }
+static size_t build_get_funcid_by_name(Build* build, Atom* name) {
+    for(size_t i = 0; i < build->funcs.len; ++i) {
+        if(strcmp(build->funcs.items[i].name->data, name->data) == 0) return i;
+    }
+    return INVALID_SYMBOLID;
+}
 #define build_get_func(build, fid) &build->funcs.items[fid]
 size_t build_add_block(Build* build, size_t fid) {
     BuildFunc* func = &build->funcs.items[fid];
@@ -43,6 +54,16 @@ size_t build_add_block(Build* build, size_t fid) {
     size_t id = func->blocks.len++;
     memset(&func->blocks.items[id], 0, sizeof(func->blocks.items[0]));
     return id;
+}
+static size_t build_add_global(Build* build, BuildGlobal global) {
+    da_reserve(&build->globals, 1);
+    size_t id = build->globals.len++;
+    build->globals.items[id] = global;
+    return id;
+}
+#define build_get_global(build, id) &build->globals.items[id]
+size_t build_add_global_arr(Build* build, typeid_t typeid, void* data, size_t len) {
+    return build_add_global(build, (BuildGlobal){.kind=GLOBAL_ARRAY, .array={.typeid=typeid, .data=data, .len=len}});
 }
 size_t build_add_inst(Build* build, size_t fid, size_t head, BuildInst inst) {
     BuildFunc* func = build_get_func(build, fid);
@@ -96,6 +117,21 @@ size_t build_add_alloca(Build* build, size_t fid, size_t head, typeid_t typeid) 
     return build_add_inst(build, fid, head, inst);
 }
 
+size_t build_add_get_addr_of(Build* build, size_t fid, size_t head, size_t globalid) {
+    BuildInst inst = {0};
+    inst.kind = BUILD_GET_ADDR_OF;
+    inst.globalid = globalid;
+    return build_add_inst(build, fid, head, inst);
+}
+
+size_t build_add_directcall(Build* build, size_t fid, size_t head, size_t what, BuildCallArgs args) {
+    BuildInst inst = {0};
+    inst.kind = BUILD_CALL_DIRECTLY;
+    inst.directcall.fid = what;
+    inst.directcall.args = args;
+    return build_add_inst(build, fid, head, inst);
+}
+// build_add_directcall((state)->build, (state)->fid, (state)->head, fid, args)
 
 size_t build_astvalue(BuildState* state, ASTValue value);
 size_t build_ast(BuildState* state, AST* ast) {
@@ -104,8 +140,20 @@ size_t build_ast(BuildState* state, AST* ast) {
         size_t v0 = build_astvalue(state, ast->left);
         size_t v1 = build_astvalue(state, ast->right);
         return state_add_int_add(state, v0, v1);
+    case AST_CALL:
+        assert(ast->what.kind == AST_VALUE_SYMBOL);
+        size_t whatid = build_get_funcid_by_name(state->build, ast->what.symbol);
+        if(whatid == INVALID_SYMBOLID) {
+            eprintfln("Invalid function name %s",ast->what.symbol->data);
+            exit(1);
+        }
+        BuildCallArgs args={0};
+        for(size_t i = 0; i < ast->args.len; ++i) {
+            da_push(&args, build_astvalue(state, ast->args.items[i]));
+        }
+        return state_add_directcall(state, whatid, args);
     default:
-        eprintfln("Unsupported ast->kind in build_ast: %d\n",ast->kind);
+        eprintfln("Unsupported ast->kind in build_aststate->: %d\n",ast->kind);
         if(ast->kind < 256) {
            eprintfln("Char representation: %c", (char)ast->kind);
         }
@@ -113,7 +161,7 @@ size_t build_ast(BuildState* state, AST* ast) {
     }
 }
 size_t build_astvalue(BuildState* state, ASTValue value) {
-    static_assert(AST_VALUE_COUNT == 2, "Update build_astvalue");
+    static_assert(AST_VALUE_COUNT == 3, "Update build_astvalue");
     switch(value.kind) {
     case AST_VALUE_SYMBOL: {
         BuildSymbol* sym = state_lookup_symbol(state, value.symbol);
@@ -130,6 +178,10 @@ size_t build_astvalue(BuildState* state, ASTValue value) {
     } break;
     case AST_VALUE_EXPR: {
         return build_ast(state, value.ast);
+    } break;
+    case AST_VALUE_C_STR: {
+        size_t globalid = state_add_global_arr(state, BUILTIN_U8, (void*)value.str, value.str_len+1);
+        return state_add_get_addr_of(state, globalid);
     } break;
     default:
         eprintfln("%s:%u: UNREACHABLE", __FILE__, __LINE__);
@@ -150,40 +202,44 @@ void build_build(Build* build, Parser* parser) {
         Type* type = type_table_get(&build->type_table, typeid);
         assert(type->core == CORE_FUNC);
         state.fid = build_add_func(build, name, typeid);
-        state.head = build_add_block(build, state.fid);
+        if(!(type->attribs & TYPE_ATTRIB_EXTERN)) {
+            state.head = build_add_block(build, state.fid);
+            for(size_t j=0; j < type->signature.input.len; ++j) {
+                if(type->signature.input.items[j].name) {
+                    Type* argt = type_table_get(&build->type_table, type->signature.input.items[j].typeid);
+                    size_t alloca = state_add_alloca(&state, type->signature.input.items[j].typeid);
 
-        for(size_t j=0; j < type->signature.input.len; ++j) {
-            if(type->signature.input.items[j].name) {
-                Type* argt = type_table_get(&build->type_table, type->signature.input.items[j].typeid);
-                size_t alloca = state_add_alloca(&state, type->signature.input.items[j].typeid);
-
-                switch(argt->core) {
-                case CORE_I32:
-                    size_t larg = state_add_load_arg(&state, j);
-                    state_add_store_int(&state, alloca, larg);
-                    BuildSymbol sym = {
-                        .allocation = BUILD_SYM_ALLOC_PTR,
-                        .id = alloca,
-                    };
-                    build_symbol_table_add(&state.build->funcs.items[state.fid].local_table, type->signature.input.items[j].name, sym);
-                    break;
-                default:
-                    eprintfln("Unhandled type in signature loading in build_build: %d", argt->core);
-                    exit(1);
+                    switch(argt->core) {
+                    case CORE_I32:
+                        size_t larg = state_add_load_arg(&state, j);
+                        state_add_store_int(&state, alloca, larg);
+                        BuildSymbol sym = {
+                            .allocation = BUILD_SYM_ALLOC_PTR,
+                            .id = alloca,
+                        };
+                        build_symbol_table_add(&state.build->funcs.items[state.fid].local_table, type->signature.input.items[j].name, sym);
+                        break;
+                    default:
+                        eprintfln("Unhandled type in signature loading in build_build: %d for function %s", argt->core, name->data);
+                        exit(1);
+                    }
                 }
             }
+            for(size_t j=0; j < scope->insts.len; ++j) {
+                Instruction* inst = &scope->insts.items[j];
+                static_assert(INST_COUNT == 2, "Update build_build");
+                switch(inst->kind) {
+                case INST_RETURN:
+                    state_add_return(&state, build_astvalue(&state, inst->astvalue));
+                    break;
+                case INST_EVAL:
+                    build_astvalue(&state, inst->astvalue);
+                    break;
+                default:
+                    eprintfln("UNHANDLED INSTRUCTION %d",inst->kind);
+                    exit(1);
+                }
+            } 
         }
-        for(size_t j=0; j < scope->insts.len; ++j) {
-            Instruction* inst = &scope->insts.items[j];
-            static_assert(INST_COUNT == 1, "Update build_build");
-            switch(inst->kind) {
-            case INST_RETURN:
-                state_add_return(&state, build_astvalue(&state, inst->astvalue));
-                break;
-            default:
-                eprintfln("UNHANDLED INSTRUCTION %d",inst->kind);
-                exit(1);
-            }
-        } 
     } 
 }

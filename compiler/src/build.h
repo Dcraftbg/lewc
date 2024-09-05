@@ -1,5 +1,9 @@
 #pragma once
 #include "parser.h"
+typedef struct {
+    size_t* items;
+    size_t len, cap;
+} BuildCallArgs;
 enum {
     BUILD_LOAD_ARG,
     BUILD_ADD_INT,
@@ -7,6 +11,8 @@ enum {
     BUILD_ALLOCA,
     BUILD_LOAD_INT,
     BUILD_STORE_INT,
+    BUILD_GET_ADDR_OF,
+    BUILD_CALL_DIRECTLY,
 
     BUILD_INST_COUNT
 };
@@ -24,6 +30,13 @@ typedef struct {
             typeid_t type;
             Atom* name;
         } func;
+        struct {
+            size_t globalid;
+        };
+        struct {
+            size_t fid;
+            BuildCallArgs args;
+        } directcall;
     };
 } BuildInst;
 typedef struct {
@@ -47,11 +60,21 @@ typedef struct {
     } *items;
     size_t len, cap;
 } BuildSymbolTable;
+enum {
+    GLOBAL_ARRAY,
+    GLOBAL_KIND_COUNT
+};
+typedef struct {
+    uint8_t kind;
+    union {
+        struct { typeid_t typeid; void* data; size_t len; } array;
+    };
+} BuildGlobal;
 typedef struct {
     size_t ip;
     struct {
-       Block* items;
-       size_t len, cap;
+        Block* items;
+        size_t len, cap;
     } blocks;
     BuildSymbolTable local_table;
     Atom* name;
@@ -62,6 +85,10 @@ typedef struct {
         BuildFunc* items;
         size_t len, cap;
     } funcs;
+    struct {
+        BuildGlobal* items;
+        size_t len, cap;
+    } globals;
     AtomTable* atom_table;
     TypeTable type_table;
     const char* path;

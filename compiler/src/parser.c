@@ -49,6 +49,11 @@ typeid_t parse_type(Parser* parser) {
     // TODO: Pointers
     Token t = {0};
     t = lexer_next(parser->lexer);
+    size_t ptr_count = 0;
+    while(t.kind == '*') {
+        ptr_count++;
+        t = lexer_next(parser->lexer);
+    }
     if(t.kind != TOKEN_ATOM) {
         eprintfln("ERROR:%s: Expected name of type but got: %s", tloc(t), tdisplay(t));
         exit(1);
@@ -57,6 +62,14 @@ typeid_t parse_type(Parser* parser) {
     if(id == INVALID_TYPEID) {
         eprintfln("ERROR:%s: Unknown type name: %s", tloc(t), t.atom->data);
         exit(1);
+    }
+    if(ptr_count) {
+        Type t = {
+            .core = CORE_PTR,
+            .ptr_count = ptr_count,
+            .inner_type = id
+        };
+        return type_table_create(&parser->type_table, t);
     }
     return id;
 }
@@ -120,6 +133,9 @@ ASTValue parse_basic(Parser* parser) {
         }
         return (ASTValue){.kind=AST_VALUE_SYMBOL, .symbol=t.atom};
     } break;
+    case TOKEN_C_STR: {
+        return (ASTValue){.kind=AST_VALUE_C_STR, .str=t.str, .str_len=t.str_len};
+    } break;
     default:
         eprintfln("ERROR:%s: Unexpected token in expression: %s", tloc(t),tdisplay(t));
         exit(1);
@@ -139,10 +155,46 @@ int op_prec(int op) {
         return -1;
     }
 }
-ASTValue parse_astvalue(Parser* parser) {
+int parse_astvalue(Parser* parser, ASTValue* result) {
+    int e = 0;
     ASTValue v = parse_basic(parser);
     Token t = lexer_peak_next(parser->lexer);
     switch(t.kind) {
+    case '(': {
+        Token t = {0};
+        if((t=lexer_next(parser->lexer)).kind != '(') {
+            eprintfln("ERROR:%s: Expected '(' but found %s in function call", tloc(t), tdisplay(t));
+            exit(1);
+        }
+        CallArgs args = {0};
+        for(;;) {
+            t = lexer_peak_next(parser->lexer);
+            if(t.kind == ')') break;
+            ASTValue value;
+            e = parse_astvalue(parser, &value);
+            if(e!=0) {
+                call_args_dealloc(&args);
+                return e;
+            }
+            da_push(&args, value);
+            t = lexer_peak_next(parser->lexer);
+            if(t.kind == ')') {
+                break;
+            } else if (t.kind == ',') {
+                lexer_eat(parser->lexer, 1);
+            } else {
+                eprintfln("ERROR: %s: Expected ')' or ',' but found %s in function call", tloc(t), tdisplay(t));
+                exit(1);
+            }
+        } 
+        if((t=lexer_next(parser->lexer)).kind != ')') {
+            eprintfln("ERROR:%s: Expected ')' but found %s in function call",tloc(t),tdisplay(t));
+            exit(1);
+        }
+        result->kind = AST_VALUE_EXPR;
+        result->ast = ast_new_call(parser->arena, v, args);
+        return 0;
+    } break;
     #define X(op) case op:
     OPS
     #undef X
@@ -161,22 +213,28 @@ ASTValue parse_astvalue(Parser* parser) {
             int newprecedence = op_prec(newop);
             if (precedence < newprecedence) {
                 lexer_eat(parser->lexer, 1);
-                ASTValue v3 = parse_astvalue(parser);
+                ASTValue v3;
+                if((e = parse_astvalue(parser, &v3)) != 0) {
+                    return e;
+                }
                 v2 = (ASTValue) {
                    AST_VALUE_EXPR,
                    .ast=ast_new(parser->arena, newop, v2, v3)
                 };
             }
             AST* ast = ast_new(parser->arena, op, v, v2);
-            return (ASTValue){AST_VALUE_EXPR, .ast=ast};
+            *result = (ASTValue){AST_VALUE_EXPR, .ast=ast};
+            return 0;
         } break;
         default:
             AST* ast = ast_new(parser->arena, op, v, v2);
-            return (ASTValue){AST_VALUE_EXPR, .ast=ast};
+            *result = (ASTValue){AST_VALUE_EXPR, .ast=ast};
+            return 0;
         }
     } break;
     }
-    return v;
+    *result = v;
+    return 0;
 }
 Symbol* new_symbol(Arena* arena, Symbol symbol) {
     Symbol* s = (Symbol*)arena_alloc(arena, sizeof(*s));
@@ -186,15 +244,16 @@ Symbol* new_symbol(Arena* arena, Symbol symbol) {
 }
 
 void parse(Parser* parser, Lexer* lexer, Arena* arena) {
-    while(lexer_peak_next(parser->lexer).kind != TOKEN_EOF) {
-        Token t = lexer_next(parser->lexer);
+    Token t;
+    while((t=lexer_peak_next(parser->lexer)).kind != TOKEN_EOF) {
         if(t.kind >= TOKEN_END) {
             eprintfln("ERROR:%s: Lexer: %s", tloc(t), tdisplay(t));
             exit(1);
         }
-        static_assert(TOKEN_COUNT == 262, "Update parser");
+        static_assert(TOKEN_COUNT == 264, "Update parser");
         switch(t.kind) {
         case '}': {
+            lexer_eat(parser->lexer, 1);
             if(parser->head->parent == NULL) {
                 eprintfln("ERROR:%s: Too many '}' brackets",tloc(t));
                 exit(1);
@@ -207,17 +266,23 @@ void parse(Parser* parser, Lexer* lexer, Arena* arena) {
             }
         } break;
         case TOKEN_RETURN: {
+            lexer_eat(parser->lexer, 1);
             Scope* s = parser->head;
             if(s->kind != SCOPE_FUNC) {
                 eprintfln("ERROR:%s: Cannot return outside of function",tloc(t));
                 exit(1);
             }
-            ASTValue astvalue = parse_astvalue(parser);
+            ASTValue astvalue;
+            int e = parse_astvalue(parser, &astvalue);
+            if((e != 0)) {
+                eprintfln("ERROR:%s: Failed to parse return expression",tloc(t));
+                exit(1);
+            }
             Instruction inst = { INST_RETURN, .astvalue=astvalue };
             da_push(&s->insts, inst);
         } break;
         case TOKEN_EXTERN: {
-            ;
+            lexer_eat(parser->lexer, 1);
             if((t = lexer_next(parser->lexer)).kind == TOKEN_ATOM && lexer_peak_next(parser->lexer).kind == ':' && lexer_peak(parser->lexer, 1).kind == ':' && lexer_peak(parser->lexer, 2).kind == '(') {
                 Atom* name = t.atom;
                 lexer_eat(parser->lexer, 2);
@@ -227,8 +292,8 @@ void parse(Parser* parser, Lexer* lexer, Arena* arena) {
                 }
 
                 Type functype={0};
-                functype.core = CORE_FUNC;
-
+                functype.core    = CORE_FUNC;
+                functype.attribs = TYPE_ATTRIB_EXTERN;
                 parse_func_signature(parser, &functype.signature);
                 if(parser->head->parent != NULL) {
                     eprintfln("ERROR:%s: Nested function definitions are not yet implemented", tloc(t));
@@ -237,6 +302,7 @@ void parse(Parser* parser, Lexer* lexer, Arena* arena) {
                 typeid_t fid = type_table_create(&parser->type_table, functype);
                 Symbol* sym = new_symbol(parser->arena, (Symbol){SYMBOL_FUNC, .typeid=fid});
                 symtab_insert(&parser->head->symtab, name, sym);
+                funcs_insert(&parser->funcs, name, fid, NULL);
             } else {
                 eprintfln("ERROR:%s: Expected signature of external function to follow the syntax:", tloc(t));
                 eprintfln("  extern <func name> :: <(<Arguments>)> (-> <Output Type>)");
@@ -244,9 +310,9 @@ void parse(Parser* parser, Lexer* lexer, Arena* arena) {
             }
         } break;
         case TOKEN_ATOM: {
-            if(lexer_peak_next(parser->lexer).kind == ':' && lexer_peak(parser->lexer, 1).kind == ':' && lexer_peak(parser->lexer, 2).kind == '(') {
+            if(lexer_peak(parser->lexer, 1).kind == ':' && lexer_peak(parser->lexer, 2).kind == ':' && lexer_peak(parser->lexer, 3).kind == '(') {
                 Atom* name = t.atom;
-                lexer_eat(parser->lexer, 2);
+                lexer_eat(parser->lexer, 3);
                 Type functype={0};
                 functype.core = CORE_FUNC;
 
@@ -274,11 +340,24 @@ void parse(Parser* parser, Lexer* lexer, Arena* arena) {
                 parser->head = s;
                 funcs_insert(&parser->funcs, name, fid, s);
             } else {
-                eprintfln("ERROR:%s: Unexpected Atom: %s", tloc(t), t.atom->data);
-                exit(1);
+                Scope* s = parser->head;
+                if(s->kind != SCOPE_FUNC) {
+                    eprintfln("ERROR:%s: Unexpected Atom: %s",tloc(t), t.atom->data);
+                    exit(1);
+                }
+                ASTValue astvalue;
+                int e = parse_astvalue(parser, &astvalue);
+                if(e != 0) {
+                    eprintfln("ERROR:%s: Unexpected Atom: %s", tloc(t), t.atom->data);
+                    exit(1);
+                } else {
+                    Instruction inst = { INST_EVAL, .astvalue=astvalue };
+                    da_push(&s->insts, inst);
+                }
             }
         } break;
         case ';':
+            lexer_eat(parser->lexer, 1);
             break;
         default:
             eprintfln("ERROR:%s: Unexpected token: %s", tloc(t), tdisplay(t));

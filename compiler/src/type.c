@@ -18,8 +18,10 @@ size_t type_table_get_by_name(TypeTable* t, const char* name) {
 }
 
 Type builtin_types[] = {
-    { .name="i32", .core=CORE_I32, .unsign=false }
+    [BUILTIN_U8]  = { .name="u8" , .core=CORE_I8 , .ptr_count=0, .unsign=true  },
+    [BUILTIN_I32] = { .name="i32", .core=CORE_I32, .ptr_count=0, .unsign=false },
 };
+static_assert(BUILTIN_COUNT==ARRAY_LEN(builtin_types), "Update builtin_types");
 void type_table_init(TypeTable* t) {
     memset(t, 0, sizeof(*t));
     for(size_t i = 0; i < ARRAY_LEN(builtin_types); ++i) {
@@ -37,6 +39,8 @@ size_t type_get_size(Type* type) {
     switch(type->core) {
     case CORE_I32:
         return 4;
+    case CORE_I8:
+        return 1;
     default:
         return 0;
     }

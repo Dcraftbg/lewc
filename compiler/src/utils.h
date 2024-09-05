@@ -1,4 +1,5 @@
 #pragma once
+#include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
 #ifdef _WIN32
@@ -16,6 +17,9 @@
 #define eprintfln(...) do { eprintf(__VA_ARGS__); fputs(NEWLINE, stderr); } while(0)
 #define ARRAY_LEN(arr) (sizeof(arr) / sizeof(*arr))
 #define BITMAP_BYTES(n) ((n+7)/8)
+#define BIT(n) (1<<(n-1))
+
+
 /*
 #if defined(__STDC_VERSION__)
 #   if __STDC_VERSION__ >= 202311L
