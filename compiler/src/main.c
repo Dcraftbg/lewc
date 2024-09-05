@@ -44,7 +44,7 @@ static Platform default_platform =
 #endif
 ;
 // TODO: Default arch detection
-static Architecture default_arch = ARCH_X86_64;
+static const Architecture default_arch = ARCH_X86_64;
 int main(int argc, const char** argv) {
     build_options.exe = shift_args(&argc, &argv);
     assert(build_options.exe);
@@ -87,7 +87,8 @@ int main(int argc, const char** argv) {
     AtomTable atom_table={0};
     atom_table.arena = &arena;
 
-    Lexer lexer = lexer_create(build_options.ipath, &atom_table);
+    Lexer lexer;
+    lexer_create(&lexer, build_options.ipath, &atom_table, &arena);
 
     Parser parser = {0};
     parser_create(&parser, &lexer, &arena);

@@ -8,9 +8,13 @@
 #include "token.h"
 #include "utf8.h"
 #include "fileutils.h"
+#include "scratch.h"
+#include "arena.h"
 
 typedef struct {
     AtomTable* atom_table;
+    Arena* arena;
+    ScratchBuf buf;
     const char* path;
     const char* cursor;
     size_t l0, c0;
@@ -18,7 +22,7 @@ typedef struct {
     const char* src;
 } Lexer;
 
-Lexer lexer_create(const char* ipath, AtomTable* table);
+void lexer_create(Lexer* lexer, const char* ipath, AtomTable* table, Arena* arena);
 void lexer_cleanup(Lexer* lexer);
 Token lexer_next(Lexer* lexer);
 

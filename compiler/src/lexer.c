@@ -4,37 +4,33 @@ typedef struct {
     const char* cursor;
     size_t l0, c0;
 } Snapshot;
-Lexer lexer_create(const char* ipath, AtomTable* table) {
-    static_assert(
-        sizeof(Lexer) ==
-        sizeof(AtomTable*) +
-        sizeof(const char*) +
-        sizeof(const char*) +
-        sizeof(size_t) +
-        sizeof(size_t) +
-        sizeof(const char*) +
-        sizeof(const char*)
-        ,
-        "Update lexer_create");
-    Lexer result = {0};
+void lexer_create(Lexer* lexer, const char* ipath, AtomTable* table, Arena* arena) {
     size_t size = 0;
-    result.src = read_entire_file(ipath, &size);
+    lexer->src = read_entire_file(ipath, &size);
     // TODO: error handling or something?
-    if(!result.src) {
+    if(!lexer->src) {
         eprintfln("ERROR: Could not read source file: %s",ipath);
         exit(1);
     }
-    result.cursor = result.src;
-    result.end = result.src+size;
-    result.l0 = 1;
-    result.c0 = 0;
-    result.atom_table = table;
-    result.path = ipath;
-    return result;
+    lexer->cursor = lexer->src;
+    lexer->end = lexer->src+size;
+    lexer->l0 = 1;
+    lexer->c0 = 0;
+    lexer->atom_table = table;
+    lexer->arena = arena;
+    lexer->path = ipath;
+    scratchbuf_init(&lexer->buf);
+}
+static uint32_t lexer_peak_c_n(Lexer* lexer, size_t n) {
+    const char* strm = lexer->cursor;
+    uint32_t c;
+    do {
+        c = utf8_next(&strm, lexer->end);
+    } while(n--);
+    return c;
 }
 static uint32_t lexer_peak_c(Lexer* lexer) {
-    const char* strm = lexer->cursor;
-    return utf8_next(&strm, lexer->end);
+    return lexer_peak_c_n(lexer, 0);
 }
 static uint32_t lexer_next_c(Lexer* lexer) {
     uint32_t res = utf8_next(&lexer->cursor, lexer->end);
@@ -69,6 +65,66 @@ static Word lexer_parse_word(Lexer* lexer) {
     while (lexer->cursor < lexer->end && iswordc(lexer_peak_c(lexer))) lexer_next_c(lexer);
     return (Word){start,lexer->cursor};
 }
+static void lex_str(Lexer* lexer, const char **str, size_t *len) {
+    int c;
+    bool escape=false;
+    if((c=lexer_next_c(lexer)) != '"') {
+        eprintfln("ERROR: %s:%zu:%zu: Expected '\"' at the start of string but found %c", lexer->path, lexer->l0, lexer->c0, c);
+        *str = NULL;
+        return;
+    }
+    while (lexer->cursor < lexer->end && (escape || (lexer_peak_c(lexer) != '"'))) {
+        c = lexer_next_c(lexer);
+        if(escape) {
+            switch(c) {
+            case 't':
+                scratchbuf_push(&lexer->buf, '\t');
+                break;
+            case 'n':
+                scratchbuf_push(&lexer->buf, '\n');
+                break;
+            case 'r':
+                scratchbuf_push(&lexer->buf, '\r');
+                break;
+            case '0':
+                scratchbuf_push(&lexer->buf, '\0');
+                break;
+            default:
+                if(c >= 256) {
+                     eprintfln("ERROR: %s:%zu:%zu: UTF8 characters are not yet supported in strings :(", lexer->path, lexer->l0, lexer->c0);
+                     abort();
+                }
+                scratchbuf_push(&lexer->buf, c);
+                break;
+            }
+            escape = false;
+        } else {
+            if(c == '\\') {
+                escape = true;
+            }
+            else {
+                if(c >= 256) {
+                     eprintfln("ERROR: %s:%zu:%zu: UTF8 characters are not yet supported in strings :(", lexer->path, lexer->l0, lexer->c0);
+                     abort();
+                }
+                scratchbuf_push(&lexer->buf, c);
+            }
+        }
+    }
+    if((c=lexer_next_c(lexer)) != '"') {
+        eprintfln("ERROR: %s:%zu:%zu: Expected '\"' at the end of string but found %c", lexer->path, lexer->l0, lexer->c0, c);
+        *str = NULL;
+        return;
+    }
+    *len = lexer->buf.len;
+    scratchbuf_push(&lexer->buf, '\0');
+    void* buf = arena_alloc(lexer->arena, lexer->buf.len);
+    assert(buf);
+    memcpy(buf, lexer->buf.data, lexer->buf.len);
+    *str = buf;
+    scratchbuf_reset(&lexer->buf);
+    return;
+}
 #define MAKE_TOKEN(...) (Token) { lexer->path, l0, c0, lexer->l0, lexer->c0, .kind=__VA_ARGS__ }
 Token lexer_next(Lexer* lexer) {
     lexer_trim(lexer);
@@ -95,7 +151,14 @@ Token lexer_next(Lexer* lexer) {
         }
         return MAKE_TOKEN(c);
     default:
-        if(c == '_' || isalpha(c)) {
+        if(c == 'c' && lexer_peak_c_n(lexer, 1) == '"') {
+            lexer_next_c(lexer);
+            const char* str = NULL;
+            size_t len=0;
+            lex_str(lexer, &str, &len);
+            if(!str) return MAKE_TOKEN(TOKEN_INVALID_STR);
+            return MAKE_TOKEN(TOKEN_C_STR, .str = str, .str_len = len);
+        } else if(c == '_' || isalpha(c)) {
             Word word = lexer_parse_word(lexer);
                  if (wordeq(word, "return")) return MAKE_TOKEN(TOKEN_RETURN);
             else if (wordeq(word, "extern")) return MAKE_TOKEN(TOKEN_EXTERN);

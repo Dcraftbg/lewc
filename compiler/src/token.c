@@ -1,4 +1,5 @@
 #include "token.h"
+#include "strutils.h"
 #define TPRINTF(...) snprintf(tdisplay_buf, sizeof(tdisplay_buf), __VA_ARGS__)
 const char* tdisplay(Token t) {
     static char tdisplay_buf[1024];
@@ -22,6 +23,14 @@ const char* tdisplay(Token t) {
     case TOKEN_RETURN:
         TPRINTF("return");
         return tdisplay_buf;
+    case TOKEN_C_STR: {
+        ScratchBuf buf;
+        scratchbuf_init(&buf);
+        strescape(t.str, t.str_len, &buf);
+        TPRINTF("CStr (\"%s\")", buf.data);
+        scratchbuf_cleanup(&buf);
+        return tdisplay_buf;
+    }
     default:
         if(t.kind < 256) {
            TPRINTF("'%c'",t.kind);

@@ -8,8 +8,10 @@
 #include "buildoptions.h"
 extern BuildOptions build_options;
 static void _example_dump() {
+    Arena arena={0};
     AtomTable atom_table={0};
-    Lexer lexer = lexer_create(build_options.ipath, &atom_table);
+    Lexer lexer;
+    lexer_create(&lexer, build_options.ipath, &atom_table, &arena);
     while(lexer_peak_next(&lexer).kind != TOKEN_EOF) {
         Token t = lexer_next(&lexer);
         if(t.kind >= TOKEN_END) {

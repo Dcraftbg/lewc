@@ -10,10 +10,12 @@ enum {
     TOKEN_ARROW,
     TOKEN_RETURN,
     TOKEN_EXTERN,
+    TOKEN_C_STR,
     // Tokens to stop 
     TOKEN_EOF,
     TOKEN_END=TOKEN_EOF,
     TOKEN_UNPARSABLE,
+    TOKEN_INVALID_STR,
     TOKEN_COUNT
 };
 typedef struct {
@@ -23,8 +25,13 @@ typedef struct {
     int kind;
     union {
         Atom* atom;
+        struct {
+            const char* str;
+            size_t str_len;
+        };
         uint32_t codepoint;
     };
+    /*Small string buffer?*/
 } Token;
 // NOTE: Temporarily display a Token
 const char* tdisplay(Token t);
