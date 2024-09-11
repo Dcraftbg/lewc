@@ -6,3 +6,4 @@ int/
 *.obj
 test.c
 build
+doodles/
