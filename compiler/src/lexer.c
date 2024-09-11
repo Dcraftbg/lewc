@@ -142,7 +142,7 @@ static Token lex_num_base10(size_t l0, size_t c0, Lexer* lexer) {
     while(lexer->cursor < lexer->end && isalnum(lexer_peak_c(lexer))) {
         c = lexer_next_c(lexer);
         if(c >= '0' && c <= '9') {
-            result = result * 10 + c;
+            result = result * 10 + (c - '0');
         } else {
             eprintfln("ERROR:%s:%zu:%zu: Invalid character in base10 integer '%c' (%u)", lexer->path, lexer->l0, lexer->c0, c, c);
             return MAKE_TOKEN(TOKEN_INVALID_INT_LITERAL);
