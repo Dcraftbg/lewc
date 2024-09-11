@@ -1,0 +1,9 @@
+extern puts :: (cstr: *u8);
+say_hello :: () -> i32 {
+   puts(c"Hello World!");
+   return 0;
+}
+main :: () -> i32 {
+   say_hello();
+   return 0;
+}

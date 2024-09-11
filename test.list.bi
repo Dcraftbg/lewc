@@ -1,4 +1,4 @@
-:i count 15
+:i count 20
 :b shell 56
 ./bin/compiler examples/sum.prot -o ./int/tests/sum.nasm
 :i returncode 0
@@ -58,6 +58,42 @@ gcc -static ./int/tests/hello.o -o ./bin/tests/hello
 
 :b shell 17
 ./bin/tests/hello
+:i returncode 0
+:b stdout 13
+Hello World!
+
+:b stderr 0
+
+:b shell 0
+
+:i returncode 0
+:b stdout 0
+
+:b stderr 0
+
+:b shell 70
+./bin/compiler examples/func_calls.prot -o ./int/tests/func_calls.nasm
+:i returncode 0
+:b stdout 0
+
+:b stderr 0
+
+:b shell 69
+nasm -f elf64 ./int/tests/func_calls.nasm -o ./int/tests/func_calls.o
+:i returncode 0
+:b stdout 0
+
+:b stderr 0
+
+:b shell 62
+gcc -static ./int/tests/func_calls.o -o ./bin/tests/func_calls
+:i returncode 0
+:b stdout 0
+
+:b stderr 0
+
+:b shell 22
+./bin/tests/func_calls
 :i returncode 0
 :b stdout 13
 Hello World!

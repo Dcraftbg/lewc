@@ -8,6 +8,11 @@ nasm -f elf64 ./int/tests/hello.nasm -o ./int/tests/hello.o
 gcc -static ./int/tests/hello.o -o ./bin/tests/hello
 ./bin/tests/hello
 
+./bin/compiler examples/func_calls.prot -o ./int/tests/func_calls.nasm
+nasm -f elf64 ./int/tests/func_calls.nasm -o ./int/tests/func_calls.o
+gcc -static ./int/tests/func_calls.o -o ./bin/tests/func_calls
+./bin/tests/func_calls
+
 ./bin/compiler examples/int_literals.prot -o ./int/tests/int_literals.nasm
 nasm -f elf64 ./int/tests/int_literals.nasm -o ./int/tests/int_literals.o
 gcc ./examples/int_literals.c ./int/tests/int_literals.o -o ./bin/tests/int_literals
