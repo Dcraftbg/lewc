@@ -140,7 +140,7 @@ void compile_nasm_x86_64_linux(CompileState* state) {
                         CompileValue value = {0};
                         CompileValue* arg = &vals[inst->arg];
                         if(arg->kind == CVALUE_REGISTER && arg->reg == REG_A) {
-                            nprintfln("   add rsp, %zu",rsp);
+                            if(rsp) nprintfln("   add rsp, %zu",rsp);
                             nprintfln("   pop rbp");
                             nprintfln("   ret");
                             break;
@@ -151,7 +151,7 @@ void compile_nasm_x86_64_linux(CompileState* state) {
                         case CVALUE_REGISTER:
                             value.regsize = arg->regsize;
                             nprintfln("   mov %s, %s", nasm_gpr_to_str(value.reg, value.regsize), nasm_gpr_to_str(arg->reg, arg->regsize));
-                            nprintfln("   add rsp, %zu",rsp);
+                            if(rsp) nprintfln("   add rsp, %zu",rsp);
                             nprintfln("   pop rbp");
                             nprintfln("   ret");
                             break;
@@ -170,7 +170,7 @@ void compile_nasm_x86_64_linux(CompileState* state) {
                             } else {
                                 nprintfln("   mov %s, %lu", reg, arg->integer.value);
                             }
-                            nprintfln("   add rsp, %zu",rsp);
+                            if(rsp) nprintfln("   add rsp, %zu",rsp);
                             nprintfln("   pop rbp");
                             nprintfln("   ret");
                             break;
@@ -225,9 +225,13 @@ void compile_nasm_x86_64_linux(CompileState* state) {
                     // TODO: non void function calls
                     case BUILD_CALL_DIRECTLY: {
                         BuildFunc* func = &state->build->funcs.items[inst->directcall.fid];
+                        size_t pushed_rsp = 0;
                         for(size_t i = 0; i < inst->directcall.args.len; ++i) {
                             assert(i < ARRAY_LEN(LINUX_GPR_ARGS));
-                            if(!nasm_gpr_is_free(&state->regs, LINUX_GPR_ARGS[i])) nprintfln("   push %s", nasm_gpr_to_str(LINUX_GPR_ARGS[i], REG_SIZE_64));
+                            if(!nasm_gpr_is_free(&state->regs, LINUX_GPR_ARGS[i])) {
+                                nprintfln("   push %s", nasm_gpr_to_str(LINUX_GPR_ARGS[i], REG_SIZE_64));
+                                pushed_rsp+=8;
+                            }
                             CompileValue* val = &vals[inst->directcall.args.items[i]];
                             switch(val->kind) {
                             case CVALUE_REGISTER:
@@ -242,7 +246,13 @@ void compile_nasm_x86_64_linux(CompileState* state) {
                                 exit(1);
                             }
                         }
+                        if(pushed_rsp % 16 != 0) {
+                            nprintfln("   sub rsp, %zu", pushed_rsp%16);
+                        }
                         nprintfln("   call %s",func->name->data);
+                        if(pushed_rsp % 16 != 0) {
+                            nprintfln("   add rsp, %zu", pushed_rsp%16);
+                        }
                         for(size_t i = 0; i < inst->directcall.args.len; ++i) {
                             assert(i < ARRAY_LEN(LINUX_GPR_ARGS));
                             if(!nasm_gpr_is_free(&state->regs, LINUX_GPR_ARGS[i])) nprintfln("   pop %s", nasm_gpr_to_str(LINUX_GPR_ARGS[i], REG_SIZE_64));
