@@ -19,6 +19,7 @@
 #include "parser.h"
 #include "build.h"
 #include "compile.h"
+#include "strutils.h"
 
 const char* shift_args(int *argc, const char ***argv) {
     if((*argc) <= 0) return NULL;
@@ -32,8 +33,10 @@ BuildOptions build_options = { 0 };
 #define UPRINTF(...) fprintf(stderr, __VA_ARGS__)
 void usage() {
     UPRINTF("Usage %s:\n",build_options.exe);
-    UPRINTF(" -o <path> - Specify output path\n");
-    UPRINTF(" <path>    - Specify input path\n");
+    UPRINTF(" -o <path>             - Specify output path\n");
+    UPRINTF(" <path>                - Specify input path\n");
+    UPRINTF(" --arch=<arch>         - Specify output architecture\n");
+    UPRINTF(" --platform=<platform> - Specify output platform\n");
 }
 
 static Platform default_platform = 
@@ -41,17 +44,25 @@ static Platform default_platform =
   OS_WINDOWS
 #elif defined(__linux__)
   OS_LINUX
+#else
+# warning Your platform is not supported as a default_platform. Youll likely have to specify it explicitly
 #endif
 ;
 // TODO: Default arch detection
 static const Architecture default_arch = ARCH_X86_64;
 int main(int argc, const char** argv) {
+    Target target={0};
+    target.opath = build_options.opath;
+    target.platform = default_platform;
+    target.arch = default_arch;
+
     build_options.exe = shift_args(&argc, &argv);
     assert(build_options.exe);
-    const char* arg = NULL;
+    const char* arg      = NULL;
+    const char* arch     = NULL;
+    const char* platform = NULL;
     while ((arg = shift_args(&argc, &argv))) {
-        if (build_options.ipath == NULL) build_options.ipath = arg;
-        else if (strcmp(arg, "-o") == 0) {
+        if (strcmp(arg, "-o") == 0) {
             if (build_options.opath) {
                 fprintf(stderr, "Output path already specified!\n");
                 usage();
@@ -67,10 +78,29 @@ int main(int argc, const char** argv) {
         else if (strcmp(arg, "--experimental-windows") == 0) {
             build_options.experimental_windows = true;
         }
+        else if ((arch=strstrip(arg, "--arch="))) {
+            if(strcmp(arch, "x86_64")==0) target.arch = ARCH_X86_64;
+            else {
+                eprintfln("ERROR: Unknown target arch: %s", arch);
+                exit(1);
+            }
+        }
+        else if ((platform=strstrip(arg, "--platform="))) {
+            if      (strcmp(platform, "Windows")==0) target.platform = OS_WINDOWS;
+            else if (strcmp(platform, "Linux"  )==0) target.platform = OS_LINUX;
+            else {
+                eprintfln("ERROR: Unknown table platform: %s", platform);
+                exit(1);
+            }
+        }
         else {
-            fprintf(stderr, "Unknown argument: '%s'\n", arg);
-            usage();
-            exit(1);
+            if (build_options.ipath == NULL) {
+                build_options.ipath = arg;
+            } else {
+                fprintf(stderr, "Unknown argument: '%s'\n", arg);
+                usage();
+                exit(1);
+            }
         }
     }
     if(!build_options.ipath) {
@@ -98,10 +128,6 @@ int main(int argc, const char** argv) {
     build.path = build_options.ipath;
     build_build(&build, &parser);
 
-    Target target={0};
-    target.opath = build_options.opath;
-    target.platform = default_platform;
-    target.arch = default_arch;
     compile(&build, &target, &arena);
 
     lexer_cleanup(parser.lexer);

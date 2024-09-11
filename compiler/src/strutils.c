@@ -27,3 +27,10 @@ void strescape(const char* str, size_t len, ScratchBuf* buf) {
     }
     scratchbuf_push(buf, '\0');
 }
+const char* strstrip(const char* str, const char* prefix) {
+    size_t len = strlen(prefix);
+    if(strncmp(str, prefix, len) == 0) {
+        return str+len;
+    }
+    return NULL;
+}
