@@ -11,11 +11,13 @@ enum {
     TOKEN_RETURN,
     TOKEN_EXTERN,
     TOKEN_C_STR,
+    TOKEN_INT,
     // Tokens to stop 
     TOKEN_EOF,
     TOKEN_END=TOKEN_EOF,
     TOKEN_UNPARSABLE,
     TOKEN_INVALID_STR,
+    TOKEN_INVALID_INT_LITERAL,
     TOKEN_COUNT
 };
 typedef struct {
@@ -30,6 +32,10 @@ typedef struct {
             size_t str_len;
         };
         uint32_t codepoint;
+        struct {
+            /*typeid_t typeid;*/ 
+            uint64_t value;
+        } integer;
     };
     /*Small string buffer?*/
 } Token;

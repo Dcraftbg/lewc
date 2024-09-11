@@ -126,6 +126,41 @@ static void lex_str(Lexer* lexer, const char **str, size_t *len) {
     return;
 }
 #define MAKE_TOKEN(...) (Token) { lexer->path, l0, c0, lexer->l0, lexer->c0, .kind=__VA_ARGS__ }
+static size_t lex_prefix_to_radix(Lexer* lexer) {
+    int c = lexer_peak_c(lexer);
+    switch(c) {
+    case 'x': return 16;
+    case 'o': return 12;
+    case 'b': return 2;
+    case '0': return 0;
+    }
+    return 10;
+}
+static Token lex_num_base10(size_t l0, size_t c0, Lexer* lexer) {
+    uint32_t c;
+    uint64_t result=0;
+    while(lexer->cursor < lexer->end && isalnum(lexer_peak_c(lexer))) {
+        c = lexer_next_c(lexer);
+        if(c >= '0' && c <= '9') {
+            result = result * 10 + c;
+        } else {
+            eprintfln("ERROR:%s:%zu:%zu: Invalid character in base10 integer '%c' (%u)", lexer->path, lexer->l0, lexer->c0, c, c);
+            return MAKE_TOKEN(TOKEN_INVALID_INT_LITERAL);
+        }
+    }
+    return MAKE_TOKEN(TOKEN_INT, .integer={ .value = result });
+}
+static Token lex_num_by_radix(size_t l0, size_t c0, Lexer* lexer, size_t radix) {
+    switch(radix) {
+    case 10: return lex_num_base10(l0, c0, lexer);
+    case 2:
+    case 12:
+    case 16:
+        eprintfln("ERROR:%s:%zu:%zu: Unsupported integer with radix=%zu", lexer->path, l0, c0, radix);
+        return MAKE_TOKEN(TOKEN_INVALID_INT_LITERAL);
+    }
+    return MAKE_TOKEN(TOKEN_INVALID_INT_LITERAL);
+}
 Token lexer_next(Lexer* lexer) {
     lexer_trim(lexer);
     size_t l0 = lexer->l0;
@@ -151,8 +186,19 @@ Token lexer_next(Lexer* lexer) {
             return MAKE_TOKEN(TOKEN_ARROW);
         }
         return MAKE_TOKEN(c);
+    case '0':
+        lexer_next_c(lexer);
+        if(lexer->cursor >= lexer->end) return MAKE_TOKEN(TOKEN_INT, .integer= { .value = 0 });
+        size_t radix = lex_prefix_to_radix(lexer);
+        if(!radix) {
+            eprintfln("ERROR:%s:%zu:%zu Cannot have an integer with multiple 0's (i.e. 000000)", lexer->path, lexer->l0, lexer->c0);
+            return MAKE_TOKEN(TOKEN_INVALID_INT_LITERAL);
+        }
+        return lex_num_by_radix(l0, c0, lexer, radix);
     default:
-        if(c == 'c' && lexer_peak_c_n(lexer, 1) == '"') {
+        if (c >= '0' && c <= '9') {
+            return lex_num_by_radix(l0, c0, lexer, 10);
+        } else if(c == 'c' && lexer_peak_c_n(lexer, 1) == '"') {
             lexer_next_c(lexer);
             const char* str = NULL;
             size_t len=0;
