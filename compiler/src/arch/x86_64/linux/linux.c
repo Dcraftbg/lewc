@@ -229,8 +229,18 @@ void compile_nasm_x86_64_linux(CompileState* state) {
                             assert(i < ARRAY_LEN(LINUX_GPR_ARGS));
                             if(!nasm_gpr_is_free(&state->regs, LINUX_GPR_ARGS[i])) nprintfln("   push %s", nasm_gpr_to_str(LINUX_GPR_ARGS[i], REG_SIZE_64));
                             CompileValue* val = &vals[inst->directcall.args.items[i]];
-                            assert(val->kind == CVALUE_REGISTER);
-                            nprintfln("   mov %s, %s", nasm_gpr_to_str(LINUX_GPR_ARGS[i], val->regsize), nasm_gpr_to_str(val->reg, val->regsize));
+                            switch(val->kind) {
+                            case CVALUE_REGISTER:
+                                nprintfln("   mov %s, %s", nasm_gpr_to_str(LINUX_GPR_ARGS[i], val->regsize), nasm_gpr_to_str(val->reg, val->regsize));
+                                break;
+                            case CVALUE_CONST_INT:
+                                // TODO: Unhardcode register size
+                                nprintfln("   mov %s, %lu", nasm_gpr_to_str(LINUX_GPR_ARGS[i], REG_SIZE_32), val->integer.value);
+                                break;
+                            default:
+                                eprintfln("%s:%u: ERROR: Unsupported cvalue type %d in BUILD_CALL_DIRECTLY arguemnts", __FILE__, __LINE__, val->kind);
+                                exit(1);
+                            }
                         }
                         nprintfln("   call %s",func->name->data);
                         for(size_t i = 0; i < inst->directcall.args.len; ++i) {
