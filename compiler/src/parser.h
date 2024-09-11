@@ -23,9 +23,9 @@ static void _example_dump() {
     lexer_cleanup(&lexer);
 }
 enum {
-    INST_RETURN,
-    INST_EVAL,
-    INST_COUNT
+    STATEMENT_RETURN,
+    STATEMENT_EVAL,
+    STATEMENT_COUNT
 };
 typedef struct {
     int kind;
@@ -33,20 +33,20 @@ typedef struct {
         ASTValue astvalue;
     };
     /*metadata*/;
-} Instruction;
+} Statement;
 enum {
     SCOPE_GLOBAL,
     SCOPE_FUNC
 };
 typedef struct {
-    Instruction *items;
+    Statement *items;
     size_t len, cap;
-} Insts;
+} Statements;
 typedef struct Scope {
     struct Scope* parent;
     int kind;
     SymbolTable symtab; 
-    Insts insts;
+    Statements statements;
 } Scope;
 struct FuncPair {
     Atom* name;

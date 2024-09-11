@@ -245,7 +245,7 @@ Symbol* new_symbol(Arena* arena, Symbol symbol) {
     *s = symbol;
     return s;
 }
-Instruction parse_statement(Parser* parser, Token t) {
+Statement parse_statement(Parser* parser, Token t) {
     switch(t.kind) {
         case TOKEN_RETURN: {
             lexer_eat(parser->lexer, 1);
@@ -255,7 +255,7 @@ Instruction parse_statement(Parser* parser, Token t) {
                 eprintfln("ERROR:%s: Failed to parse return statement",tloc(t));
                 exit(1);
             }
-            return (Instruction) { INST_RETURN, .astvalue=astvalue };
+            return (Statement) { STATEMENT_RETURN, .astvalue=astvalue };
         } break;
     }
     ASTValue astvalue;
@@ -264,7 +264,7 @@ Instruction parse_statement(Parser* parser, Token t) {
         eprintfln("ERROR:%s: Unknown token in statement: %s", tloc(t), tdisplay(t));
         exit(1);
     } else {
-        return (Instruction) { INST_EVAL, .astvalue=astvalue };
+        return (Statement) { STATEMENT_EVAL, .astvalue=astvalue };
     }
 }
 void parse_func_body(Parser* parser, Scope* s) {
@@ -284,7 +284,7 @@ void parse_func_body(Parser* parser, Scope* s) {
             lexer_eat(parser->lexer, 1);
             continue;
         }
-        da_push(&s->insts, parse_statement(parser, t));
+        da_push(&s->statements, parse_statement(parser, t));
     }
     t = lexer_next(parser->lexer);
     if(t.kind != '}') {

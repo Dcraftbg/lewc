@@ -236,18 +236,18 @@ void build_build(Build* build, Parser* parser) {
                     }
                 }
             }
-            for(size_t j=0; j < scope->insts.len; ++j) {
-                Instruction* inst = &scope->insts.items[j];
-                static_assert(INST_COUNT == 2, "Update build_build");
-                switch(inst->kind) {
-                case INST_RETURN:
-                    state_add_return(&state, build_astvalue(&state, inst->astvalue));
+            for(size_t j=0; j < scope->statements.len; ++j) {
+                Statement* statement = &scope->statements.items[j];
+                static_assert(STATEMENT_COUNT == 2, "Update build_build");
+                switch(statement->kind) {
+                case STATEMENT_RETURN:
+                    state_add_return(&state, build_astvalue(&state, statement->astvalue));
                     break;
-                case INST_EVAL:
-                    build_astvalue(&state, inst->astvalue);
+                case STATEMENT_EVAL:
+                    build_astvalue(&state, statement->astvalue);
                     break;
                 default:
-                    eprintfln("UNHANDLED INSTRUCTION %d",inst->kind);
+                    eprintfln("UNHANDLED STATEMENT %d",statement->kind);
                     exit(1);
                 }
             } 
