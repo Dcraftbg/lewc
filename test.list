@@ -3,3 +3,13 @@ nasm -f elf64 ./int/tests/sum.nasm -o ./int/tests/sum.o
 gcc ./examples/sum.c ./int/tests/sum.o -o ./bin/tests/sum
 ./bin/tests/sum
 
+./bin/compiler examples/hello.prot -o ./int/tests/hello.nasm
+nasm -f elf64 ./int/tests/hello.nasm -o ./int/tests/hello.o
+gcc -static ./int/tests/hello.o -o ./bin/tests/hello
+./bin/tests/hello
+
+./bin/compiler examples/int_literals.prot -o ./int/tests/int_literals.nasm
+nasm -f elf64 ./int/tests/int_literals.nasm -o ./int/tests/int_literals.o
+gcc ./examples/int_literals.c ./int/tests/int_literals.o -o ./bin/tests/int_literals
+./bin/tests/int_literals
+
