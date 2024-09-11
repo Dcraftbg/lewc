@@ -52,7 +52,6 @@ static Platform default_platform =
 static const Architecture default_arch = ARCH_X86_64;
 int main(int argc, const char** argv) {
     Target target={0};
-    target.opath = build_options.opath;
     target.platform = default_platform;
     target.arch = default_arch;
 
@@ -128,6 +127,7 @@ int main(int argc, const char** argv) {
     build.path = build_options.ipath;
     build_build(&build, &parser);
 
+    target.opath = build_options.opath;
     compile(&build, &target, &arena);
 
     lexer_cleanup(parser.lexer);
