@@ -15,7 +15,6 @@ void strescape(const char* str, size_t len, ScratchBuf* buf) {
             scratchbuf_push(buf, '\\');
             scratchbuf_push(buf, 'r');
             break;
-        // NOTE: not really reachable so I dunno why its even here
         case '\0':
             scratchbuf_push(buf, '\\');
             scratchbuf_push(buf, '0');
