@@ -129,21 +129,71 @@ static void lex_str(Lexer* lexer, const char **str, size_t *len) {
 static size_t lex_prefix_to_radix(Lexer* lexer) {
     int c = lexer_peak_c(lexer);
     switch(c) {
-    case 'x': return 16;
-    case 'o': return 12;
-    case 'b': return 2;
+    case 'x': lexer_next_c(lexer); return 16;
+    case 'o': lexer_next_c(lexer); return 8;
+    case 'b': lexer_next_c(lexer); return 2;
     case '0': return 0;
     }
     return 10;
 }
+static Token lex_num_base16(size_t l0, size_t c0, Lexer* lexer) {
+    uint32_t c;
+    uint64_t result=0;
+    while(lexer->cursor < lexer->end && (isalnum((c=lexer_peak_c(lexer))) || c == '_')) {
+        c = lexer_next_c(lexer);
+        if(c >= '0' && c <= '9') {
+            result = result * 16 + (c - '0');
+        } else if (c >= 'a' && c <= 'f') {
+            result = result * 16 + 10 + (c - 'a');
+        } else if (c >= 'A' && c <= 'F') {
+            result = result * 16 + 10 + (c - 'A');
+        } else if (c == '_') {}
+        else {
+            eprintfln("ERROR:%s:%zu:%zu: Invalid character in base16 integer '%c' (%u)", lexer->path, lexer->l0, lexer->c0, c, c);
+            return MAKE_TOKEN(TOKEN_INVALID_INT_LITERAL);
+        }
+    }
+    return MAKE_TOKEN(TOKEN_INT, .integer={ .value = result });
+}
+static Token lex_num_base2(size_t l0, size_t c0, Lexer* lexer) {
+    uint32_t c;
+    uint64_t result=0;
+    while(lexer->cursor < lexer->end && (isalnum((c=lexer_peak_c(lexer))) || c == '_')) {
+        c = lexer_next_c(lexer);
+        if(c >= '0' && c <= '1') {
+            result = result * 2 + (c - '0');
+        } else if (c == '_') {}
+        else {
+            eprintfln("ERROR:%s:%zu:%zu: Invalid character in base10 integer '%c' (%u)", lexer->path, lexer->l0, lexer->c0, c, c);
+            return MAKE_TOKEN(TOKEN_INVALID_INT_LITERAL);
+        }
+    }
+    return MAKE_TOKEN(TOKEN_INT, .integer={ .value = result });
+}
 static Token lex_num_base10(size_t l0, size_t c0, Lexer* lexer) {
     uint32_t c;
     uint64_t result=0;
-    while(lexer->cursor < lexer->end && isalnum(lexer_peak_c(lexer))) {
+    while(lexer->cursor < lexer->end && (isalnum((c=lexer_peak_c(lexer))) || c == '_')) {
         c = lexer_next_c(lexer);
         if(c >= '0' && c <= '9') {
             result = result * 10 + (c - '0');
-        } else {
+        } else if (c == '_') {}
+        else {
+            eprintfln("ERROR:%s:%zu:%zu: Invalid character in base10 integer '%c' (%u)", lexer->path, lexer->l0, lexer->c0, c, c);
+            return MAKE_TOKEN(TOKEN_INVALID_INT_LITERAL);
+        }
+    }
+    return MAKE_TOKEN(TOKEN_INT, .integer={ .value = result });
+}
+static Token lex_num_base8(size_t l0, size_t c0, Lexer* lexer) {
+    uint32_t c;
+    uint64_t result=0;
+    while(lexer->cursor < lexer->end && (isalnum((c=lexer_peak_c(lexer))) || c == '_')) {
+        c = lexer_next_c(lexer);
+        if (c >= '0' && c <= '7') {
+            result = result * 8 + (c - '0');
+        } else if (c == '_') {}
+        else {
             eprintfln("ERROR:%s:%zu:%zu: Invalid character in base10 integer '%c' (%u)", lexer->path, lexer->l0, lexer->c0, c, c);
             return MAKE_TOKEN(TOKEN_INVALID_INT_LITERAL);
         }
@@ -153,9 +203,10 @@ static Token lex_num_base10(size_t l0, size_t c0, Lexer* lexer) {
 static Token lex_num_by_radix(size_t l0, size_t c0, Lexer* lexer, size_t radix) {
     switch(radix) {
     case 10: return lex_num_base10(l0, c0, lexer);
-    case 2:
-    case 12:
-    case 16:
+    case 16: return lex_num_base16(l0, c0, lexer);
+    case 2 : return lex_num_base2 (l0, c0, lexer);
+    case 8 : return lex_num_base8(l0, c0, lexer);
+    default:
         eprintfln("ERROR:%s:%zu:%zu: Unsupported integer with radix=%zu", lexer->path, l0, c0, radix);
         return MAKE_TOKEN(TOKEN_INVALID_INT_LITERAL);
     }
