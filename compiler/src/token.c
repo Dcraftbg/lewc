@@ -31,13 +31,16 @@ const char* tdisplay(Token t) {
         scratchbuf_cleanup(&buf);
         return tdisplay_buf;
     }
+    case TOKEN_INT: 
+        TPRINTF("Integer (%lu)", t.integer.value);
+        return tdisplay_buf;
     default:
         if(t.kind < 256) {
            TPRINTF("'%c'",t.kind);
            return tdisplay_buf;
         }
     }
-    eprintfln("None exhaustive tdisplay for token.kind = %d",t.kind);
+    eprintfln("Non exhaustive tdisplay for token.kind = %d",t.kind);
     abort();
     return NULL;
 }

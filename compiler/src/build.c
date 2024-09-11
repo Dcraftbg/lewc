@@ -12,6 +12,7 @@
 #define state_add_get_addr_of(state, globalid) build_add_get_addr_of((state)->build, (state)->fid, (state)->head, globalid)
 
 #define state_add_directcall(state, what, args) build_add_directcall((state)->build, (state)->fid, (state)->head, what, args)
+#define state_add_const_int(state, type, value) build_add_const_int((state)->build, (state)->fid, (state)->head, type, value)
 
 #define INVALID_SYMBOLID ((size_t)-1)
 // #define INVALID_SYMBOL (BuildSymbol){.id=INVALID_SYMBOLID, .allocation=0}
@@ -131,6 +132,13 @@ size_t build_add_directcall(Build* build, size_t fid, size_t head, size_t what, 
     inst.directcall.args = args;
     return build_add_inst(build, fid, head, inst);
 }
+size_t build_add_const_int(Build* build, size_t fid, size_t head, typeid_t type, uint64_t value) {
+    BuildInst inst = {0};
+    inst.kind = BUILD_CONST_INT;
+    inst.integer.type  = type;
+    inst.integer.value = value;
+    return build_add_inst(build, fid, head, inst);
+}
 // build_add_directcall((state)->build, (state)->fid, (state)->head, fid, args)
 
 size_t build_astvalue(BuildState* state, ASTValue value);
@@ -161,7 +169,7 @@ size_t build_ast(BuildState* state, AST* ast) {
     }
 }
 size_t build_astvalue(BuildState* state, ASTValue value) {
-    static_assert(AST_VALUE_COUNT == 3, "Update build_astvalue");
+    static_assert(AST_VALUE_COUNT == 4, "Update build_astvalue");
     switch(value.kind) {
     case AST_VALUE_SYMBOL: {
         BuildSymbol* sym = state_lookup_symbol(state, value.symbol);
@@ -182,6 +190,9 @@ size_t build_astvalue(BuildState* state, ASTValue value) {
     case AST_VALUE_C_STR: {
         size_t globalid = state_add_global_arr(state, BUILTIN_U8, (void*)value.str, value.str_len+1);
         return state_add_get_addr_of(state, globalid);
+    } break;
+    case AST_VALUE_INT: {
+        return state_add_const_int(state, BUILTIN_I32, value.integer.value);
     } break;
     default:
         eprintfln("%s:%u: UNREACHABLE", __FILE__, __LINE__);

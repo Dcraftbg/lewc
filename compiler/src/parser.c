@@ -136,6 +136,9 @@ ASTValue parse_basic(Parser* parser) {
     case TOKEN_C_STR: {
         return (ASTValue){.kind=AST_VALUE_C_STR, .str=t.str, .str_len=t.str_len};
     } break;
+    case TOKEN_INT: {
+        return (ASTValue){.kind=AST_VALUE_INT, .integer = { .value = t.integer.value } };
+    } break;
     default:
         eprintfln("ERROR:%s: Unexpected token in expression: %s", tloc(t),tdisplay(t));
         exit(1);
@@ -211,7 +214,7 @@ int parse_astvalue(Parser* parser, ASTValue* result) {
         {
             int newop = t.kind;
             int newprecedence = op_prec(newop);
-            if (precedence < newprecedence) {
+            if (precedence <= newprecedence) {
                 lexer_eat(parser->lexer, 1);
                 ASTValue v3;
                 if((e = parse_astvalue(parser, &v3)) != 0) {
@@ -242,7 +245,6 @@ Symbol* new_symbol(Arena* arena, Symbol symbol) {
     *s = symbol;
     return s;
 }
-
 void parse(Parser* parser, Lexer* lexer, Arena* arena) {
     Token t;
     while((t=lexer_peak_next(parser->lexer)).kind != TOKEN_EOF) {
@@ -250,7 +252,7 @@ void parse(Parser* parser, Lexer* lexer, Arena* arena) {
             eprintfln("ERROR:%s: Lexer: %s", tloc(t), tdisplay(t));
             exit(1);
         }
-        static_assert(TOKEN_COUNT == 264, "Update parser");
+        static_assert(TOKEN_COUNT == 266, "Update parser");
         switch(t.kind) {
         case '}': {
             lexer_eat(parser->lexer, 1);
@@ -356,11 +358,27 @@ void parse(Parser* parser, Lexer* lexer, Arena* arena) {
                 }
             }
         } break;
+        case TOKEN_INT: {
+            Scope* s = parser->head;
+            if(s->kind != SCOPE_FUNC) {
+                eprintfln("ERROR:%s: Unexpected integer: %lu",tloc(t), t.integer.value);
+                exit(1);
+            }
+            ASTValue astvalue;
+            int e = parse_astvalue(parser, &astvalue);
+            if(e != 0) {
+                eprintfln("ERROR:%s: Unexpected integer: %lu", tloc(t), t.integer.value);
+                exit(1);
+            } else {
+                Instruction inst = { INST_EVAL, .astvalue=astvalue };
+                da_push(&s->insts, inst);
+            }
+        } break;
         case ';':
             lexer_eat(parser->lexer, 1);
             break;
         default:
-            eprintfln("ERROR:%s: Unexpected token: %s", tloc(t), tdisplay(t));
+            eprintfln("ERROR:%s:  Unexpected token: %s", tloc(t), tdisplay(t));
             exit(1);
         }
     }

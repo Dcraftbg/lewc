@@ -5,6 +5,7 @@ enum {
     AST_VALUE_SYMBOL,
     AST_VALUE_EXPR,
     AST_VALUE_C_STR,
+    AST_VALUE_INT,
 
     AST_VALUE_COUNT,
 };
@@ -12,7 +13,7 @@ typedef struct {
     int kind;
     union {
         struct AST* ast;
-        uint64_t integer;
+        struct { uint64_t value; } integer;
         struct { const char* str; size_t str_len; };
         Atom* symbol;
     };

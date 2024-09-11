@@ -73,7 +73,7 @@ void compile_nasm_x86_64_linux(CompileState* state) {
                 nprintfln(".%zu:",j);
                 for(size_t k = 0; k < block->len; ++k, ++ip) {
                     BuildInst* inst = &block->items[k];
-                    static_assert(BUILD_INST_COUNT == 8);
+                    static_assert(BUILD_INST_COUNT == 9);
                     switch(inst->kind) {
                     case BUILD_LOAD_ARG: {
                         assert(inst->arg < sig->input.len);
@@ -101,16 +101,38 @@ void compile_nasm_x86_64_linux(CompileState* state) {
                         assert(inst->v0 < ip && inst->v1 < ip); // It is a previous instruction.
                         CompileValue* v0 = &vals[inst->v0];
                         CompileValue* v1 = &vals[inst->v1];
-
-                        assert(v0->kind == CVALUE_REGISTER);
-                        assert(v1->kind == CVALUE_REGISTER);
-                        assert(v0->regsize == v1->regsize);
-                        CompileValue  result = compile_value_alloc(state, v0->regsize);
-                        assert(result.kind == CVALUE_REGISTER);
-                        nprintfln("   lea %s, [%s+%s]", nasm_gpr_to_str(result.reg, result.regsize), nasm_gpr_to_str(v0->reg, REG_SIZE_64), nasm_gpr_to_str(v1->reg, REG_SIZE_64));
-                        // nprintfln("   mov %s, %s", nasm_gpr_to_str(result.reg, result.regsize), nasm_gpr_to_str(v0->reg   , v0->regsize   ));
-                        // nprintfln("   add %s, %s", nasm_gpr_to_str(result.reg, result.regsize), nasm_gpr_to_str(v1->reg   , v1->regsize   ));
-                        vals[ip] = result;
+                        CompileValue* result = &vals[ip];
+                        switch(v0->kind) {
+                        case CVALUE_REGISTER: {
+                            switch(v1->kind) {
+                            case CVALUE_REGISTER: {
+                                assert(v0->regsize == v1->regsize);
+                                *result = compile_value_alloc(state, v0->regsize);
+                                assert(result->kind == CVALUE_REGISTER);
+                                nprintfln("   lea %s, [%s+%s]", nasm_gpr_to_str(result->reg, result->regsize), nasm_gpr_to_str(v0->reg, REG_SIZE_64), nasm_gpr_to_str(v1->reg, REG_SIZE_64));
+                            } break;
+                            case CVALUE_CONST_INT: {
+                                *result = compile_value_alloc(state, v0->regsize);
+                                assert(result->kind == CVALUE_REGISTER);
+                                nprintfln("   lea %s, [%s+%lu]", nasm_gpr_to_str(result->reg, result->regsize), nasm_gpr_to_str(v0->reg, REG_SIZE_64), v1->integer.value);
+                            } break;
+                            }
+                        } break;
+                        case CVALUE_CONST_INT: {
+                            switch(v1->kind) {
+                            case CVALUE_REGISTER: {
+                                *result = compile_value_alloc(state, v0->regsize);
+                                assert(result->kind == CVALUE_REGISTER);
+                                nprintfln("   lea %s, [%s+%lu]", nasm_gpr_to_str(result->reg, result->regsize), nasm_gpr_to_str(v1->reg, REG_SIZE_64), v0->integer.value);
+                            } break;
+                            case CVALUE_CONST_INT: {
+                                result->kind = CVALUE_CONST_INT;
+                                result->integer.type = v0->integer.type;
+                                result->integer.value = v0->integer.value + v1->integer.value;
+                            } break;
+                            }
+                        } break;
+                        }
                     } break;
                     case BUILD_RETURN: {
                         assert(inst->arg < ip); // It is a previous instruction.
@@ -152,6 +174,12 @@ void compile_nasm_x86_64_linux(CompileState* state) {
                         *result = compile_value_alloc(state, REG_SIZE_32);
                         assert(result->kind == CVALUE_REGISTER);
                         nprintfln("   mov %s, [rbp-%zu]",nasm_gpr_to_str(result->reg, result->regsize),ptr->stack_ptr);
+                    } break;
+                    case BUILD_CONST_INT: {
+                        CompileValue* result = &vals[ip];
+                        result->kind = CVALUE_CONST_INT;
+                        result->integer.type  = inst->integer.type;
+                        result->integer.value = inst->integer.value;
                     } break;
                     case BUILD_STORE_INT: {
                         assert(inst->arg < ip);

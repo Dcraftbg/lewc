@@ -9,12 +9,14 @@
 enum {
     CVALUE_REGISTER,
     CVALUE_STACK_PTR,
+    CVALUE_CONST_INT,
 };
 typedef struct {
     int kind;
     union {
-        struct { size_t regsize; size_t reg; };
+        struct { size_t regsize  ; size_t reg   ; };
         struct { size_t stack_ptr; typeid_t type; };
+        struct { uint64_t value  ; typeid_t type; } integer;
     };
 } CompileValue;
 

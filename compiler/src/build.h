@@ -13,6 +13,7 @@ enum {
     BUILD_STORE_INT,
     BUILD_GET_ADDR_OF,
     BUILD_CALL_DIRECTLY,
+    BUILD_CONST_INT,
 
     BUILD_INST_COUNT
 };
@@ -37,6 +38,10 @@ typedef struct {
             size_t fid;
             BuildCallArgs args;
         } directcall;
+        struct {
+            typeid_t type;
+            uint64_t value;
+        } integer;
     };
 } BuildInst;
 typedef struct {
