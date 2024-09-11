@@ -144,13 +144,39 @@ void compile_nasm_x86_64_linux(CompileState* state) {
                             nprintfln("   ret");
                             break;
                         }
-                        assert(arg->kind == CVALUE_REGISTER);
+
                         value.reg = REG_A;
-                        value.regsize = arg->regsize;
-                        nprintfln("   mov %s, %s",nasm_gpr_to_str(value.reg, value.regsize), nasm_gpr_to_str(arg->reg, arg->regsize));
-                        nprintfln("   add rsp, %zu",rsp);
-                        nprintfln("   pop rbp");
-                        nprintfln("   ret");
+                        switch(arg->kind) {
+                        case CVALUE_REGISTER:
+                            value.regsize = arg->regsize;
+                            nprintfln("   mov %s, %s", nasm_gpr_to_str(value.reg, value.regsize), nasm_gpr_to_str(arg->reg, arg->regsize));
+                            nprintfln("   add rsp, %zu",rsp);
+                            nprintfln("   pop rbp");
+                            nprintfln("   ret");
+                            break;
+                        case CVALUE_CONST_INT:
+                            switch(arg->integer.type) {
+                            case BUILTIN_I32:
+                                value.regsize = REG_SIZE_64;
+                                break;
+                            default:
+                                eprintfln("Invalid const int return with typeid=%zu", arg->integer.type);
+                                exit(1);
+                            }
+                            const char* reg =  nasm_gpr_to_str(value.reg, value.regsize);
+                            if(arg->integer.value == 0) {
+                                nprintfln("   xor %s, %s", reg, reg);
+                            } else {
+                                nprintfln("   mov %s, %lu", reg, arg->integer.value);
+                            }
+                            nprintfln("   add rsp, %zu",rsp);
+                            nprintfln("   pop rbp");
+                            nprintfln("   ret");
+                            break;
+                        default:
+                            eprintfln("%s:%u: Unsupported CVALUE_REGISTER in BUILD_RETURN", __FILE__, __LINE__);
+                            break;
+                        }
                     } break;
                     case BUILD_ALLOCA: {
                         Type* t = type_table_get(&state->build->type_table, inst->type);
