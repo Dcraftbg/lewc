@@ -245,6 +245,52 @@ Symbol* new_symbol(Arena* arena, Symbol symbol) {
     *s = symbol;
     return s;
 }
+Instruction parse_statement(Parser* parser, Token t) {
+    switch(t.kind) {
+        case TOKEN_RETURN: {
+            lexer_eat(parser->lexer, 1);
+            ASTValue astvalue;
+            int e = parse_astvalue(parser, &astvalue);
+            if((e != 0)) {
+                eprintfln("ERROR:%s: Failed to parse return statement",tloc(t));
+                exit(1);
+            }
+            return (Instruction) { INST_RETURN, .astvalue=astvalue };
+        } break;
+    }
+    ASTValue astvalue;
+    int e = parse_astvalue(parser, &astvalue);
+    if(e != 0) {
+        eprintfln("ERROR:%s: Unknown token in statement: %s", tloc(t), tdisplay(t));
+        exit(1);
+    } else {
+        return (Instruction) { INST_EVAL, .astvalue=astvalue };
+    }
+}
+void parse_func_body(Parser* parser, Scope* s) {
+    Token t;
+    assert(s->kind == SCOPE_FUNC);
+    while((t=lexer_peak_next(parser->lexer)).kind != '}') {
+        if(t.kind >= TOKEN_END) {
+            if(t.kind >= TOKEN_ERR) {
+                eprintfln("ERROR:%s: Lexer error %s", tloc(t), tdisplay(t));
+            } else {
+                eprintfln("ERROR:%s: Unexpected token in function body: %s", tloc(t), tdisplay(t));
+                exit(1);
+            }
+        }
+        if(t.kind == ';') {
+            lexer_eat(parser->lexer, 1);
+            continue;
+        }
+        da_push(&s->insts, parse_statement(parser, t));
+    }
+    t = lexer_next(parser->lexer);
+    if(t.kind != '}') {
+        eprintfln("ERROR:%s: Expected '}' at the end of function body, but found: %s", tloc(t), tdisplay(t));
+        exit(1);
+    }
+}
 void parse(Parser* parser, Lexer* lexer, Arena* arena) {
     Token t;
     while((t=lexer_peak_next(parser->lexer)).kind != TOKEN_EOF) {
@@ -266,22 +312,6 @@ void parse(Parser* parser, Lexer* lexer, Arena* arena) {
             case SCOPE_FUNC:
                 break;
             }
-        } break;
-        case TOKEN_RETURN: {
-            lexer_eat(parser->lexer, 1);
-            Scope* s = parser->head;
-            if(s->kind != SCOPE_FUNC) {
-                eprintfln("ERROR:%s: Cannot return outside of function",tloc(t));
-                exit(1);
-            }
-            ASTValue astvalue;
-            int e = parse_astvalue(parser, &astvalue);
-            if((e != 0)) {
-                eprintfln("ERROR:%s: Failed to parse return expression",tloc(t));
-                exit(1);
-            }
-            Instruction inst = { INST_RETURN, .astvalue=astvalue };
-            da_push(&s->insts, inst);
         } break;
         case TOKEN_EXTERN: {
             lexer_eat(parser->lexer, 1);
@@ -340,38 +370,12 @@ void parse(Parser* parser, Lexer* lexer, Arena* arena) {
                     }
                 }
                 parser->head = s;
+                parse_func_body(parser, s);
+                parser->head = parser->head->parent;
                 funcs_insert(&parser->funcs, name, fid, s);
             } else {
-                Scope* s = parser->head;
-                if(s->kind != SCOPE_FUNC) {
-                    eprintfln("ERROR:%s: Unexpected Atom: %s",tloc(t), t.atom->data);
-                    exit(1);
-                }
-                ASTValue astvalue;
-                int e = parse_astvalue(parser, &astvalue);
-                if(e != 0) {
-                    eprintfln("ERROR:%s: Unexpected Atom: %s", tloc(t), t.atom->data);
-                    exit(1);
-                } else {
-                    Instruction inst = { INST_EVAL, .astvalue=astvalue };
-                    da_push(&s->insts, inst);
-                }
-            }
-        } break;
-        case TOKEN_INT: {
-            Scope* s = parser->head;
-            if(s->kind != SCOPE_FUNC) {
-                eprintfln("ERROR:%s: Unexpected integer: %lu",tloc(t), t.integer.value);
+                eprintfln("ERROR:%s: Unexpected Atom: %s",tloc(t), t.atom->data);
                 exit(1);
-            }
-            ASTValue astvalue;
-            int e = parse_astvalue(parser, &astvalue);
-            if(e != 0) {
-                eprintfln("ERROR:%s: Unexpected integer: %lu", tloc(t), t.integer.value);
-                exit(1);
-            } else {
-                Instruction inst = { INST_EVAL, .astvalue=astvalue };
-                da_push(&s->insts, inst);
             }
         } break;
         case ';':
