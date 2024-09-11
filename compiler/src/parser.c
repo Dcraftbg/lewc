@@ -274,6 +274,7 @@ void parse_func_body(Parser* parser, Scope* s) {
         if(t.kind >= TOKEN_END) {
             if(t.kind >= TOKEN_ERR) {
                 eprintfln("ERROR:%s: Lexer error %s", tloc(t), tdisplay(t));
+                exit(1);
             } else {
                 eprintfln("ERROR:%s: Unexpected token in function body: %s", tloc(t), tdisplay(t));
                 exit(1);
