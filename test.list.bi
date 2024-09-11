@@ -58,7 +58,7 @@ gcc -static ./int/tests/hello.o -o ./bin/tests/hello
 
 :b shell 17
 ./bin/tests/hello
-:i returncode 1
+:i returncode 0
 :b stdout 13
 Hello World!
 
