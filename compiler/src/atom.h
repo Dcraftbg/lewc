@@ -1,5 +1,5 @@
 #pragma once
-#include "hashutils.h"
+#include "strslice.h"
 #include "arena.h"
 #include <stddef.h>
 #include <string.h>
@@ -8,28 +8,20 @@ typedef struct {
     char data[];
 } Atom;
 
-#ifdef SMART_ATOM
-typedef struct AtomHead {
-    struct list list;
-    Atom atom;
-} AtomHead;
-typedef struct {
-    struct list list;
-    size_t size;
-} AtomBucket;
+#ifdef ATOM_HASHTABLE_DEFINE
+#define HASHMAP_DEFINE
 #endif
-// TODO: Reimplement Googles' hash table
+#include "hashmap.h"
+#define ATOMHASHMAP_ALLOC(n) malloc(n)
+#define ATOMHASHMAP_DEALLOC(ptr, size) free(ptr)
+
+MAKE_HASHMAP_EX(AtomHashmap, atom_hashmap, Atom*, StrSlice, strslice_hash, strslice_eq, ATOMHASHMAP_ALLOC, ATOMHASHMAP_DEALLOC)
+#ifdef ATOM_HASHTABLE_DEFINE
+#undef ATOM_HASHTABLE_DEFINE
+#endif
 typedef struct {
     Arena *arena;
-#ifdef SMART_ATOM
-    AtomBucket* data;
-    // TODO: Maybe use integer scaling with powers of 2?
-    size_t len; 
-    size_t maxbucket; // The longest bucket in the hashmap
-    size_t limit;
-    size_t scalar;
-#error SMART_ATOM is unfinished... Yeahhh.. Im lazy
-#endif
+    AtomHashmap hashmap;
 } AtomTable;
 
 Atom* atom_alloc(AtomTable* table, const char* str, size_t len);
