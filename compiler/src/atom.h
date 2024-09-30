@@ -26,3 +26,6 @@ typedef struct {
 
 Atom* atom_alloc(AtomTable* table, const char* str, size_t len);
 void atom_table_construct(AtomTable* table);
+
+#define atom_hash(atom) ((size_t)(atom))
+#define atom_eq(a, b) ((a)==(b))

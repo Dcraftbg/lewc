@@ -1,3 +1,4 @@
+#define FUNC_MAP_DEFINE
 #include "parser.h"
 
 Scope* new_scope(Arena* arena, Scope* parent, int kind) {
@@ -8,16 +9,13 @@ Scope* new_scope(Arena* arena, Scope* parent, int kind) {
     s->kind = kind;
     return s;
 }
-Scope* funcs_find(Funcs* funcs, const char* name) {
-    for(size_t i = 0; i < funcs->len; ++i) {
-        if(strcmp(funcs->items[i].name->data, name) == 0) {
-            return funcs->items[i].scope;
-        }
-    }
+Scope* funcs_find(Funcs* funcs, Atom* name) {
+    Function* func;
+    if((func=func_map_get(&funcs->map, name))) return func->scope;
     return NULL;
 }
 void funcs_insert(Funcs* funcs, Atom* name, typeid_t id, Scope* scope) {
-    da_push(funcs, ((struct FuncPair){name, id, scope}));
+    assert(func_map_insert(&funcs->map, name, (Function){id, scope}));
 }
 void parser_create(Parser* this, Lexer* lexer, Arena* arena) {
     static_assert(

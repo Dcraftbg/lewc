@@ -152,7 +152,10 @@ size_t build_ast(BuildState* state, AST* ast) {
         assert(ast->what.kind == AST_VALUE_SYMBOL);
         size_t whatid = build_get_funcid_by_name(state->build, ast->what.symbol);
         if(whatid == INVALID_SYMBOLID) {
-            eprintfln("Invalid function name %s",ast->what.symbol->data);
+            eprintfln("Invalid function name %s", ast->what.symbol->data);
+            for(size_t i = 0; i < state->build->funcs.len; ++i) {
+                eprintfln("%zu> Function %s", i, state->build->funcs.items[i].name->data);
+            }
             exit(1);
         }
         BuildCallArgs args={0};
@@ -203,54 +206,63 @@ void build_build(Build* build, Parser* parser) {
     BuildState state = {0};
     state.build = build;
     type_table_move(&build->type_table, &parser->type_table);
+    for(size_t i = 0; i < parser->funcs.map.buckets.len; ++i) {
+        Pair_FuncMap* fpair = parser->funcs.map.buckets.items[i].first;
+        while(fpair) {
+            build_add_func(build, fpair->key, fpair->value.type);
+            fpair = fpair->next;
+        }
+    }
+    for(size_t i = 0; i < parser->funcs.map.buckets.len; ++i) {
+        Pair_FuncMap* fpair = parser->funcs.map.buckets.items[i].first;
+        while(fpair) {
+            Atom* name = fpair->key;
+            Scope* scope = fpair->value.scope;
+            typeid_t typeid = fpair->value.type;
+            (void)scope;
+            Type* type = type_table_get(&build->type_table, typeid);
+            assert(type->core == CORE_FUNC);
+            state.fid = build_get_funcid_by_name(build, name);
+            if(!(type->attribs & TYPE_ATTRIB_EXTERN)) {
+                state.head = build_add_block(build, state.fid);
+                for(size_t j=0; j < type->signature.input.len; ++j) {
+                    if(type->signature.input.items[j].name) {
+                        Type* argt = type_table_get(&build->type_table, type->signature.input.items[j].typeid);
+                        size_t alloca = state_add_alloca(&state, type->signature.input.items[j].typeid);
 
-    for(size_t i = 0; i < parser->funcs.len; ++i) {
-        struct FuncPair* fpair = &parser->funcs.items[i];
-        Scope* scope = fpair->scope;
-        Atom* name = fpair->name;
-        typeid_t typeid = fpair->type;
-        (void)scope;
-        Type* type = type_table_get(&build->type_table, typeid);
-        assert(type->core == CORE_FUNC);
-        state.fid = build_add_func(build, name, typeid);
-        if(!(type->attribs & TYPE_ATTRIB_EXTERN)) {
-            state.head = build_add_block(build, state.fid);
-            for(size_t j=0; j < type->signature.input.len; ++j) {
-                if(type->signature.input.items[j].name) {
-                    Type* argt = type_table_get(&build->type_table, type->signature.input.items[j].typeid);
-                    size_t alloca = state_add_alloca(&state, type->signature.input.items[j].typeid);
-
-                    switch(argt->core) {
-                    case CORE_I32:
-                        size_t larg = state_add_load_arg(&state, j);
-                        state_add_store_int(&state, alloca, larg);
-                        BuildSymbol sym = {
-                            .allocation = BUILD_SYM_ALLOC_PTR,
-                            .id = alloca,
-                        };
-                        build_symbol_table_add(&state.build->funcs.items[state.fid].local_table, type->signature.input.items[j].name, sym);
-                        break;
-                    default:
-                        eprintfln("Unhandled type in signature loading in build_build: %d for function %s", argt->core, name->data);
-                        exit(1);
+                        switch(argt->core) {
+                        case CORE_I32:
+                            size_t larg = state_add_load_arg(&state, j);
+                            state_add_store_int(&state, alloca, larg);
+                            BuildSymbol sym = {
+                                .allocation = BUILD_SYM_ALLOC_PTR,
+                                .id = alloca,
+                            };
+                            build_symbol_table_add(&state.build->funcs.items[state.fid].local_table, type->signature.input.items[j].name, sym);
+                            break;
+                        default:
+                            eprintfln("Unhandled type in signature loading in build_build: %d for function %s", argt->core, name->data);
+                            exit(1);
+                        }
                     }
                 }
+                for(size_t j=0; j < scope->statements.len; ++j) {
+                    Statement* statement = &scope->statements.items[j];
+                    static_assert(STATEMENT_COUNT == 2, "Update build_build");
+                    switch(statement->kind) {
+                    case STATEMENT_RETURN:
+                        state_add_return(&state, build_astvalue(&state, statement->astvalue));
+                        break;
+                    case STATEMENT_EVAL:
+                        build_astvalue(&state, statement->astvalue);
+                        break;
+                    default:
+                        eprintfln("UNHANDLED STATEMENT %d",statement->kind);
+                        exit(1);
+                    }
+                } 
             }
-            for(size_t j=0; j < scope->statements.len; ++j) {
-                Statement* statement = &scope->statements.items[j];
-                static_assert(STATEMENT_COUNT == 2, "Update build_build");
-                switch(statement->kind) {
-                case STATEMENT_RETURN:
-                    state_add_return(&state, build_astvalue(&state, statement->astvalue));
-                    break;
-                case STATEMENT_EVAL:
-                    build_astvalue(&state, statement->astvalue);
-                    break;
-                default:
-                    eprintfln("UNHANDLED STATEMENT %d",statement->kind);
-                    exit(1);
-                }
-            } 
+            fpair = fpair->next; 
         }
-    } 
+    }
 }

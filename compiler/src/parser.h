@@ -48,14 +48,22 @@ typedef struct Scope {
     SymbolTable symtab; 
     Statements statements;
 } Scope;
-struct FuncPair {
-    Atom* name;
+typedef struct {
     typeid_t type;
     Scope* scope;
-};
+} Function;
+#ifdef FUNC_MAP_DEFINE
+#define HASHMAP_DEFINE
+#endif
+#include "hashmap.h"
+#define FUNC_MAP_ALLOC(n) malloc(n)
+#define FUNC_MAP_DEALLOC(ptr, size) free(ptr)
+MAKE_HASHMAP_EX(FuncMap, func_map, Function, Atom*, atom_hash, atom_eq, FUNC_MAP_ALLOC, FUNC_MAP_DEALLOC)
+#ifdef FUNC_MAP_DEFINE
+#undef HASHMAP_DEFINE
+#endif
 typedef struct {
-    struct FuncPair *items;
-    size_t len, cap;
+    FuncMap map;
 } Funcs;
 typedef struct {
     Arena* arena;
