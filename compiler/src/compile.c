@@ -1,8 +1,9 @@
 #include "compile.h"
 #include "assert.h"
 #include "utils.h"
-static_assert(OUTPUT_COUNT == 1, "Update outputkind_map");
+static_assert(OUTPUT_COUNT == 2, "Update outputkind_map");
 const char* outputkind_map[OUTPUT_COUNT] = {
+    "Undefined",
     "Nasm Assembly" 
 };
 const char* outputkind_str(OutputKind kind) {
@@ -10,8 +11,9 @@ const char* outputkind_str(OutputKind kind) {
     return outputkind_map[kind];
 }
 
-static_assert(ARCH_COUNT == 1, "Update arch_map");
+static_assert(ARCH_COUNT == 2, "Update arch_map");
 const char* arch_map[ARCH_COUNT] = {
+    "Undefined",
     "x86_64" 
 };
 const char* arch_str(Architecture kind) {
@@ -19,8 +21,9 @@ const char* arch_str(Architecture kind) {
     return arch_map[kind];
 }
 
-static_assert(PLATFORM_COUNT == 2, "Update platform_map");
+static_assert(PLATFORM_COUNT == 3, "Update platform_map");
 const char* platform_map[PLATFORM_COUNT] = {
+    [OS_UNDEFINED] = "Undefined",
     [OS_WINDOWS] = "Windows",
     [OS_LINUX] = "Linux"
 };
@@ -30,7 +33,7 @@ const char* platform_str(Platform kind) {
 }
 
 void compile(Build* build, Target* target, Arena* arena) {
-    static_assert(OUTPUT_COUNT == 1, "Update compile");
+    static_assert(OUTPUT_COUNT == 2, "Update compile");
     CompileState state = {0};
     state.target = target;
     state.build = build;

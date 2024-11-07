@@ -44,7 +44,8 @@ static Platform default_platform =
 #elif defined(__linux__)
   OS_LINUX
 #else
-# warning Your platform is not supported as a default_platform. Youll likely have to specify it explicitly
+  OS_UNDEFINED
+// # warning Your platform is not supported as a default_platform. Youll likely have to specify it explicitly
 #endif
 ;
 // TODO: Default arch detection
@@ -103,6 +104,11 @@ int main(int argc, const char** argv) {
     }
     if(!build_options.ipath) {
         eprintf("ERROR: Missing input path!\n");
+        usage();
+        exit(1);
+    }
+    if(!target.platform) {
+        eprintfln("ERROR: Could not infer platform automatically. Please specify it with --platform={your platform}");
         usage();
         exit(1);
     }

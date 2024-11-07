@@ -6,16 +6,19 @@
 #include "arch/x86_64/linux/linux.h"
 
 typedef enum {
+    OUTPUT_UNDEFINED=0,
     OUTPUT_NASM,
 
     OUTPUT_COUNT
 } OutputKind;
 typedef enum {
+    ARCH_UNDEFINED=0,
     ARCH_X86_64,
 
     ARCH_COUNT
 } Architecture;
 typedef enum {
+    OS_UNDEFINED=0,
     OS_WINDOWS,
     OS_LINUX,
 
