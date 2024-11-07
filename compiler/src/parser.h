@@ -3,7 +3,6 @@
 #include "token.h"
 #include "lexer.h"
 #include "type.h"
-#include "symbol.h"
 #include "ast.h"
 #include "buildoptions.h"
 extern BuildOptions build_options;
@@ -45,7 +44,6 @@ typedef struct {
 typedef struct Scope {
     struct Scope* parent;
     int kind;
-    SymbolTable symtab; 
     Statements statements;
 } Scope;
 typedef struct {

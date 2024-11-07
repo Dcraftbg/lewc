@@ -14,7 +14,6 @@
 #include "token.h"
 #include "lexer.h"
 #include "type.h"
-#include "symbol.h"
 #include "ast.h"
 #include "parser.h"
 #include "build.h"

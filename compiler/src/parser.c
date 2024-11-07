@@ -35,14 +35,6 @@ void parser_create(Parser* this, Lexer* lexer, Arena* arena) {
     this->head = &this->global;
     // scope_init(&this->global);
 }
-Symbol* symbol_find(Scope* head, Atom* name) {
-    Symbol* s;
-    while(head) {
-        if((s = symtab_symbol_find(&head->symtab, name))) return s;
-        head = head->parent;
-    }
-    return NULL;
-}
 typeid_t parse_type(Parser* parser) {
     // TODO: Pointers
     Token t = {0};
@@ -124,11 +116,6 @@ ASTValue parse_basic(Parser* parser) {
     Token t = lexer_next(parser->lexer);
     switch(t.kind) {
     case TOKEN_ATOM: {
-        Symbol *s = symbol_find(parser->head, t.atom);
-        if(!s) {
-            eprintfln("ERROR:%s: Unknown variable: %s",tloc(t),t.atom->data);
-            exit(1);
-        }
         return (ASTValue){.kind=AST_VALUE_SYMBOL, .symbol=t.atom};
     } break;
     case TOKEN_C_STR: {
@@ -237,12 +224,6 @@ int parse_astvalue(Parser* parser, ASTValue* result) {
     *result = v;
     return 0;
 }
-Symbol* new_symbol(Arena* arena, Symbol symbol) {
-    Symbol* s = (Symbol*)arena_alloc(arena, sizeof(*s));
-    if(!s) return NULL;
-    *s = symbol;
-    return s;
-}
 Statement parse_statement(Parser* parser, Token t) {
     switch(t.kind) {
         case TOKEN_RETURN: {
@@ -331,8 +312,6 @@ void parse(Parser* parser, Lexer* lexer, Arena* arena) {
                     exit(1);
                 }
                 typeid_t fid = type_table_create(&parser->type_table, functype);
-                Symbol* sym = new_symbol(parser->arena, (Symbol){SYMBOL_FUNC, .typeid=fid});
-                symtab_insert(&parser->head->symtab, name, sym);
                 funcs_insert(&parser->funcs, name, fid, NULL);
             } else {
                 eprintfln("ERROR:%s: Expected signature of external function to follow the syntax:", tloc(t));
@@ -357,17 +336,7 @@ void parse(Parser* parser, Lexer* lexer, Arena* arena) {
                     exit(1);
                 }
                 typeid_t fid = type_table_create(&parser->type_table, functype);
-                Symbol* sym = new_symbol(parser->arena, (Symbol){SYMBOL_FUNC, .typeid=fid});
-                symtab_insert(&parser->head->symtab, name, sym);
-                
-
                 Scope* s = new_scope(parser->arena, parser->head, SCOPE_FUNC);
-                for(size_t i = 0; i < functype.signature.input.len; ++i) {
-                    Arg* arg = &functype.signature.input.items[i];
-                    if(arg->name) {
-                       symtab_insert(&s->symtab, arg->name, new_symbol(parser->arena, (Symbol){SYMBOL_VARIABLE, .typeid=arg->typeid}));
-                    }
-                }
                 parser->head = s;
                 parse_func_body(parser, s);
                 parser->head = parser->head->parent;
