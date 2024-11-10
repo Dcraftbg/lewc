@@ -92,5 +92,10 @@ bool syn_analyse(ProgramState* state) {
             fpair = fpair->next; 
         }
     }
+    while(list.len) {
+        sym_tab_destruct(&list.items[list.len--]);
+    }
+    free(list.items);
+    list.items = NULL;
     return true;
 }
