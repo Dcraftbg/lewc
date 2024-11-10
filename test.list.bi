@@ -1,4 +1,4 @@
-:i count 20
+:i count 21
 :b shell 56
 ./bin/compiler examples/sum.prot -o ./int/tests/sum.nasm
 :i returncode 0
@@ -142,4 +142,12 @@ get_five() = 5
 :b stdout 0
 
 :b stderr 0
+
+:b shell 72
+./bin/compiler examples/syntactical.prot -o ./int/tests/syntactical.nasm
+:i returncode 1
+:b stdout 0
+
+:b stderr 35
+Unknown variable or function `foo`
 
