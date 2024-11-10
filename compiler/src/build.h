@@ -1,5 +1,5 @@
 #pragma once
-#include "parser.h"
+#include "progstate.h"
 typedef struct {
     size_t* items;
     size_t len, cap;
@@ -103,4 +103,4 @@ typedef struct {
     size_t fid;
     size_t head;
 } BuildState;
-void build_build(Build* build, Parser* parser);
+void build_build(Build* build, ProgramState* state);

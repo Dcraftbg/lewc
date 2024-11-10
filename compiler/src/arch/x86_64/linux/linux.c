@@ -1,6 +1,7 @@
 #include "linux.h"
 #include "../nasm.h"
 #include "../common.h"
+#include <errno.h>
 
 int LINUX_GPR_ARGS[] = {
      REG_DI,

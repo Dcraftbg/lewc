@@ -19,6 +19,7 @@
 #include "build.h"
 #include "compile.h"
 #include "strutils.h"
+#include "progstate.h"
 
 const char* shift_args(int *argc, const char ***argv) {
     if((*argc) <= 0) return NULL;
@@ -124,13 +125,16 @@ int main(int argc, const char** argv) {
     Lexer lexer;
     lexer_create(&lexer, build_options.ipath, &atom_table, &arena);
 
+    ProgramState state = {0};
+    type_table_init(&state.type_table);
     Parser parser = {0};
-    parser_create(&parser, &lexer, &arena);
+    parser_create(&parser, &lexer, &arena, &state);
     parse(&parser, &lexer, &arena);
+    
     
     Build build={0};
     build.path = build_options.ipath;
-    build_build(&build, &parser);
+    build_build(&build, &state);
 
     target.opath = build_options.opath;
     compile(&build, &target, &arena);

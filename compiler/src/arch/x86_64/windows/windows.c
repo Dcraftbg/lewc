@@ -9,7 +9,7 @@ int WINDOWS_GPR_ARGS[] = {
     REG_R9
 };
 void compile_nasm_x86_64_windows(CompileState* state) {
-    if(!build_options.experimental_windows) {
+    if(!state->options->experimental_windows) {
         eprintfln("ERROR: compile_nasm_x86_64_windows is still very much not supported as there's quite a few differences between windows and linux. Please use something like WSL until we have this all sorted. Or you could add the --experimental-windows flag which will allow you to continue with this janky and unfinished target");
         exit(1);
     }

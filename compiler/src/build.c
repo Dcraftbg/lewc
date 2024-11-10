@@ -202,19 +202,19 @@ size_t build_astvalue(BuildState* state, ASTValue value) {
         exit(1);
     }
 }
-void build_build(Build* build, Parser* parser) {
+void build_build(Build* build, ProgramState* pstate) {
     BuildState state = {0};
     state.build = build;
-    type_table_move(&build->type_table, &parser->type_table);
-    for(size_t i = 0; i < parser->funcs.map.buckets.len; ++i) {
-        Pair_FuncMap* fpair = parser->funcs.map.buckets.items[i].first;
+    type_table_move(&build->type_table, &pstate->type_table);
+    for(size_t i = 0; i < pstate->funcs.map.buckets.len; ++i) {
+        Pair_FuncMap* fpair = pstate->funcs.map.buckets.items[i].first;
         while(fpair) {
             build_add_func(build, fpair->key, fpair->value.type);
             fpair = fpair->next;
         }
     }
-    for(size_t i = 0; i < parser->funcs.map.buckets.len; ++i) {
-        Pair_FuncMap* fpair = parser->funcs.map.buckets.items[i].first;
+    for(size_t i = 0; i < pstate->funcs.map.buckets.len; ++i) {
+        Pair_FuncMap* fpair = pstate->funcs.map.buckets.items[i].first;
         while(fpair) {
             Atom* name = fpair->key;
             Scope* scope = fpair->value.scope;

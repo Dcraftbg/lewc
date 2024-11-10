@@ -17,22 +17,12 @@ Scope* funcs_find(Funcs* funcs, Atom* name) {
 void funcs_insert(Funcs* funcs, Atom* name, typeid_t id, Scope* scope) {
     assert(func_map_insert(&funcs->map, name, (Function){id, scope}));
 }
-void parser_create(Parser* this, Lexer* lexer, Arena* arena) {
-    static_assert(
-        sizeof(Parser) ==
-        sizeof(Arena)+
-        sizeof(TypeTable)+
-        sizeof(Lexer*)+
-        sizeof(Scope)+
-        sizeof(Scope*)+
-        sizeof(Funcs),
-        "Update parser_create"
-    );
+void parser_create(Parser* this, Lexer* lexer, Arena* arena, ProgramState* state) {
     memset(this, 0, sizeof(*this));
     this->arena = arena;
-    type_table_init(&this->type_table);
     this->lexer = lexer;
-    this->head = &this->global;
+    this->head = &state->global;
+    this->state = state;
     // scope_init(&this->global);
 }
 typeid_t parse_type(Parser* parser) {
@@ -48,7 +38,7 @@ typeid_t parse_type(Parser* parser) {
         eprintfln("ERROR:%s: Expected name of type but got: %s", tloc(t), tdisplay(t));
         exit(1);
     }
-    typeid_t id = type_table_get_by_name(&parser->type_table, t.atom->data);
+    typeid_t id = type_table_get_by_name(&parser->state->type_table, t.atom->data);
     if(id == INVALID_TYPEID) {
         eprintfln("ERROR:%s: Unknown type name: %s", tloc(t), t.atom->data);
         exit(1);
@@ -59,7 +49,7 @@ typeid_t parse_type(Parser* parser) {
             .ptr_count = ptr_count,
             .inner_type = id
         };
-        return type_table_create(&parser->type_table, t);
+        return type_table_create(&parser->state->type_table, t);
     }
     return id;
 }
@@ -311,8 +301,8 @@ void parse(Parser* parser, Lexer* lexer, Arena* arena) {
                     eprintfln("ERROR:%s: Nested function definitions are not yet implemented", tloc(t));
                     exit(1);
                 }
-                typeid_t fid = type_table_create(&parser->type_table, functype);
-                funcs_insert(&parser->funcs, name, fid, NULL);
+                typeid_t fid = type_table_create(&parser->state->type_table, functype);
+                funcs_insert(&parser->state->funcs, name, fid, NULL);
             } else {
                 eprintfln("ERROR:%s: Expected signature of external function to follow the syntax:", tloc(t));
                 eprintfln("  extern <func name> :: <(<Arguments>)> (-> <Output Type>)");
@@ -335,12 +325,12 @@ void parse(Parser* parser, Lexer* lexer, Arena* arena) {
                     eprintfln("ERROR:%s: Missing '{' at the start of function. Got: %s", tloc(t), tdisplay(t));
                     exit(1);
                 }
-                typeid_t fid = type_table_create(&parser->type_table, functype);
+                typeid_t fid = type_table_create(&parser->state->type_table, functype);
                 Scope* s = new_scope(parser->arena, parser->head, SCOPE_FUNC);
                 parser->head = s;
                 parse_func_body(parser, s);
                 parser->head = parser->head->parent;
-                funcs_insert(&parser->funcs, name, fid, s);
+                funcs_insert(&parser->state->funcs, name, fid, s);
             } else {
                 eprintfln("ERROR:%s: Unexpected Atom: %s",tloc(t), t.atom->data);
                 exit(1);

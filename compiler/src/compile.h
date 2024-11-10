@@ -1,5 +1,6 @@
 #pragma once
 #include "build.h"
+#include "buildoptions.h"
 #include "arena.h"
 #include "arch/x86_64/nasm.h"
 #include "arch/x86_64/windows/windows.h"

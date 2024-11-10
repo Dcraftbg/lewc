@@ -21,55 +21,13 @@ static void _example_dump() {
     }
     lexer_cleanup(&lexer);
 }
-enum {
-    STATEMENT_RETURN,
-    STATEMENT_EVAL,
-    STATEMENT_COUNT
-};
-typedef struct {
-    int kind;
-    union {
-        ASTValue astvalue;
-    };
-    /*metadata*/;
-} Statement;
-enum {
-    SCOPE_GLOBAL,
-    SCOPE_FUNC
-};
-typedef struct {
-    Statement *items;
-    size_t len, cap;
-} Statements;
-typedef struct Scope {
-    struct Scope* parent;
-    int kind;
-    Statements statements;
-} Scope;
-typedef struct {
-    typeid_t type;
-    Scope* scope;
-} Function;
-#ifdef FUNC_MAP_DEFINE
-#define HASHMAP_DEFINE
-#endif
-#include "hashmap.h"
-#define FUNC_MAP_ALLOC(n) malloc(n)
-#define FUNC_MAP_DEALLOC(ptr, size) free(ptr)
-MAKE_HASHMAP_EX(FuncMap, func_map, Function, Atom*, atom_hash, atom_eq, FUNC_MAP_ALLOC, FUNC_MAP_DEALLOC)
-#ifdef FUNC_MAP_DEFINE
-#undef HASHMAP_DEFINE
-#endif
-typedef struct {
-    FuncMap map;
-} Funcs;
+
+#include "progstate.h"
 typedef struct {
     Arena* arena;
-    TypeTable type_table;
     Lexer* lexer;
-    Scope global;
     Scope* head;
-    Funcs funcs;
+    ProgramState* state;
 } Parser;
-void parser_create(Parser* this, Lexer* lexer, Arena* arena);
+void parser_create(Parser* this, Lexer* lexer, Arena* arena, ProgramState* state);
 void parse(Parser* parser, Lexer* lexer, Arena* arena);
