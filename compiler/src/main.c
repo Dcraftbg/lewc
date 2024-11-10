@@ -20,6 +20,7 @@
 #include "compile.h"
 #include "strutils.h"
 #include "progstate.h"
+#include "syn_analys.h"
 
 const char* shift_args(int *argc, const char ***argv) {
     if((*argc) <= 0) return NULL;
@@ -130,7 +131,8 @@ int main(int argc, const char** argv) {
     Parser parser = {0};
     parser_create(&parser, &lexer, &arena, &state);
     parse(&parser, &lexer, &arena);
-    
+
+    if(!syn_analyse(&state)) exit(1);
     
     Build build={0};
     build.path = build_options.ipath;

@@ -6,7 +6,7 @@
 #define SYM_TAB_ALLOC(n) malloc(n)
 #define SYM_TAB_DEALLOC(ptr, size) free(ptr)
 // TODO: Hash set
-MAKE_HASHMAP_EX(SymTab, sym_tab, Atom*, bool, atom_hash, atom_eq, SYM_TAB_ALLOC, SYM_TAB_DEALLOC)
+MAKE_HASHMAP_EX(SymTab, sym_tab, bool, Atom*, atom_hash, atom_eq, SYM_TAB_ALLOC, SYM_TAB_DEALLOC)
 #undef HASHMAP_DEFINE
 typedef struct {
     SymTab *items;
@@ -35,6 +35,7 @@ bool syn_analyse_ast(SymTabList* list, AST* ast) {
             eprintfln("ERROR: Cannot assign to something thats not a variable");
             return false;
         }
+    case '+':
         // ------ For any other binop
         if(!syn_analyse_ast(list, ast->as.binop.lhs)) return false;
         if(!syn_analyse_ast(list, ast->as.binop.rhs)) return false;
@@ -57,11 +58,17 @@ bool syn_analyse_ast(SymTabList* list, AST* ast) {
 bool syn_analyse(ProgramState* state) {
     SymTabList list={0};
     da_push(&list, (SymTab){0});
+
     for(size_t i = 0; i < state->funcs.map.buckets.len; ++i) {
         Pair_FuncMap* fpair = state->funcs.map.buckets.items[i].first;
         while(fpair) {
-            Atom* name = fpair->key;
-            sym_tab_insert(&list.items[list.len-1], name, 0);
+            sym_tab_insert(&list.items[list.len-1], fpair->key, false);
+            fpair = fpair->next; 
+        }
+    }
+    for(size_t i = 0; i < state->funcs.map.buckets.len; ++i) {
+        Pair_FuncMap* fpair = state->funcs.map.buckets.items[i].first;
+        while(fpair) {
             Function* func = &fpair->value;
             Type* type = type_table_get(&state->type_table, func->type);
             assert(type->core == CORE_FUNC);
@@ -69,7 +76,7 @@ bool syn_analyse(ProgramState* state) {
                 da_push(&list, (SymTab){0});
                 for(size_t j=0; j < type->signature.input.len; ++j) {
                     if(type->signature.input.items[j].name) {
-                        sym_tab_insert(&list.items[list.len-1], type->signature.input.items[j].name, 0);
+                        sym_tab_insert(&list.items[list.len-1], type->signature.input.items[j].name, false);
                     }
                 }
                 for(size_t j=0; j < func->scope->statements.len; ++j) {
