@@ -1,59 +1,34 @@
 #pragma once
 #include "arena.h"
-struct AST;
-enum {
-    AST_VALUE_SYMBOL,
-    AST_VALUE_EXPR,
-    AST_VALUE_C_STR,
-    AST_VALUE_INT,
-
-    AST_VALUE_COUNT,
-};
-typedef struct {
-    int kind;
-    union {
-        struct AST* ast;
-        struct { uint64_t value; } integer;
-        struct { const char* str; size_t str_len; };
-        Atom* symbol;
-    };
-} ASTValue;
+#include <stdint.h>
+#include "atom.h"
 enum {
     AST_SET=256,
     AST_CALL,
+    AST_C_STR,
+    AST_INT,
+    AST_SYMBOL,
 };
+typedef struct AST AST;
 typedef struct {
-    ASTValue* items;
+    AST** items;
     size_t len;
     size_t cap;
 } CallArgs;
-typedef struct AST {
+struct AST {
     int kind;
     union {
-        struct { ASTValue left, right; };
-        struct { ASTValue what; CallArgs args; };
-    };
-} AST;
-static AST* ast_new(Arena* arena, int kind, ASTValue left, ASTValue right) {
-    AST* ast = (AST*)arena_alloc(arena, sizeof(*ast));
-    if(!ast) return ast;
-    ast->kind = kind;
-    ast->left = left;
-    ast->right = right;
-    return ast;
-}
+        struct { AST *lhs, *rhs; } binop;
+        struct { AST *what; CallArgs args; } call;
+        struct { uint64_t value; } integer;
+        struct { const char* str; size_t len; } str;
+        Atom* symbol;
+    } as;
+};
 
-static AST* ast_new_call(Arena* arena, ASTValue what, CallArgs args) {
-    AST* ast = (AST*)arena_alloc(arena, sizeof(*ast));
-    if(!ast) return ast;
-    ast->kind = AST_CALL;
-    ast->what = what;
-    ast->args = args;
-    return ast;
-}
-static void call_args_dealloc(CallArgs* this) {
-    if(this->items) free(this->items);
-    this->items = NULL;
-    this->cap = 0;
-    this->len = 0;
-}
+AST* ast_new_binop(Arena* arena, int kind, AST* lhs, AST* rhs);
+AST* ast_new_symbol(Arena* arena, Atom* symbol);
+AST* ast_new_cstr(Arena* arena, const char* str, size_t len);
+AST* ast_new_int(Arena* arena, uint64_t value);
+AST* ast_new_call(Arena* arena, AST* what, CallArgs args);
+void call_args_dealloc(CallArgs* args);

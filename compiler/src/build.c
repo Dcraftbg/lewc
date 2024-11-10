@@ -141,41 +141,30 @@ size_t build_add_const_int(Build* build, size_t fid, size_t head, typeid_t type,
 }
 // build_add_directcall((state)->build, (state)->fid, (state)->head, fid, args)
 
-size_t build_astvalue(BuildState* state, ASTValue value);
 size_t build_ast(BuildState* state, AST* ast) {
     switch(ast->kind) {
     case '+':
-        size_t v0 = build_astvalue(state, ast->left);
-        size_t v1 = build_astvalue(state, ast->right);
+        size_t v0 = build_ast(state, ast->as.binop.lhs);
+        size_t v1 = build_ast(state, ast->as.binop.rhs);
         return state_add_int_add(state, v0, v1);
     case AST_CALL:
-        assert(ast->what.kind == AST_VALUE_SYMBOL);
-        size_t whatid = build_get_funcid_by_name(state->build, ast->what.symbol);
+        assert(ast->as.call.what->kind == AST_SYMBOL);
+        Atom* symbol = ast->as.call.what->as.symbol;
+        size_t whatid = build_get_funcid_by_name(state->build, symbol);
         if(whatid == INVALID_SYMBOLID) {
-            eprintfln("Invalid function name %s", ast->what.symbol->data);
+            eprintfln("Invalid function name %s", symbol->data);
             for(size_t i = 0; i < state->build->funcs.len; ++i) {
                 eprintfln("%zu> Function %s", i, state->build->funcs.items[i].name->data);
             }
             exit(1);
         }
         BuildCallArgs args={0};
-        for(size_t i = 0; i < ast->args.len; ++i) {
-            da_push(&args, build_astvalue(state, ast->args.items[i]));
+        for(size_t i = 0; i < ast->as.call.args.len; ++i) {
+            da_push(&args, build_ast(state, ast->as.call.args.items[i]));
         }
         return state_add_directcall(state, whatid, args);
-    default:
-        eprintfln("Unsupported ast->kind in build_aststate->: %d\n",ast->kind);
-        if(ast->kind < 256) {
-           eprintfln("Char representation: %c", (char)ast->kind);
-        }
-        exit(1);
-    }
-}
-size_t build_astvalue(BuildState* state, ASTValue value) {
-    static_assert(AST_VALUE_COUNT == 4, "Update build_astvalue");
-    switch(value.kind) {
-    case AST_VALUE_SYMBOL: {
-        BuildSymbol* sym = state_lookup_symbol(state, value.symbol);
+    case AST_SYMBOL: {
+        BuildSymbol* sym = state_lookup_symbol(state, ast->as.symbol);
         static_assert(BUILD_SYM_ALLOC_COUNT == 3);
         switch(sym->allocation) {
         case BUILD_SYM_ALLOC_DIRECT:
@@ -183,22 +172,22 @@ size_t build_astvalue(BuildState* state, ASTValue value) {
         case BUILD_SYM_ALLOC_PTR:
             return state_add_load_int(state, sym->id);
         default:
-            eprintfln("Unhandled allocation mechanism %d",sym->allocation);
+            eprintfln("Unhandled allocation mechanism %d", sym->allocation);
             abort();
         }
     } break;
-    case AST_VALUE_EXPR: {
-        return build_ast(state, value.ast);
-    } break;
-    case AST_VALUE_C_STR: {
-        size_t globalid = state_add_global_arr(state, BUILTIN_U8, (void*)value.str, value.str_len+1);
+    case AST_C_STR: {
+        size_t globalid = state_add_global_arr(state, BUILTIN_U8, (void*)ast->as.str.str, ast->as.str.len+1);
         return state_add_get_addr_of(state, globalid);
     } break;
-    case AST_VALUE_INT: {
-        return state_add_const_int(state, BUILTIN_I32, value.integer.value);
+    case AST_INT: {
+        return state_add_const_int(state, BUILTIN_I32, ast->as.integer.value);
     } break;
     default:
-        eprintfln("%s:%u: UNREACHABLE", __FILE__, __LINE__);
+        eprintfln("Unsupported ast->kind in build_aststate->: %d\n",ast->kind);
+        if(ast->kind < 256) {
+           eprintfln("Char representation: %c", (char)ast->kind);
+        }
         exit(1);
     }
 }
@@ -251,10 +240,10 @@ void build_build(Build* build, ProgramState* pstate) {
                     static_assert(STATEMENT_COUNT == 2, "Update build_build");
                     switch(statement->kind) {
                     case STATEMENT_RETURN:
-                        state_add_return(&state, build_astvalue(&state, statement->astvalue));
+                        state_add_return(&state, build_ast(&state, statement->ast));
                         break;
                     case STATEMENT_EVAL:
-                        build_astvalue(&state, statement->astvalue);
+                        build_ast(&state, statement->ast);
                         break;
                     default:
                         eprintfln("UNHANDLED STATEMENT %d",statement->kind);

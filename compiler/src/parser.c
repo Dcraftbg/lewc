@@ -102,17 +102,17 @@ void parse_func_signature(Parser* parser, FuncSignature* sig) {
         }
     }
 }
-ASTValue parse_basic(Parser* parser) {
+AST* parse_basic(Parser* parser) {
     Token t = lexer_next(parser->lexer);
     switch(t.kind) {
     case TOKEN_ATOM: {
-        return (ASTValue){.kind=AST_VALUE_SYMBOL, .symbol=t.atom};
+        return ast_new_symbol(parser->arena, t.atom);
     } break;
     case TOKEN_C_STR: {
-        return (ASTValue){.kind=AST_VALUE_C_STR, .str=t.str, .str_len=t.str_len};
+        return ast_new_cstr(parser->arena, t.str, t.str_len); 
     } break;
     case TOKEN_INT: {
-        return (ASTValue){.kind=AST_VALUE_INT, .integer = { .value = t.integer.value } };
+        return ast_new_int(parser->arena, t.integer.value); 
     } break;
     default:
         eprintfln("ERROR:%s: Unexpected token in expression: %s", tloc(t),tdisplay(t));
@@ -133,13 +133,12 @@ int op_prec(int op) {
         return -1;
     }
 }
-int parse_astvalue(Parser* parser, ASTValue* result) {
-    int e = 0;
-    ASTValue v = parse_basic(parser);
+AST* parse_ast(Parser* parser) {
+    AST* v = parse_basic(parser);
+    if(!v) return NULL;
     Token t = lexer_peak_next(parser->lexer);
     switch(t.kind) {
     case '(': {
-        Token t = {0};
         if((t=lexer_next(parser->lexer)).kind != '(') {
             eprintfln("ERROR:%s: Expected '(' but found %s in function call", tloc(t), tdisplay(t));
             exit(1);
@@ -148,11 +147,10 @@ int parse_astvalue(Parser* parser, ASTValue* result) {
         for(;;) {
             t = lexer_peak_next(parser->lexer);
             if(t.kind == ')') break;
-            ASTValue value;
-            e = parse_astvalue(parser, &value);
-            if(e!=0) {
+            AST* value = parse_ast(parser);
+            if(!value) {
                 call_args_dealloc(&args);
-                return e;
+                return NULL;
             }
             da_push(&args, value);
             t = lexer_peak_next(parser->lexer);
@@ -169,9 +167,7 @@ int parse_astvalue(Parser* parser, ASTValue* result) {
             eprintfln("ERROR:%s: Expected ')' but found %s in function call",tloc(t),tdisplay(t));
             exit(1);
         }
-        result->kind = AST_VALUE_EXPR;
-        result->ast = ast_new_call(parser->arena, v, args);
-        return 0;
+        return ast_new_call(parser->arena, v, args);
     } break;
     #define X(op) case op:
     OPS
@@ -180,7 +176,8 @@ int parse_astvalue(Parser* parser, ASTValue* result) {
         int op = t.kind;
         int precedence = op_prec(op);
         lexer_eat(parser->lexer, 1);
-        ASTValue v2 = parse_basic(parser);
+        AST* v2 = parse_basic(parser);
+        if(!v2) return NULL;
         t = lexer_peak_next(parser->lexer);
         switch(t.kind) {
         #define X(op) case op:
@@ -191,50 +188,37 @@ int parse_astvalue(Parser* parser, ASTValue* result) {
             int newprecedence = op_prec(newop);
             if (precedence <= newprecedence) {
                 lexer_eat(parser->lexer, 1);
-                ASTValue v3;
-                if((e = parse_astvalue(parser, &v3)) != 0) {
-                    return e;
-                }
-                v2 = (ASTValue) {
-                   AST_VALUE_EXPR,
-                   .ast=ast_new(parser->arena, newop, v2, v3)
-                };
+                AST* v3 = parse_ast(parser);
+                if(!v3) return NULL;
+                v2 = ast_new_binop(parser->arena, newop, v2, v3);
             }
-            AST* ast = ast_new(parser->arena, op, v, v2);
-            *result = (ASTValue){AST_VALUE_EXPR, .ast=ast};
-            return 0;
+            return ast_new_binop(parser->arena, op, v, v2);
         } break;
         default:
-            AST* ast = ast_new(parser->arena, op, v, v2);
-            *result = (ASTValue){AST_VALUE_EXPR, .ast=ast};
-            return 0;
+            return ast_new_binop(parser->arena, op, v, v2);
         }
     } break;
     }
-    *result = v;
-    return 0;
+    return v;
 }
 Statement parse_statement(Parser* parser, Token t) {
     switch(t.kind) {
         case TOKEN_RETURN: {
             lexer_eat(parser->lexer, 1);
-            ASTValue astvalue;
-            int e = parse_astvalue(parser, &astvalue);
-            if((e != 0)) {
+            AST* ast = parse_ast(parser);
+            if(!ast) {
                 eprintfln("ERROR:%s: Failed to parse return statement",tloc(t));
                 exit(1);
             }
-            return (Statement) { STATEMENT_RETURN, .astvalue=astvalue };
+            return (Statement) { STATEMENT_RETURN, .ast=ast };
         } break;
     }
-    ASTValue astvalue;
-    int e = parse_astvalue(parser, &astvalue);
-    if(e != 0) {
+    AST* ast = parse_ast(parser);
+    if(!ast) {
         eprintfln("ERROR:%s: Unknown token in statement: %s", tloc(t), tdisplay(t));
         exit(1);
-    } else {
-        return (Statement) { STATEMENT_EVAL, .astvalue=astvalue };
     }
+    return (Statement) { STATEMENT_EVAL, .ast=ast };
 }
 void parse_func_body(Parser* parser, Scope* s) {
     Token t;

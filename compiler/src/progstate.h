@@ -9,7 +9,7 @@ enum {
 typedef struct {
     int kind;
     union {
-        ASTValue astvalue;
+        AST* ast;
     };
     /*metadata*/;
 } Statement;
