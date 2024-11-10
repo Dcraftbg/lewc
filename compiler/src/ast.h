@@ -8,6 +8,7 @@ enum {
     AST_C_STR,
     AST_INT,
     AST_SYMBOL,
+    AST_KIND_COUNT
 };
 typedef struct AST AST;
 typedef struct {
