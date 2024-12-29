@@ -28,7 +28,7 @@ void compile_nasm_x86_64_linux(CompileState* state) {
         switch(global->kind) {
         case GLOBAL_ARRAY: {
             nprintfln(".G%zu:",i);
-            Type* type = type_table_get(&state->build->type_table, global->array.typeid);
+            Type* type = global->array.typeid;
             assert(type->core == CORE_I8 && type->ptr_count == 0);
             nprintf(" db ");
             for(size_t i = 0; i < global->array.len; ++i) {
@@ -45,7 +45,7 @@ void compile_nasm_x86_64_linux(CompileState* state) {
     for(size_t i = 0; i < state->build->funcs.len; ++i) {
         nasm_gpr_reset(&state->regs);
         BuildFunc* func = &state->build->funcs.items[i];
-        Type* type = type_table_get(&state->build->type_table, func->typeid);
+        Type* type = func->typeid;
         assert(type);
         assert(type->core == CORE_FUNC);
         if(type->attribs & TYPE_ATTRIB_EXTERN) {
@@ -80,7 +80,7 @@ void compile_nasm_x86_64_linux(CompileState* state) {
                     case BUILD_LOAD_ARG: {
                         assert(inst->arg < sig->input.len);
                         Arg* arg = &sig->input.items[inst->arg];
-                        Type* argtype = type_table_get(&state->build->type_table, arg->typeid);
+                        Type* argtype = arg->type;
                         switch(inst->arg) {
                         case 0:
                         case 1:
@@ -157,12 +157,11 @@ void compile_nasm_x86_64_linux(CompileState* state) {
                             nprintfln("   ret");
                             break;
                         case CVALUE_CONST_INT:
-                            switch(arg->integer.type) {
-                            case BUILTIN_I32:
+                            if(arg->integer.type == &type_i32) {
+                                // FIXME: Wtf?
                                 value.regsize = REG_SIZE_64;
-                                break;
-                            default:
-                                eprintfln("Invalid const int return with typeid=%zu", arg->integer.type);
+                            } else {
+                                eprintfln("Invalid const int return with typeid=%p", arg->integer.type);
                                 exit(1);
                             }
                             const char* reg =  nasm_gpr_to_str(value.reg, value.regsize);
@@ -181,7 +180,7 @@ void compile_nasm_x86_64_linux(CompileState* state) {
                         }
                     } break;
                     case BUILD_ALLOCA: {
-                        Type* t = type_table_get(&state->build->type_table, inst->type);
+                        Type* t = inst->type;
                         size_t size = type_get_size(t);
                         assert(size && "Unsupported types with size=0 for alloca");
                         size += (rsp+size+8) % 16;
@@ -196,7 +195,7 @@ void compile_nasm_x86_64_linux(CompileState* state) {
                         assert(inst->arg < ip);
                         CompileValue* ptr = &vals[inst->arg];
                         assert(ptr->kind == CVALUE_STACK_PTR);
-                        Type* t = type_table_get(&state->build->type_table, ptr->type);
+                        Type* t = ptr->type;
                         assert(t->core == CORE_I32 && "Unsupported types in iload");
                         CompileValue* result = &vals[ip];
                         *result = compile_value_alloc(state, REG_SIZE_32);

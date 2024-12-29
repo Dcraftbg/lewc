@@ -1,9 +1,9 @@
 #pragma once
-#include "type.h"
 #include "atom.h"
+typedef struct Type Type;
 typedef struct {
     Atom* name; // NULL if no name is specified
-    typeid_t typeid;
+    Type* type;
 } Arg;
 typedef struct {
     Arg *items;
@@ -11,5 +11,5 @@ typedef struct {
 } Args;
 typedef struct {
     Args input;
-    typeid_t output;
+    Type* output;
 } FuncSignature;

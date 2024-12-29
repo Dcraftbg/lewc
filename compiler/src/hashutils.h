@@ -7,3 +7,7 @@ static size_t djb2(const char *str, size_t len) {
     }
     return hash;
 }
+#include <string.h>
+static size_t djb2_cstr(const char *str) {
+    return djb2(str, strlen(str));
+}

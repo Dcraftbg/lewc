@@ -70,7 +70,7 @@ bool syn_analyse(ProgramState* state) {
         Pair_FuncMap* fpair = state->funcs.map.buckets.items[i].first;
         while(fpair) {
             Function* func = &fpair->value;
-            Type* type = type_table_get(&state->type_table, func->type);
+            Type* type = func->type;
             assert(type->core == CORE_FUNC);
             if(!(type->attribs & TYPE_ATTRIB_EXTERN)) {
                 da_push(&list, (SymTab){0});

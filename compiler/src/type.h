@@ -3,11 +3,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <string.h>
-#include "darray.h"
 #include "utils.h"
-// NOTE: func.h depends on typeid_t to be defined
-typedef size_t typeid_t;
-#include "func.h"
 enum {
     CORE_PTR,
     CORE_I8,
@@ -17,33 +13,34 @@ enum {
 enum {
     TYPE_ATTRIB_EXTERN=BIT(1),
 };
-typedef struct {
-    const char* name;
+typedef struct Type Type;
+#include "func.h"
+struct Type {
     int core;
     size_t ptr_count;
+    // TODO: Move the extern thing to func.h
     uint8_t attribs;
     union {
        bool unsign; // Is it unsigned?
        FuncSignature signature;
-       typeid_t inner_type;
+       Type* inner_type;
     };
-} Type;
-typedef struct {
-    Type *items;
-    size_t len, cap;
-} TypeTable;
-enum {
-    BUILTIN_U8,
-    BUILTIN_I32,
-
-
-    BUILTIN_COUNT,
 };
-
-#define INVALID_TYPEID ((typeid_t)-1L)
-typeid_t type_table_get_by_name(TypeTable* t, const char* name);
-Type* type_table_get(TypeTable* t, typeid_t id);
-typeid_t type_table_create(TypeTable* t, Type type);
+#ifdef TYPE_TABLE_DEFINE
+#   define HASHMAP_DEFINE
+#endif
+#include "hashmap.h"
+#define TYPE_TABLE_ALLOC(n) malloc(n)
+#define TYPE_TABLE_DEALLOC(ptr, size) free(ptr)
+#define cstr_eq(a, b) (strcmp(a, b) == 0)
+MAKE_HASHMAP_EX(TypeTable, type_table, Type*, const char*, djb2_cstr, cstr_eq, TYPE_TABLE_ALLOC, TYPE_TABLE_DEALLOC);
+#ifdef TYPE_TABLE_DEFINE
+#   undef HASHMAP_DEFINE
+#endif
+extern Type type_u8;
+extern Type type_i32;
 void type_table_move(TypeTable* into, TypeTable* from);
 void type_table_init(TypeTable* t);
 size_t type_get_size(Type* type);
+#include "arena.h"
+Type* type_new(Arena* arena);

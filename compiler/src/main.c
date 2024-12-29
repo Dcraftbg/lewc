@@ -33,7 +33,7 @@ const char* shift_args(int *argc, const char ***argv) {
 BuildOptions build_options = { 0 };
 #define UPRINTF(...) fprintf(stderr, __VA_ARGS__)
 void usage() {
-    UPRINTF("Usage %s:\n",build_options.exe);
+    UPRINTF("Usage %s:\n", build_options.exe);
     UPRINTF(" -o <path>             - Specify output path\n");
     UPRINTF(" <path>                - Specify input path\n");
     UPRINTF(" --arch=<arch>         - Specify output architecture\n");

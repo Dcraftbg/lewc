@@ -1,5 +1,6 @@
 #define FUNC_MAP_DEFINE
 #include "parser.h"
+#include "darray.h"
 
 Scope* new_scope(Arena* arena, Scope* parent, int kind) {
     Scope* s = arena_alloc(arena, sizeof(*s));
@@ -14,7 +15,7 @@ Scope* funcs_find(Funcs* funcs, Atom* name) {
     if((func=func_map_get(&funcs->map, name))) return func->scope;
     return NULL;
 }
-void funcs_insert(Funcs* funcs, Atom* name, typeid_t id, Scope* scope) {
+void funcs_insert(Funcs* funcs, Atom* name, Type* id, Scope* scope) {
     assert(func_map_insert(&funcs->map, name, (Function){id, scope}));
 }
 void parser_create(Parser* this, Lexer* lexer, Arena* arena, ProgramState* state) {
@@ -25,7 +26,7 @@ void parser_create(Parser* this, Lexer* lexer, Arena* arena, ProgramState* state
     this->state = state;
     // scope_init(&this->global);
 }
-typeid_t parse_type(Parser* parser) {
+Type* parse_type(Parser* parser) {
     // TODO: Pointers
     Token t = {0};
     t = lexer_next(parser->lexer);
@@ -38,18 +39,17 @@ typeid_t parse_type(Parser* parser) {
         eprintfln("ERROR:%s: Expected name of type but got: %s", tloc(t), tdisplay(t));
         exit(1);
     }
-    typeid_t id = type_table_get_by_name(&parser->state->type_table, t.atom->data);
-    if(id == INVALID_TYPEID) {
+    Type* id = *type_table_get(&parser->state->type_table, t.atom->data);
+    if(!id) {
         eprintfln("ERROR:%s: Unknown type name: %s", tloc(t), t.atom->data);
         exit(1);
     }
     if(ptr_count) {
-        Type t = {
-            .core = CORE_PTR,
-            .ptr_count = ptr_count,
-            .inner_type = id
-        };
-        return type_table_create(&parser->state->type_table, t);
+        Type* ptr = type_new(parser->arena);
+        ptr->core = CORE_PTR;
+        ptr->ptr_count = ptr_count;
+        ptr->inner_type = id;
+        return ptr;
     }
     return id;
 }
@@ -72,8 +72,8 @@ void parse_func_signature(Parser* parser, FuncSignature* sig) {
             eprintfln("ERROR:%s: Expected ':' before argument type but found: %s", tloc(t), tdisplay(t));
             exit(1);
         }
-        typeid_t typeid = parse_type(parser);
-        if(typeid == INVALID_TYPEID) {
+        Type* typeid = parse_type(parser);
+        if(!typeid) {
             eprintfln("ERROR:%s: Invalid type in signature", tloc(t));
             exit(1);
         }
@@ -92,11 +92,11 @@ void parse_func_signature(Parser* parser, FuncSignature* sig) {
         eprintfln("ERROR:%s: Expected ')' but found %s in function signature",tloc(t),tdisplay(t));
         exit(1);
     }
-    sig->output = INVALID_TYPEID;
+    sig->output = NULL;
     if(lexer_peak_next(parser->lexer).kind == TOKEN_ARROW) {
         lexer_eat(parser->lexer, 1);
         sig->output = parse_type(parser);
-        if(sig->output == INVALID_TYPEID) {
+        if(!sig->output) {
             eprintfln("ERROR:%s: Invalid return type",tloc(t));
             exit(1);
         }
@@ -277,15 +277,14 @@ void parse(Parser* parser, Lexer* lexer, Arena* arena) {
                     exit(1);
                 }
 
-                Type functype={0};
-                functype.core    = CORE_FUNC;
-                functype.attribs = TYPE_ATTRIB_EXTERN;
-                parse_func_signature(parser, &functype.signature);
+                Type* fid = type_new(parser->arena);
+                fid->core    = CORE_FUNC;
+                fid->attribs = TYPE_ATTRIB_EXTERN;
+                parse_func_signature(parser, &fid->signature);
                 if(parser->head->parent != NULL) {
                     eprintfln("ERROR:%s: Nested function definitions are not yet implemented", tloc(t));
                     exit(1);
                 }
-                typeid_t fid = type_table_create(&parser->state->type_table, functype);
                 funcs_insert(&parser->state->funcs, name, fid, NULL);
             } else {
                 eprintfln("ERROR:%s: Expected signature of external function to follow the syntax:", tloc(t));
@@ -297,10 +296,10 @@ void parse(Parser* parser, Lexer* lexer, Arena* arena) {
             if(lexer_peak(parser->lexer, 1).kind == ':' && lexer_peak(parser->lexer, 2).kind == ':' && lexer_peak(parser->lexer, 3).kind == '(') {
                 Atom* name = t.atom;
                 lexer_eat(parser->lexer, 3);
-                Type functype={0};
-                functype.core = CORE_FUNC;
+                Type* fid = type_new(parser->arena);
+                fid->core = CORE_FUNC;
 
-                parse_func_signature(parser, &functype.signature);
+                parse_func_signature(parser, &fid->signature);
                 if(parser->head->parent != NULL) {
                     eprintfln("ERROR:%s: Nested function definitions are not yet implemented", tloc(t));
                     exit(1);
@@ -309,7 +308,6 @@ void parse(Parser* parser, Lexer* lexer, Arena* arena) {
                     eprintfln("ERROR:%s: Missing '{' at the start of function. Got: %s", tloc(t), tdisplay(t));
                     exit(1);
                 }
-                typeid_t fid = type_table_create(&parser->state->type_table, functype);
                 Scope* s = new_scope(parser->arena, parser->head, SCOPE_FUNC);
                 parser->head = s;
                 parse_func_body(parser, s);

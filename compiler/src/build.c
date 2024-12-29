@@ -1,4 +1,5 @@
 #include "build.h"
+#include "darray.h"
 
 #define state_add_return(state, id) build_add_return((state)->build, (state)->fid, (state)->head, id)
 #define state_add_int_add(state, v0, v1) build_add_int_add((state)->build, (state)->fid, (state)->head, v0, v1) 
@@ -34,7 +35,7 @@ static BuildSymbol* state_lookup_symbol(BuildState* state, Atom* symbol)  {
     BuildFunc* func = &state->build->funcs.items[state->fid];
     return build_symbol_table_lookup(&func->local_table, symbol);
 }
-size_t build_add_func(Build* build, Atom* name, typeid_t type) {
+size_t build_add_func(Build* build, Atom* name, Type* type) {
     da_reserve(&build->funcs, 1);
     size_t id = build->funcs.len++;
     memset(&build->funcs.items[id], 0, sizeof(build->funcs.items[id]));
@@ -63,7 +64,7 @@ static size_t build_add_global(Build* build, BuildGlobal global) {
     return id;
 }
 #define build_get_global(build, id) &build->globals.items[id]
-size_t build_add_global_arr(Build* build, typeid_t typeid, void* data, size_t len) {
+size_t build_add_global_arr(Build* build, Type* typeid, void* data, size_t len) {
     return build_add_global(build, (BuildGlobal){.kind=GLOBAL_ARRAY, .array={.typeid=typeid, .data=data, .len=len}});
 }
 size_t build_add_inst(Build* build, size_t fid, size_t head, BuildInst inst) {
@@ -111,7 +112,7 @@ size_t build_add_load_arg(Build* build, size_t fid, size_t head, size_t arg) {
     inst.arg = arg;
     return build_add_inst(build, fid, head, inst);
 }
-size_t build_add_alloca(Build* build, size_t fid, size_t head, typeid_t typeid) {
+size_t build_add_alloca(Build* build, size_t fid, size_t head, Type* typeid) {
     BuildInst inst = {0};
     inst.kind = BUILD_ALLOCA;
     inst.type = typeid;
@@ -132,7 +133,7 @@ size_t build_add_directcall(Build* build, size_t fid, size_t head, size_t what, 
     inst.directcall.args = args;
     return build_add_inst(build, fid, head, inst);
 }
-size_t build_add_const_int(Build* build, size_t fid, size_t head, typeid_t type, uint64_t value) {
+size_t build_add_const_int(Build* build, size_t fid, size_t head, Type* type, uint64_t value) {
     BuildInst inst = {0};
     inst.kind = BUILD_CONST_INT;
     inst.integer.type  = type;
@@ -177,11 +178,11 @@ size_t build_ast(BuildState* state, AST* ast) {
         }
     } break;
     case AST_C_STR: {
-        size_t globalid = state_add_global_arr(state, BUILTIN_U8, (void*)ast->as.str.str, ast->as.str.len+1);
+        size_t globalid = state_add_global_arr(state, &type_u8, (void*)ast->as.str.str, ast->as.str.len+1);
         return state_add_get_addr_of(state, globalid);
     } break;
     case AST_INT: {
-        return state_add_const_int(state, BUILTIN_I32, ast->as.integer.value);
+        return state_add_const_int(state, &type_i32, ast->as.integer.value);
     } break;
     default:
         eprintfln("Unsupported ast->kind in build_aststate->: %d\n",ast->kind);
@@ -207,17 +208,16 @@ void build_build(Build* build, ProgramState* pstate) {
         while(fpair) {
             Atom* name = fpair->key;
             Scope* scope = fpair->value.scope;
-            typeid_t typeid = fpair->value.type;
+            Type* type = fpair->value.type;
             (void)scope;
-            Type* type = type_table_get(&build->type_table, typeid);
             assert(type->core == CORE_FUNC);
             state.fid = build_get_funcid_by_name(build, name);
             if(!(type->attribs & TYPE_ATTRIB_EXTERN)) {
                 state.head = build_add_block(build, state.fid);
                 for(size_t j=0; j < type->signature.input.len; ++j) {
                     if(type->signature.input.items[j].name) {
-                        Type* argt = type_table_get(&build->type_table, type->signature.input.items[j].typeid);
-                        size_t alloca = state_add_alloca(&state, type->signature.input.items[j].typeid);
+                        Type* argt = type->signature.input.items[j].type;
+                        size_t alloca = state_add_alloca(&state, type->signature.input.items[j].type);
 
                         switch(argt->core) {
                         case CORE_I32:

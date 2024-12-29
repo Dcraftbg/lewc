@@ -25,10 +25,10 @@ typedef struct {
             size_t v0, v1; // ID's of Instructions
         };
         struct {
-            typeid_t type;
+            Type* type;
         };
         struct {
-            typeid_t type;
+            Type* type;
             Atom* name;
         } func;
         struct {
@@ -39,7 +39,7 @@ typedef struct {
             BuildCallArgs args;
         } directcall;
         struct {
-            typeid_t type;
+            Type* type;
             uint64_t value;
         } integer;
     };
@@ -72,7 +72,7 @@ enum {
 typedef struct {
     uint8_t kind;
     union {
-        struct { typeid_t typeid; void* data; size_t len; } array;
+        struct { Type* typeid; void* data; size_t len; } array;
     };
 } BuildGlobal;
 typedef struct {
@@ -83,7 +83,7 @@ typedef struct {
     } blocks;
     BuildSymbolTable local_table;
     Atom* name;
-    typeid_t typeid;
+    Type* typeid;
 } BuildFunc;
 typedef struct {
     struct {

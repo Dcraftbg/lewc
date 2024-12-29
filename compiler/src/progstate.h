@@ -27,7 +27,7 @@ typedef struct Scope {
     Statements statements;
 } Scope;
 typedef struct {
-    typeid_t type;
+    Type* type;
     Scope* scope;
 } Function;
 #ifdef FUNC_MAP_DEFINE
