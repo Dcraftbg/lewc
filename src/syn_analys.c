@@ -59,15 +59,15 @@ bool syn_analyse(ProgramState* state) {
     SymTabList list={0};
     da_push(&list, (SymTab){0});
 
-    for(size_t i = 0; i < state->funcs.map.buckets.len; ++i) {
-        Pair_FuncMap* fpair = state->funcs.map.buckets.items[i].first;
+    for(size_t i = 0; i < state->funcs.buckets.len; ++i) {
+        Pair_FuncMap* fpair = state->funcs.buckets.items[i].first;
         while(fpair) {
             sym_tab_insert(&list.items[list.len-1], fpair->key, false);
             fpair = fpair->next; 
         }
     }
-    for(size_t i = 0; i < state->funcs.map.buckets.len; ++i) {
-        Pair_FuncMap* fpair = state->funcs.map.buckets.items[i].first;
+    for(size_t i = 0; i < state->funcs.buckets.len; ++i) {
+        Pair_FuncMap* fpair = state->funcs.buckets.items[i].first;
         while(fpair) {
             Function* func = &fpair->value;
             Type* type = func->type;

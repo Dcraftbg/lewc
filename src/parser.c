@@ -10,13 +10,13 @@ Scope* new_scope(Arena* arena, Scope* parent, int kind) {
     s->kind = kind;
     return s;
 }
-Scope* funcs_find(Funcs* funcs, Atom* name) {
+Scope* funcs_find(FuncMap* funcs, Atom* name) {
     Function* func;
-    if((func=func_map_get(&funcs->map, name))) return func->scope;
+    if((func=func_map_get(funcs, name))) return func->scope;
     return NULL;
 }
-void funcs_insert(Funcs* funcs, Atom* name, Type* id, Scope* scope) {
-    assert(func_map_insert(&funcs->map, name, (Function){id, scope}));
+void funcs_insert(FuncMap* funcs, Atom* name, Type* id, Scope* scope) {
+    assert(func_map_insert(funcs, name, (Function){id, scope}));
 }
 void parser_create(Parser* this, Lexer* lexer, Arena* arena, ProgramState* state) {
     memset(this, 0, sizeof(*this));
