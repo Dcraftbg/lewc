@@ -1,21 +1,21 @@
-./bin/lewc examples/sum.prot -o ./int/tests/sum.nasm
+./bin/lewc examples/sum.lew -o ./int/tests/sum.nasm
 nasm -f elf64 ./int/tests/sum.nasm -o ./int/tests/sum.o
 gcc ./examples/sum.c ./int/tests/sum.o -o ./bin/tests/sum
 ./bin/tests/sum
 
-./bin/lewc examples/hello.prot -o ./int/tests/hello.nasm
+./bin/lewc examples/hello.lew -o ./int/tests/hello.nasm
 nasm -f elf64 ./int/tests/hello.nasm -o ./int/tests/hello.o
 gcc -static ./int/tests/hello.o -o ./bin/tests/hello
 ./bin/tests/hello
 
-./bin/lewc examples/func_calls.prot -o ./int/tests/func_calls.nasm
+./bin/lewc examples/func_calls.lew -o ./int/tests/func_calls.nasm
 nasm -f elf64 ./int/tests/func_calls.nasm -o ./int/tests/func_calls.o
 gcc -static ./int/tests/func_calls.o -o ./bin/tests/func_calls
 ./bin/tests/func_calls
 
-./bin/lewc examples/int_literals.prot -o ./int/tests/int_literals.nasm
+./bin/lewc examples/int_literals.lew -o ./int/tests/int_literals.nasm
 nasm -f elf64 ./int/tests/int_literals.nasm -o ./int/tests/int_literals.o
 gcc ./examples/int_literals.c ./int/tests/int_literals.o -o ./bin/tests/int_literals
 ./bin/tests/int_literals
 
-./bin/lewc examples/syntactical.prot -o ./int/tests/syntactical.nasm
+./bin/lewc examples/syntactical.lew -o ./int/tests/syntactical.nasm

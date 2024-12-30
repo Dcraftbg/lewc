@@ -1,6 +1,6 @@
 :i count 21
-:b shell 52
-./bin/lewc examples/sum.prot -o ./int/tests/sum.nasm
+:b shell 51
+./bin/lewc examples/sum.lew -o ./int/tests/sum.nasm
 :i returncode 0
 :b stdout 0
 
@@ -35,8 +35,8 @@ sum(4,5) => 9
 
 :b stderr 0
 
-:b shell 56
-./bin/lewc examples/hello.prot -o ./int/tests/hello.nasm
+:b shell 55
+./bin/lewc examples/hello.lew -o ./int/tests/hello.nasm
 :i returncode 0
 :b stdout 0
 
@@ -71,8 +71,8 @@ Hello World!
 
 :b stderr 0
 
-:b shell 66
-./bin/lewc examples/func_calls.prot -o ./int/tests/func_calls.nasm
+:b shell 65
+./bin/lewc examples/func_calls.lew -o ./int/tests/func_calls.nasm
 :i returncode 0
 :b stdout 0
 
@@ -107,8 +107,8 @@ Hello World!
 
 :b stderr 0
 
-:b shell 70
-./bin/lewc examples/int_literals.prot -o ./int/tests/int_literals.nasm
+:b shell 69
+./bin/lewc examples/int_literals.lew -o ./int/tests/int_literals.nasm
 :i returncode 0
 :b stdout 0
 
@@ -143,8 +143,8 @@ get_five() = 5
 
 :b stderr 0
 
-:b shell 68
-./bin/lewc examples/syntactical.prot -o ./int/tests/syntactical.nasm
+:b shell 67
+./bin/lewc examples/syntactical.lew -o ./int/tests/syntactical.nasm
 :i returncode 1
 :b stdout 0
 
