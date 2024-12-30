@@ -50,7 +50,7 @@ bool nob_mkdir_if_not_exists_silent(const char *path) {
 bool make_build_dirs() {
     if(!nob_mkdir_if_not_exists_silent("./bin"         )) return false;
     if(!nob_mkdir_if_not_exists_silent("./int"         )) return false;
-    if(!nob_mkdir_if_not_exists_silent("./int/compiler")) return false;
+    if(!nob_mkdir_if_not_exists_silent("./int/lewc")) return false;
     if(!nob_mkdir_if_not_exists_silent("./int/testsys" )) return false;
     return true;
 }
@@ -189,9 +189,9 @@ defer:
 static bool build_dir(const char* rootdir, const char* build_dir, bool forced) {
    return _build_dir(rootdir, build_dir, rootdir, forced);
 }
-bool build_compiler(bool forced) {
-    if(!build_dir("./compiler/src"  , "./int/compiler", forced)) return false;
-    nob_log(NOB_INFO, "Built compiler successfully");
+bool build_lewc(bool forced) {
+    if(!build_dir("./src"  , "./int/lewc", forced)) return false;
+    nob_log(NOB_INFO, "Built lewc successfully");
     return true;
 }
 
@@ -264,18 +264,18 @@ bool ld(Nob_File_Paths* paths, const char* opath) {
     nob_log(NOB_INFO, "Linked %s successfully", opath);
     return true;
 }
-bool link_compiler() {
-    nob_log(NOB_INFO, "Linking compiler");
+bool link_lewc() {
+    nob_log(NOB_INFO, "Linking lewc");
     Nob_File_Paths paths = {0};
-    if(!find_objs("./int/compiler",&paths)) {
+    if(!find_objs("./int/lewc",&paths)) {
         return false;
     }
-    if(!ld(&paths, "./bin/compiler")) {
+    if(!ld(&paths, "./bin/lewc")) {
         nob_da_free(paths);
         return false;
     }
     nob_da_free(paths);
-    nob_log(NOB_INFO, "Linked compiler successfully");
+    nob_log(NOB_INFO, "Linked lewc successfully");
     return true;
 }
 
@@ -312,9 +312,9 @@ bool test(Build* build);
 
 Cmd commands[] = {
    { .name = "help"       , .run=help       , .desc="Help command that explains either what a specific subcommand does or lists all subcommands" },
-   { .name = "build"      , .run=build      , .desc="Build to compiler" },
-   { .name = "run"        , .run=run        , .desc="Run the compiler" },
-   { .name = "bruh"       , .run=bruh       , .desc="Build+Run the compiler" },
+   { .name = "build"      , .run=build      , .desc="Build to lewc" },
+   { .name = "run"        , .run=run        , .desc="Run the lewc" },
+   { .name = "bruh"       , .run=bruh       , .desc="Build+Run the lewc" },
    { .name = "test"       , .run=test       , .desc="Run test suite or test command" },
 };
 
@@ -344,15 +344,15 @@ bool build(Build* build) {
         forced = true;
         shift_args(&build->argc, &build->argv);
     }
-    if(!build_compiler(forced)) return false;
-    if(!link_compiler()) return false;
+    if(!build_lewc(forced)) return false;
+    if(!link_lewc()) return false;
     return true;
 }
 bool run(Build* build) {
     Nob_Cmd cmd = {0};
     nob_cmd_append(
         &cmd,
-        "./bin/compiler"
+        "./bin/lewc"
     );
     nob_da_append_many(&cmd, build->argv, build->argc);
     if (!nob_cmd_run_sync(cmd)) {
