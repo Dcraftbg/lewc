@@ -41,6 +41,7 @@ bool syn_analyse_ast(SymTabNode* node, AST* ast) {
         }
         break;
     case AST_SET:
+        // TODO: Make sure this isn't a function we're trying to assign to
         // For = --------------------
         // Or pointer when dereferencing
         if(ast->as.binop.lhs->kind != AST_SYMBOL) {
@@ -83,7 +84,7 @@ bool syn_analyse(ProgramState* state) {
             Type* type = func->type;
             assert(type->core == CORE_FUNC);
             if(!(type->attribs & TYPE_ATTRIB_EXTERN)) {
-                node = symtab_node_new(node, state->arena);
+                func->symtab_node = node = symtab_node_new(node, state->arena);
                 for(size_t j=0; j < type->signature.input.len; ++j) {
                     if(type->signature.input.items[j].name) {
                         sym_tab_insert(&node->symtab, type->signature.input.items[j].name, symbol_new(state->arena, type->signature.input.items[j].type));

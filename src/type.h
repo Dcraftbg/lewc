@@ -4,6 +4,7 @@
 #include <stddef.h>
 #include <string.h>
 #include "utils.h"
+// TODO: A way to dump a type
 enum {
     CORE_PTR,
     CORE_I8,
@@ -26,6 +27,12 @@ struct Type {
        Type* inner_type;
     };
 };
+static bool type_eq(Type* a, Type* b) {
+    if(a == NULL && b == NULL) return true;
+    if(a->core != b->core || a->ptr_count != b->ptr_count) return false;
+    if(a->core == CORE_PTR) return type_eq(a->inner_type, b->inner_type);
+    return true;
+}
 #ifdef TYPE_TABLE_DEFINE
 #   define HASHMAP_DEFINE
 #endif
@@ -39,8 +46,11 @@ MAKE_HASHMAP_EX(TypeTable, type_table, Type*, const char*, djb2_cstr, cstr_eq, T
 #endif
 extern Type type_u8;
 extern Type type_i32;
+Type* type_ptr(Arena* arena, Type* to, size_t ptr_count);
 void type_table_move(TypeTable* into, TypeTable* from);
 void type_table_init(TypeTable* t);
 size_t type_get_size(Type* type);
 #include "arena.h"
 Type* type_new(Arena* arena);
+bool type_isbinary(Type* t);
+void type_dump(FILE* f, Type* t);

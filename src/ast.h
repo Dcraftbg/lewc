@@ -16,8 +16,10 @@ typedef struct {
     size_t len;
     size_t cap;
 } CallArgs;
+typedef struct Type Type;
 struct AST {
     int kind;
+    Type* type;
     union {
         struct { AST *lhs, *rhs; } binop;
         struct { AST *what; CallArgs args; } call;

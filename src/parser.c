@@ -44,13 +44,7 @@ Type* parse_type(Parser* parser) {
         eprintfln("ERROR:%s: Unknown type name: %s", tloc(t), t.atom->data);
         exit(1);
     }
-    if(ptr_count) {
-        Type* ptr = type_new(parser->arena);
-        ptr->core = CORE_PTR;
-        ptr->ptr_count = ptr_count;
-        ptr->inner_type = id;
-        return ptr;
-    }
+    if(ptr_count) return type_ptr(parser->arena, id, ptr_count);
     return id;
 }
 void parse_func_signature(Parser* parser, FuncSignature* sig) {

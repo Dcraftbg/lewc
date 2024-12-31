@@ -6,6 +6,9 @@
 #include "type.h"
 
 typedef struct SymTabNode SymTabNode;
+// TODO: Keep track of the type of symbol.
+// i.e. Function, variable etc.
+// And checks for trying to assign to a function and so on
 typedef struct {
     Type* type;
 } Symbol;
@@ -27,4 +30,6 @@ struct SymTabNode {
     size_t   len, cap;
 };
 typedef struct ProgramState ProgramState;
+
+Symbol* stl_lookup(SymTabNode* node, Atom* a);
 bool syn_analyse(ProgramState* state);
