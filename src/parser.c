@@ -99,15 +99,12 @@ void parse_func_signature(Parser* parser, FuncSignature* sig) {
 AST* parse_basic(Parser* parser) {
     Token t = lexer_next(parser->lexer);
     switch(t.kind) {
-    case TOKEN_ATOM: {
+    case TOKEN_ATOM:
         return ast_new_symbol(parser->arena, t.atom);
-    } break;
-    case TOKEN_C_STR: {
+    case TOKEN_C_STR:
         return ast_new_cstr(parser->arena, t.str, t.str_len); 
-    } break;
-    case TOKEN_INT: {
+    case TOKEN_INT:
         return ast_new_int(parser->arena, t.integer.value); 
-    } break;
     default:
         eprintfln("ERROR:%s: Unexpected token in expression: %s", tloc(t),tdisplay(t));
         exit(1);
@@ -127,41 +124,47 @@ int op_prec(int op) {
         return -1;
     }
 }
+
+AST* parse_ast(Parser* parser);
+AST* parse_astcall(Parser* parser, AST* what) {
+    Token t;
+    if((t=lexer_next(parser->lexer)).kind != '(') {
+        eprintfln("ERROR:%s: Expected '(' but found %s in function call", tloc(t), tdisplay(t));
+        exit(1);
+    }
+    CallArgs args = {0};
+    for(;;) {
+        t = lexer_peak_next(parser->lexer);
+        if(t.kind == ')') break;
+        AST* value = parse_ast(parser);
+        if(!value) {
+            call_args_dealloc(&args);
+            return NULL;
+        }
+        da_push(&args, value);
+        t = lexer_peak_next(parser->lexer);
+        if(t.kind == ')') {
+            break;
+        } else if (t.kind == ',') {
+            lexer_eat(parser->lexer, 1);
+        } else {
+            eprintfln("ERROR: %s: Expected ')' or ',' but found %s in function call", tloc(t), tdisplay(t));
+            exit(1);
+        }
+    } 
+    if((t=lexer_next(parser->lexer)).kind != ')') {
+        eprintfln("ERROR:%s: Expected ')' but found %s in function call",tloc(t),tdisplay(t));
+        exit(1);
+    }
+    return ast_new_call(parser->arena, what, args);
+}
 AST* parse_ast(Parser* parser) {
     AST* v = parse_basic(parser);
     if(!v) return NULL;
     Token t = lexer_peak_next(parser->lexer);
     switch(t.kind) {
     case '(': {
-        if((t=lexer_next(parser->lexer)).kind != '(') {
-            eprintfln("ERROR:%s: Expected '(' but found %s in function call", tloc(t), tdisplay(t));
-            exit(1);
-        }
-        CallArgs args = {0};
-        for(;;) {
-            t = lexer_peak_next(parser->lexer);
-            if(t.kind == ')') break;
-            AST* value = parse_ast(parser);
-            if(!value) {
-                call_args_dealloc(&args);
-                return NULL;
-            }
-            da_push(&args, value);
-            t = lexer_peak_next(parser->lexer);
-            if(t.kind == ')') {
-                break;
-            } else if (t.kind == ',') {
-                lexer_eat(parser->lexer, 1);
-            } else {
-                eprintfln("ERROR: %s: Expected ')' or ',' but found %s in function call", tloc(t), tdisplay(t));
-                exit(1);
-            }
-        } 
-        if((t=lexer_next(parser->lexer)).kind != ')') {
-            eprintfln("ERROR:%s: Expected ')' but found %s in function call",tloc(t),tdisplay(t));
-            exit(1);
-        }
-        return ast_new_call(parser->arena, v, args);
+        return parse_astcall(parser, v);
     } break;
     #define X(op) case op:
     OPS
@@ -174,6 +177,8 @@ AST* parse_ast(Parser* parser) {
         if(!v2) return NULL;
         t = lexer_peak_next(parser->lexer);
         switch(t.kind) {
+        case '(':
+            return ast_new_binop(parser->arena, op, v, parse_astcall(parser, v2));
         #define X(op) case op:
         OPS 
         #undef X
