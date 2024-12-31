@@ -2,7 +2,12 @@
 #include <stdio.h>
 #include "buildoptions.h"
 #include "arena.h"
-
+typedef enum {
+    BACKEND_UNDEFINED=0,
+    BACKEND_QBE,
+    
+    BACKEND_COUNT
+} Backend;
 typedef enum {
     OUTPUT_UNDEFINED=0,
     OUTPUT_GAS,
@@ -27,8 +32,10 @@ typedef struct {
     OutputKind outputKind;
     Architecture arch;
     Platform platform;
+    Backend backend;
 } Target;
 
 const char* outputkind_str(OutputKind kind);
 const char* arch_str(Architecture kind);
 const char* platform_str(Platform kind);
+const char* backend_str(Backend backend);

@@ -1,6 +1,17 @@
 #include "compile.h"
 #include "assert.h"
 #include "utils.h"
+
+static_assert(BACKEND_COUNT == 2, "Update backend_map");
+const char* backend_map[BACKEND_COUNT] = {
+    [BACKEND_UNDEFINED] = "Undefined",
+    [BACKEND_QBE] = "qbe" 
+};
+const char* backend_str(Backend backend) {
+    assert(backend >= 0 && backend < ARRAY_LEN(backend_map));
+    return backend_map[backend];
+}
+
 static_assert(OUTPUT_COUNT == 2, "Update outputkind_map");
 const char* outputkind_map[OUTPUT_COUNT] = {
     "Undefined",
