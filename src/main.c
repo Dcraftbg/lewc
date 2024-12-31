@@ -53,10 +53,12 @@ static Platform default_platform =
 ;
 // TODO: Default arch detection
 static const Architecture default_arch = ARCH_X86_64;
+static const Backend default_backend = BACKEND_QBE;
 int main(int argc, const char** argv) {
     Target target={0};
     target.platform = default_platform;
-    target.arch = default_arch;
+    target.arch     = default_arch;
+    target.backend  = default_backend;
 
     build_options.exe = shift_args(&argc, &argv);
     assert(build_options.exe);
