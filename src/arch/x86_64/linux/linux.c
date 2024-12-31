@@ -114,18 +114,26 @@ void compile_nasm_x86_64_linux(CompileState* state) {
                                 nprintfln("   lea %s, [%s+%s]", nasm_gpr_to_str(result->reg, result->regsize), nasm_gpr_to_str(v0->reg, REG_SIZE_64), nasm_gpr_to_str(v1->reg, REG_SIZE_64));
                             } break;
                             case CVALUE_CONST_INT: {
-                                *result = compile_value_alloc(state, v0->regsize);
-                                assert(result->kind == CVALUE_REGISTER);
-                                nprintfln("   lea %s, [%s+%lu]", nasm_gpr_to_str(result->reg, result->regsize), nasm_gpr_to_str(v0->reg, REG_SIZE_64), v1->integer.value);
+                                if(v1->integer.value) {
+                                    *result = compile_value_alloc(state, v0->regsize);
+                                    assert(result->kind == CVALUE_REGISTER);
+                                    nprintfln("   lea %s, [%s+%lu]", nasm_gpr_to_str(result->reg, result->regsize), nasm_gpr_to_str(v0->reg, REG_SIZE_64), v1->integer.value);
+                                } else {
+                                    *result = *v0;
+                                }
                             } break;
                             }
                         } break;
                         case CVALUE_CONST_INT: {
                             switch(v1->kind) {
                             case CVALUE_REGISTER: {
-                                *result = compile_value_alloc(state, v0->regsize);
-                                assert(result->kind == CVALUE_REGISTER);
-                                nprintfln("   lea %s, [%s+%lu]", nasm_gpr_to_str(result->reg, result->regsize), nasm_gpr_to_str(v1->reg, REG_SIZE_64), v0->integer.value);
+                                if(v0->integer.value) {
+                                    *result = compile_value_alloc(state, v1->regsize);
+                                    assert(result->kind == CVALUE_REGISTER);
+                                    nprintfln("   lea %s, [%s+%lu]", nasm_gpr_to_str(result->reg, result->regsize), nasm_gpr_to_str(v1->reg, REG_SIZE_64), v0->integer.value);
+                                } else {
+                                    *result = *v1;
+                                }
                             } break;
                             case CVALUE_CONST_INT: {
                                 result->kind = CVALUE_CONST_INT;
@@ -158,8 +166,7 @@ void compile_nasm_x86_64_linux(CompileState* state) {
                             break;
                         case CVALUE_CONST_INT:
                             if(arg->integer.type == &type_i32) {
-                                // FIXME: Wtf?
-                                value.regsize = REG_SIZE_64;
+                                value.regsize = REG_SIZE_32;
                             } else {
                                 eprintfln("Invalid const int return with typeid=%p", arg->integer.type);
                                 exit(1);
@@ -257,6 +264,11 @@ void compile_nasm_x86_64_linux(CompileState* state) {
                             assert(i < ARRAY_LEN(LINUX_GPR_ARGS));
                             if(!nasm_gpr_is_free(&state->regs, LINUX_GPR_ARGS[i])) nprintfln("   pop %s", nasm_gpr_to_str(LINUX_GPR_ARGS[i], REG_SIZE_64));
                         }
+
+                        // TODO: Assumes result returns i32
+                        CompileValue* result = &vals[ip];
+                        result->reg = REG_A;
+                        result->regsize = REG_SIZE_32;
                     } break;
                     default:
                         eprintfln("Unhandled instruction %d", inst->kind);
