@@ -7,17 +7,16 @@ bool typecheck_ast(ProgramState* state, SymTabNode* node, AST* ast) {
         if(!typecheck_ast(state, node, ast->as.call.what)) return false;
         Type *t = ast->as.call.what->type;
         if(t->core != CORE_FUNC) {
-            eprintfln("ERROR: Tried to call something that is not a function");
+            eprintf("ERROR: Tried to call something that is not a function ("); type_dump(stderr, t); eprintfln(")");
             return false;
         }
         if(ast->as.call.args.len < t->signature.input.len) {
             eprintfln("ERROR: Too few argument in function call.");
-            return false;
+            goto arg_size_mismatch;
         }
         if(ast->as.call.args.len > t->signature.input.len) {
             eprintfln("ERROR: Too many argument in function call.");
-            eprintfln("Function expects %zu arguments, but got %zu", t->signature.input.len, ast->as.call.args.len);
-            return false;
+            goto arg_size_mismatch;
         }
         ast->type = t->signature.output;
         FuncSignature* signature = &t->signature;
@@ -28,7 +27,11 @@ bool typecheck_ast(ProgramState* state, SymTabNode* node, AST* ast) {
                 return false;
             }
         }
-    } break;
+        break;
+    arg_size_mismatch:
+        eprintf("Function ");type_dump(stderr, t);eprintfln(" expects %zu arguments, but got %zu", t->signature.input.len, ast->as.call.args.len);
+        return false;
+    }
     case AST_SET:
         if(!typecheck_ast(state, node, ast->as.binop.lhs)) return false;
         if(!typecheck_ast(state, node, ast->as.binop.rhs)) return false;
@@ -44,10 +47,11 @@ bool typecheck_ast(ProgramState* state, SymTabNode* node, AST* ast) {
         ast->type = ast->as.binop.lhs->type;
         if(!type_eq(ast->as.binop.lhs->type, ast->as.binop.rhs->type)) {
             eprintfln("Trying to add two different types together with '+'");
+            type_dump(stderr, ast->as.binop.lhs->type); eprintf(" + "); type_dump(stderr, ast->as.binop.rhs->type); eprintf("\n");
             return false;
         }
         if(!type_isbinary(ast->as.binop.lhs->type)) {
-            eprintfln("ERROR: We don't support addition between nonbinary types");
+            eprintfln("ERROR: We don't support addition between nonbinary types:");
             type_dump(stderr, ast->as.binop.lhs->type); eprintf(" + "); type_dump(stderr, ast->as.binop.rhs->type); eprintf("\n");
             return false;
         }
