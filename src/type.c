@@ -26,6 +26,10 @@ void type_table_move(TypeTable* into, TypeTable* from) {
     memset(from, 0, sizeof(*from));
 }
 void type_dump(FILE* f, Type* t) {
+    if(!t) {
+        fprintf(f, "void");
+        return;
+    }
     for(size_t i = 0; i < t->ptr_count; ++i) {
         fputc('*', f);
     }
@@ -52,7 +56,7 @@ void type_dump(FILE* f, Type* t) {
         fputc(')', f);
         if(t->signature.output) {
             fprintf(f, " -> ");
-            type_dump(f, t);
+            type_dump(f, t->signature.output);
         }
     } break;
     }
