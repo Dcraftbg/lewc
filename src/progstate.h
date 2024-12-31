@@ -28,8 +28,12 @@ typedef struct Scope {
 } Scope;
 
 #include "func.h"
-typedef struct {
+#include "syn_analys.h"
+typedef struct ProgramState ProgramState;
+struct ProgramState {
     TypeTable type_table;
     Scope global;
     FuncMap funcs;
-} ProgramState;
+    SymTabNode symtab_root;
+    Arena* arena;
+};

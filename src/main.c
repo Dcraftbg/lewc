@@ -127,6 +127,7 @@ int main(int argc, const char** argv) {
     lexer_create(&lexer, build_options.ipath, &atom_table, &arena);
 
     ProgramState state = {0};
+    state.arena = &arena;
     type_table_init(&state.type_table);
     Parser parser = {0};
     parser_create(&parser, &lexer, &arena, &state);

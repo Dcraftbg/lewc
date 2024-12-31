@@ -1,31 +1,43 @@
+#define SYMTAB_DEFINE
+#include "progstate.h"
 #include "syn_analys.h"
 #include "darray.h"
 
-#define HASHMAP_DEFINE
-#include "hashmap.h"
-#define SYM_TAB_ALLOC(n) malloc(n)
-#define SYM_TAB_DEALLOC(ptr, size) free(ptr)
-// TODO: Hash set
-MAKE_HASHMAP_EX(SymTab, sym_tab, bool, Atom*, atom_hash, atom_eq, SYM_TAB_ALLOC, SYM_TAB_DEALLOC)
-#undef HASHMAP_DEFINE
 typedef struct {
     SymTab *items;
     size_t len, cap;
 } SymTabList;
-bool stl_lookup(SymTabList* list, Atom* a) {
-    for(size_t i = 0; i < list->len; ++i) {
-        if (sym_tab_get(&list->items[i], a)) return true;
+Symbol* stl_lookup(SymTabNode* node, Atom* a) {
+    while(node) {
+        Symbol** s;
+        if ((s=sym_tab_get(&node->symtab, a))) return *s;
+        node = node->parent;
     }
     return false;
 }
+static Symbol* symbol_new(Arena* arena, Type* type) {
+    Symbol* symbol = arena_alloc(arena, sizeof(*symbol));
+    assert(symbol && "Ran out of memory");
+    memset(symbol, 0, sizeof(*symbol));
+    symbol->type = type;
+    return symbol;
+}
+SymTabNode* symtab_node_new(SymTabNode* parent, Arena* arena) {
+    SymTabNode* node = arena_alloc(arena, sizeof(*node));
+    assert(node && "Ran out of memory");
+    memset(node, 0, sizeof(*node));
+    node->parent = parent;
+    da_push(parent, node);
+    return node;
+}
 // TODO: Better error messages as AST should probably store location too
-bool syn_analyse_ast(SymTabList* list, AST* ast) {
+bool syn_analyse_ast(SymTabNode* node, AST* ast) {
     static_assert(AST_KIND_COUNT == 261, "Update syn_analyse_ast");
     switch(ast->kind) {
     case AST_CALL:
-        if(!syn_analyse_ast(list, ast->as.call.what)) return false;
+        if(!syn_analyse_ast(node, ast->as.call.what)) return false;
         for(size_t i = 0; i < ast->as.call.args.len; ++i) {
-            if(!syn_analyse_ast(list, ast->as.call.args.items[i])) return false;
+            if(!syn_analyse_ast(node, ast->as.call.args.items[i])) return false;
         }
         break;
     case AST_SET:
@@ -37,11 +49,11 @@ bool syn_analyse_ast(SymTabList* list, AST* ast) {
         }
     case '+':
         // ------ For any other binop
-        if(!syn_analyse_ast(list, ast->as.binop.lhs)) return false;
-        if(!syn_analyse_ast(list, ast->as.binop.rhs)) return false;
+        if(!syn_analyse_ast(node, ast->as.binop.lhs)) return false;
+        if(!syn_analyse_ast(node, ast->as.binop.rhs)) return false;
         break;
     case AST_SYMBOL:
-        if(!stl_lookup(list, ast->as.symbol)) {
+        if(!stl_lookup(node, ast->as.symbol)) {
             eprintfln("Unknown variable or function `%s`", ast->as.symbol->data);
             return false;
         }
@@ -56,13 +68,11 @@ bool syn_analyse_ast(SymTabList* list, AST* ast) {
     return true;
 }
 bool syn_analyse(ProgramState* state) {
-    SymTabList list={0};
-    da_push(&list, (SymTab){0});
-
+    SymTabNode* node = &state->symtab_root;
     for(size_t i = 0; i < state->funcs.buckets.len; ++i) {
         Pair_FuncMap* fpair = state->funcs.buckets.items[i].first;
         while(fpair) {
-            sym_tab_insert(&list.items[list.len-1], fpair->key, false);
+            sym_tab_insert(&node->symtab, fpair->key, symbol_new(state->arena, fpair->value.type));
             fpair = fpair->next; 
         }
     }
@@ -73,10 +83,10 @@ bool syn_analyse(ProgramState* state) {
             Type* type = func->type;
             assert(type->core == CORE_FUNC);
             if(!(type->attribs & TYPE_ATTRIB_EXTERN)) {
-                da_push(&list, (SymTab){0});
+                node = symtab_node_new(node, state->arena);
                 for(size_t j=0; j < type->signature.input.len; ++j) {
                     if(type->signature.input.items[j].name) {
-                        sym_tab_insert(&list.items[list.len-1], type->signature.input.items[j].name, false);
+                        sym_tab_insert(&node->symtab, type->signature.input.items[j].name, symbol_new(state->arena, type->signature.input.items[j].type));
                     }
                 }
                 for(size_t j=0; j < func->scope->statements.len; ++j) {
@@ -84,25 +94,20 @@ bool syn_analyse(ProgramState* state) {
                     static_assert(STATEMENT_COUNT == 2, "Update syn_analyse");
                     switch(statement->kind) {
                     case STATEMENT_RETURN:
-                        if(!syn_analyse_ast(&list, statement->ast)) return false;
+                        if(!syn_analyse_ast(node, statement->ast)) return false;
                         break;
                     case STATEMENT_EVAL:
-                        if(!syn_analyse_ast(&list, statement->ast)) return false;
+                        if(!syn_analyse_ast(node, statement->ast)) return false;
                         break;
                     default:
                         eprintfln("UNHANDLED STATEMENT %d",statement->kind);
                         exit(1);
                     }
                 } 
-                sym_tab_destruct(&list.items[list.len--]);
+                node = node->parent;
             }
             fpair = fpair->next; 
         }
     }
-    while(list.len) {
-        sym_tab_destruct(&list.items[list.len--]);
-    }
-    free(list.items);
-    list.items = NULL;
     return true;
 }
