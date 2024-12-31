@@ -28,7 +28,6 @@ typedef enum {
 } Platform;
 
 typedef struct {
-    const char* opath;
     OutputKind outputKind;
     Architecture arch;
     Platform platform;

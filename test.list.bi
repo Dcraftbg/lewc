@@ -1,13 +1,13 @@
 :i count 21
-:b shell 51
-./bin/lewc examples/sum.lew -o ./int/tests/sum.nasm
+:b shell 48
+./bin/lewc examples/sum.lew -o ./int/tests/sum.s
 :i returncode 0
 :b stdout 0
 
 :b stderr 0
 
-:b shell 55
-nasm -f elf64 ./int/tests/sum.nasm -o ./int/tests/sum.o
+:b shell 41
+as ./int/tests/sum.s -o ./int/tests/sum.o
 :i returncode 0
 :b stdout 0
 
@@ -35,15 +35,15 @@ sum(4,5) => 9
 
 :b stderr 0
 
-:b shell 55
-./bin/lewc examples/hello.lew -o ./int/tests/hello.nasm
+:b shell 52
+./bin/lewc examples/hello.lew -o ./int/tests/hello.s
 :i returncode 0
 :b stdout 0
 
 :b stderr 0
 
-:b shell 59
-nasm -f elf64 ./int/tests/hello.nasm -o ./int/tests/hello.o
+:b shell 45
+as ./int/tests/hello.s -o ./int/tests/hello.o
 :i returncode 0
 :b stdout 0
 
@@ -71,15 +71,15 @@ Hello World!
 
 :b stderr 0
 
-:b shell 65
-./bin/lewc examples/func_calls.lew -o ./int/tests/func_calls.nasm
+:b shell 62
+./bin/lewc examples/func_calls.lew -o ./int/tests/func_calls.s
 :i returncode 0
 :b stdout 0
 
 :b stderr 0
 
-:b shell 69
-nasm -f elf64 ./int/tests/func_calls.nasm -o ./int/tests/func_calls.o
+:b shell 55
+as ./int/tests/func_calls.s -o ./int/tests/func_calls.o
 :i returncode 0
 :b stdout 0
 
@@ -107,15 +107,15 @@ Hello World!
 
 :b stderr 0
 
-:b shell 69
-./bin/lewc examples/int_literals.lew -o ./int/tests/int_literals.nasm
+:b shell 66
+./bin/lewc examples/int_literals.lew -o ./int/tests/int_literals.s
 :i returncode 0
 :b stdout 0
 
 :b stderr 0
 
-:b shell 73
-nasm -f elf64 ./int/tests/int_literals.nasm -o ./int/tests/int_literals.o
+:b shell 59
+as ./int/tests/int_literals.s -o ./int/tests/int_literals.o
 :i returncode 0
 :b stdout 0
 
@@ -143,8 +143,8 @@ get_five() = 5
 
 :b stderr 0
 
-:b shell 67
-./bin/lewc examples/syntactical.lew -o ./int/tests/syntactical.nasm
+:b shell 64
+./bin/lewc examples/syntactical.lew -o ./int/tests/syntactical.s
 :i returncode 1
 :b stdout 0
 
