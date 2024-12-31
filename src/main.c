@@ -21,6 +21,7 @@
 #include "progstate.h"
 #include "syn_analys.h"
 #include "typecheck.h"
+#include "build.h"
 
 const char* shift_args(int *argc, const char ***argv) {
     if((*argc) <= 0) return NULL;
@@ -76,9 +77,6 @@ int main(int argc, const char** argv) {
                 exit(1);
             }
         }
-        else if (strcmp(arg, "--experimental-windows") == 0) {
-            build_options.experimental_windows = true;
-        }
         else if ((arch=strstrip(arg, "--arch="))) {
             if(strcmp(arch, "x86_64")==0) target.arch = ARCH_X86_64;
             else {
@@ -87,8 +85,7 @@ int main(int argc, const char** argv) {
             }
         }
         else if ((platform=strstrip(arg, "--platform="))) {
-            if      (strcmp(platform, "Windows")==0) target.platform = OS_WINDOWS;
-            else if (strcmp(platform, "Linux"  )==0) target.platform = OS_LINUX;
+            if (strcmp(platform, "Linux")==0) target.platform = OS_LINUX;
             else {
                 eprintfln("ERROR: Unknown table platform: %s", platform);
                 exit(1);
@@ -114,7 +111,7 @@ int main(int argc, const char** argv) {
         usage();
         exit(1);
     }
-    const char* default_opath = "out.nasm";
+    const char* default_opath = "out.s";
     if(!build_options.opath) {
         eprintf("WARN: No output path specified, outputting to: %s\n", default_opath);
         build_options.opath = default_opath;
@@ -135,5 +132,9 @@ int main(int argc, const char** argv) {
 
     if(!syn_analyse(&state)) exit(1);
     if(!typecheck(&state)) exit(1);
+    Build build = {0};
+    build.target  = &target;
+    build.options = &build_options;
+    if(!build_build(&build, &state)) exit(1);
     lexer_cleanup(parser.lexer);
 }

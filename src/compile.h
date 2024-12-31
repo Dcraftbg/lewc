@@ -5,7 +5,7 @@
 
 typedef enum {
     OUTPUT_UNDEFINED=0,
-    OUTPUT_NASM,
+    OUTPUT_GAS,
 
     OUTPUT_COUNT
 } OutputKind;
@@ -17,7 +17,6 @@ typedef enum {
 } Architecture;
 typedef enum {
     OS_UNDEFINED=0,
-    OS_WINDOWS,
     OS_LINUX,
 
     PLATFORM_COUNT
