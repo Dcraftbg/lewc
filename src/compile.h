@@ -1,10 +1,7 @@
 #pragma once
-#include "build.h"
+#include <stdio.h>
 #include "buildoptions.h"
 #include "arena.h"
-#include "arch/x86_64/nasm.h"
-#include "arch/x86_64/windows/windows.h"
-#include "arch/x86_64/linux/linux.h"
 
 typedef enum {
     OUTPUT_UNDEFINED=0,
@@ -33,17 +30,6 @@ typedef struct {
     Platform platform;
 } Target;
 
-typedef struct CompileState {
-    Build* build;
-    Target* target;
-    BuildOptions* options;
-    FILE* f;
-    const char* srcfile;
-    Arena* arena;
-    NasmGPRegsAlloc regs;
-} CompileState;
-
 const char* outputkind_str(OutputKind kind);
 const char* arch_str(Architecture kind);
 const char* platform_str(Platform kind);
-void compile(Build* build, Target* target, Arena* arena); 

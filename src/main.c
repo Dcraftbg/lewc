@@ -16,7 +16,6 @@
 #include "type.h"
 #include "ast.h"
 #include "parser.h"
-#include "build.h"
 #include "compile.h"
 #include "strutils.h"
 #include "progstate.h"
@@ -136,13 +135,5 @@ int main(int argc, const char** argv) {
 
     if(!syn_analyse(&state)) exit(1);
     if(!typecheck(&state)) exit(1);
-    
-    Build build={0};
-    build.path = build_options.ipath;
-    build_build(&build, &state);
-
-    target.opath = build_options.opath;
-    compile(&build, &target, &arena);
-
     lexer_cleanup(parser.lexer);
 }
