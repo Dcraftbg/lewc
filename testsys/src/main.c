@@ -57,7 +57,7 @@ const char* shift_args(int *argc, const char ***argv) {
 }
 int main(int argc, const char** argv) {
     if(!make_build_dirs()) return 1;
-    if(!nob_file_exists("./bin/compiler")) {
+    if(!nob_file_exists("./bin/lewc")) {
         nob_log(NOB_ERROR, "You need to build the compiler first before running the tests. Please use `./build build`");
         return 1;
     }
