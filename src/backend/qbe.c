@@ -32,10 +32,7 @@ typedef struct {
        fputs(NEWLINE, qbe->f);\
    } while(0)
 bool dump_type_to_qbe(Qbe* qbe, Type* t) {
-    if(!t) {
-        fclose(qbe->f);
-        exit(1);
-    }
+    assert(t);
     assert(t->core != CORE_FUNC);
     switch(t->core) {
     case CORE_PTR:
