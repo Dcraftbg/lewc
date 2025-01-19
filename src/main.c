@@ -66,6 +66,7 @@ int main(int argc, const char** argv) {
     const char* arg      = NULL;
     const char* arch     = NULL;
     const char* platform = NULL;
+    const char* backend  = NULL;
     while ((arg = shift_args(&argc, &argv))) {
         if (strcmp(arg, "-o") == 0) {
             if (build_options.opath) {
@@ -90,7 +91,14 @@ int main(int argc, const char** argv) {
         else if ((platform=strstrip(arg, "--platform="))) {
             if (strcmp(platform, "Linux")==0) target.platform = OS_LINUX;
             else {
-                eprintfln("ERROR: Unknown table platform: %s", platform);
+                eprintfln("ERROR: Unknown target platform: %s", platform);
+                exit(1);
+            }
+        }
+        else if ((backend=strstrip(arg, "--backend="))) {
+            if (strcmp(backend, "qbe") == 0) target.backend = BACKEND_QBE;
+            else {
+                eprintfln("ERROR: Unknown target backend: %s", backend);
                 exit(1);
             }
         }
