@@ -1,0 +1,1 @@
+./bin/lewc examples/syntactical.lew -o ./int/tests/syntactical.s

@@ -1,0 +1,4 @@
+./bin/lewc examples/hello.lew -o ./int/tests/hello.s
+as ./int/tests/hello.s -o ./int/tests/hello.o
+gcc -static ./int/tests/hello.o -o ./bin/tests/hello
+./bin/tests/hello

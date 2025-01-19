@@ -1,0 +1,4 @@
+./bin/lewc examples/func_calls.lew -o ./int/tests/func_calls.s
+as ./int/tests/func_calls.s -o ./int/tests/func_calls.o
+gcc -static ./int/tests/func_calls.o -o ./bin/tests/func_calls
+./bin/tests/func_calls
