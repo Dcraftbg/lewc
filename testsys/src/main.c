@@ -39,6 +39,10 @@ const char* shift_args(int *argc, const char ***argv) {
 typedef struct {
     Nob_Fd read, write;
 } Nob_Pipe;
+// FIXME: This leaks on child process:
+//  either read for stdout/stderr
+//  or    write for stdin
+// Its fine. Most programs don't have anything against it and the system *should* automatically clean it up
 bool nob_pipe_create(Nob_Pipe* result) {
 #ifdef _WIN32
 #   error Nob_Pipe isnt supported on Windows
@@ -52,6 +56,14 @@ bool nob_pipe_create(Nob_Pipe* result) {
     result->write = pipes[1];
     return true;
 }
+void nob_pipe_close(Nob_Pipe* pipe) {
+#ifdef _WIN32
+#   error Nob_Pipe isnt supported on Windows
+#endif
+    close(pipe->write);
+    close(pipe->read);
+    pipe->write = pipe->read = NOB_INVALID_FD;
+}
 ssize_t nob_fd_read(Nob_Fd fd, void* buf, size_t size) {
 #ifdef _WIN32
 #   error Nob_Pipe isnt supported on Windows
@@ -64,7 +76,7 @@ typedef struct {
     const char* path;
     bool failed;
     Nob_Proc proc;
-    Nob_Fd fdin, fdout, fderr;
+    Nob_Pipe std_pipe;
 } Test;
 typedef struct {
     Test* items;
@@ -73,12 +85,20 @@ typedef struct {
 } Tests;
 bool test_create(Test* test, Nob_Cmd* cmd, const char* path) {
     test->failed = false;  
-    test->fdin = test->fdout = test->fderr = NOB_INVALID_FD;
-    test->proc = nob_cmd_run_async_and_reset(cmd);
+    if(!nob_pipe_create(&test->std_pipe)) return false;
+    Nob_Cmd_Redirect redirect = {
+        .fdout = &test->std_pipe.write,
+        .fdin = NULL,
+        .fderr = &test->std_pipe.write,
+    };
+    test->proc = nob_cmd_run_async_redirect_and_reset(cmd, redirect);
     if(test->proc == NOB_INVALID_PROC) {
         nob_log(NOB_ERROR, "Failed to spawn test `%s`", test->path);
+        nob_pipe_close(&test->std_pipe);
         return false;
     }
+    nob_fd_close(test->std_pipe.write);
+    test->std_pipe.write = NOB_INVALID_FD;
     return true;
 }
 void wait_tests(Tests* tests) {
@@ -91,7 +111,13 @@ void wait_tests(Tests* tests) {
 void log_tests(Tests* tests) {
     for(size_t i = 0; i < tests->count; ++i) {
         if(tests->items[i].failed) {
-            nob_log(NOB_ERROR, "Test %zu (%s) failed to record", i, tests->items[i].path);
+            nob_log(NOB_ERROR, "Test %zu (%s) failed", i, tests->items[i].path);
+            ssize_t n = 0;
+            char buf[4096];
+            while((n=nob_fd_read(tests->items[i].std_pipe.read, buf, sizeof(buf)-1)) > 0) {
+                fprintf(stderr, "%.*s", (int)n, buf);
+            }
+            if(n < 0) nob_log(NOB_ERROR, "ERROR: Failed reading: %s", strerror(errno));
         }
     }
     if(tests->failed_tests) {
@@ -102,9 +128,7 @@ void log_tests(Tests* tests) {
 }
 void cleanup_tests(Tests* tests) {
     for(size_t i = 0; i < tests->count; ++i) {
-        if(tests->items[i].fdin  != NOB_INVALID_FD) nob_fd_close(tests->items[i].fdin);
-        if(tests->items[i].fdout != NOB_INVALID_FD) nob_fd_close(tests->items[i].fdout);
-        if(tests->items[i].fderr != NOB_INVALID_FD) nob_fd_close(tests->items[i].fderr);
+        nob_pipe_close(&tests->items[i].std_pipe);
     }
     nob_da_free(*tests);
 }
