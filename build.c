@@ -5,6 +5,7 @@
 // 4 | $COMPILER ./examples/sum.prot -o ./bin/tests/sum.nasm | nasm -fwin64 ./bin/tests/sum.nasm -o ./bin/tests/sum.obj | gcc ./examples/sum_main.c ./bin/tests/sum.obj -o ./bin/tests/sum | ./bin/tests/sum | "sum(3, 2) => 5" | 
 // You'd probably need to use subprocess.h or something similar for capturing the stdin, stdout and stderr 
 #include <stdio.h>
+#include <stdlib.h>
 #define NOB_IMPLEMENTATION
 #include "nob.h"
 #include <stdint.h>
@@ -68,7 +69,7 @@ bool remove_objs(const char* dirpath) {
         Nob_File_Type type = nob_get_file_type(path);
         if(strcmp(fext, "o")==0) {
             if(type == NOB_FILE_REGULAR) {
-               if(!nob_delete_file(path)) {
+               if(!remove(path)) {
                   closedir(dir);
                   return false;
                }
