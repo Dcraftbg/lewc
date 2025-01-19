@@ -45,6 +45,12 @@ AST* ast_new_symbol(Arena* arena, Atom* symbol) {
     ast->as.symbol = symbol;
     return ast;
 }
+AST* ast_new_deref(Arena* arena, AST* what) {
+    AST* ast = ast_new(arena);
+    ast->kind = AST_DEREF;
+    ast->as.deref.what = what;
+    return ast;
+}
 
 void call_args_dealloc(CallArgs* this) {
     if(this->items) free(this->items);

@@ -8,6 +8,7 @@ enum {
     AST_C_STR,
     AST_INT,
     AST_SYMBOL,
+    AST_DEREF,
     AST_KIND_COUNT
 };
 typedef struct AST AST;
@@ -22,6 +23,7 @@ struct AST {
     Type* type;
     union {
         struct { AST *lhs, *rhs; } binop;
+        struct { AST *what; } deref;
         struct { AST *what; CallArgs args; } call;
         struct { uint64_t value; } integer;
         struct { const char* str; size_t len; } str;
@@ -33,5 +35,6 @@ AST* ast_new_binop(Arena* arena, int kind, AST* lhs, AST* rhs);
 AST* ast_new_symbol(Arena* arena, Atom* symbol);
 AST* ast_new_cstr(Arena* arena, const char* str, size_t len);
 AST* ast_new_int(Arena* arena, uint64_t value);
+AST* ast_new_deref(Arena* arena, AST* what);
 AST* ast_new_call(Arena* arena, AST* what, CallArgs args);
 void call_args_dealloc(CallArgs* args);

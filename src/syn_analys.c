@@ -32,7 +32,7 @@ SymTabNode* symtab_node_new(SymTabNode* parent, Arena* arena) {
 }
 // TODO: Better error messages as AST should probably store location too
 bool syn_analyse_ast(SymTabNode* node, AST* ast) {
-    static_assert(AST_KIND_COUNT == 261, "Update syn_analyse_ast");
+    static_assert(AST_KIND_COUNT == 262, "Update syn_analyse_ast");
     switch(ast->kind) {
     case AST_CALL:
         if(!syn_analyse_ast(node, ast->as.call.what)) return false;
@@ -52,6 +52,9 @@ bool syn_analyse_ast(SymTabNode* node, AST* ast) {
         // ------ For any other binop
         if(!syn_analyse_ast(node, ast->as.binop.lhs)) return false;
         if(!syn_analyse_ast(node, ast->as.binop.rhs)) return false;
+        break;
+    case AST_DEREF:
+        if(!syn_analyse_ast(node, ast->as.deref.what)) return false;
         break;
     case AST_SYMBOL:
         if(!stl_lookup(node, ast->as.symbol)) {

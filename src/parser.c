@@ -158,10 +158,26 @@ AST* parse_astcall(Parser* parser, AST* what) {
     }
     return ast_new_call(parser->arena, what, args);
 }
+AST* parse_deref(Parser* parser) {
+    assert(lexer_next(parser->lexer).kind == '*');
+    AST* what = parse_ast(parser);
+    if(!what) return NULL;
+    return ast_new_deref(parser->arena, what);
+}
 AST* parse_ast(Parser* parser) {
-    AST* v = parse_basic(parser);
+    Token t;
+    AST* v = NULL;
+    t = lexer_peak_next(parser->lexer);
+    switch(t.kind) {
+    case '*':
+        v = parse_deref(parser);
+        break;
+    default:
+        v = parse_basic(parser);
+        break;
+    }
     if(!v) return NULL;
-    Token t = lexer_peak_next(parser->lexer);
+    t = lexer_peak_next(parser->lexer);
     switch(t.kind) {
     case '(': {
         return parse_astcall(parser, v);

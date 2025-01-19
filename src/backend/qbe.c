@@ -31,7 +31,7 @@ typedef struct {
        nprintf(__VA_ARGS__);\
        fputs(NEWLINE, qbe->f);\
    } while(0)
-bool dump_type_to_qbe(Qbe* qbe, Type* t) {
+bool dump_type_to_qbe_full(Qbe* qbe, Type* t) {
     assert(t);
     assert(t->core != CORE_FUNC);
     switch(t->core) {
@@ -39,6 +39,8 @@ bool dump_type_to_qbe(Qbe* qbe, Type* t) {
         nprintf("l");
         break;
     case CORE_I8:
+        if(t->unsign) nprintf("u");
+        else nprintf("s");
         nprintf("b");
         break;
     case CORE_I32:
@@ -50,9 +52,26 @@ bool dump_type_to_qbe(Qbe* qbe, Type* t) {
     }
     return true;
 }
+bool dump_type_to_qbe(Qbe* qbe, Type* t) {
+    assert(t);
+    assert(t->core != CORE_FUNC);
+    switch(t->core) {
+    case CORE_PTR:
+        nprintf("l");
+        break;
+    case CORE_I8:
+    case CORE_I32:
+        nprintf("w");
+        break;
+    default:
+        eprintfln("(dump_type_to_qbe) UNREACHABLE");
+        return false;
+    }
+    return true;
+}
 size_t build_qbe_ast(Qbe* qbe, AST* ast) {
     size_t n=0;
-    static_assert(AST_KIND_COUNT == 261, "Update build_qbe_ast");
+    static_assert(AST_KIND_COUNT == 262, "Update build_qbe_ast");
     switch(ast->kind) {
     case '+':
         size_t v0 = build_qbe_ast(qbe, ast->as.binop.lhs);
@@ -93,6 +112,10 @@ size_t build_qbe_ast(Qbe* qbe, AST* ast) {
         global.array.len  = ast->as.str.len;
         da_push(&qbe->globals, global);
         nprintf("    %%s%zu =", n=qbe->inst++);nprintfln("l copy $.g%zu", global.unnamed_i);
+    } break;
+    case AST_DEREF: {
+        size_t v0 = build_qbe_ast(qbe, ast->as.deref.what);
+        nprintf("    %%s%zu =", n=qbe->inst++); dump_type_to_qbe(qbe, ast->type);nprintf(" load");dump_type_to_qbe_full(qbe, ast->type); nprintfln(" %%s%zu", v0);
     } break;
     case AST_INT: 
         nprintf("    %%s%zu =", n=qbe->inst++);dump_type_to_qbe(qbe, ast->type);nprintfln(" copy %lu", ast->as.integer.value);

@@ -1,7 +1,7 @@
 #include "typecheck.h"
 // TODO: Actually decent error reporting
 bool typecheck_ast(ProgramState* state, SymTabNode* node, AST* ast) {
-    static_assert(AST_KIND_COUNT == 261, "Update typecheck_ast");
+    static_assert(AST_KIND_COUNT == 262, "Update typecheck_ast");
     switch(ast->kind) {
     case AST_CALL: {
         if(!typecheck_ast(state, node, ast->as.call.what)) return false;
@@ -24,6 +24,8 @@ bool typecheck_ast(ProgramState* state, SymTabNode* node, AST* ast) {
             if(!typecheck_ast(state, node, ast->as.call.args.items[i])) return false;
             if(!type_eq(ast->as.call.args.items[i]->type, signature->input.items[i].type)) {
                 eprintfln("Argument %zu did not match type!", i);
+                eprintf("Expected "); type_dump(stderr, signature->input.items[i].type); eprintf("\n");
+                eprintf("But got  "); type_dump(stderr, ast->as.call.args.items[i]->type); eprintf("\n");
                 return false;
             }
         }
@@ -56,6 +58,15 @@ bool typecheck_ast(ProgramState* state, SymTabNode* node, AST* ast) {
             return false;
         }
         break;
+    case AST_DEREF: {
+        if(!typecheck_ast(state, node, ast->as.deref.what)) return false;
+        AST* what = ast->as.deref.what;
+        if(!what->type || what->type->core != CORE_PTR) {
+            eprintf("Trying to dereference an expression of type "); type_dump(stderr, what->type); eprintf("\n");
+            return false;
+        }
+        ast->type = what->type->ptr_count == 1 ? what->type->inner_type : type_ptr(state->arena, what->type->inner_type, what->type->ptr_count-1);
+    } break;
     case AST_SYMBOL: 
         ast->type = stl_lookup(node, ast->as.symbol)->type;
         break;
