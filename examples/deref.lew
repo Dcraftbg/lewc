@@ -1,0 +1,5 @@
+extern putchar :: (c: u8);
+main :: () -> i32 {
+    putchar(*c"Hello");
+    return 0;
+}

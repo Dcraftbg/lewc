@@ -1,0 +1,4 @@
+./bin/lewc examples/deref.lew -o ./int/tests/deref.s
+as ./int/tests/deref.s -o ./int/tests/deref.o
+gcc -static ./int/tests/deref.o -o ./bin/tests/deref
+./bin/tests/deref

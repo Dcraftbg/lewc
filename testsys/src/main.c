@@ -9,7 +9,8 @@ const char* all_tests[] = {
     "hello.lew",
     "sum.lew",
     "int_literals.lew",
-    "syntactical.lew"
+    "syntactical.lew",
+    "deref.lew"
 };
 #define python_interp(cmd) nob_cmd_append(cmd, "python3")
 #define python_rere(cmd) (python_interp(cmd), nob_cmd_append(&cmd, 
