@@ -37,65 +37,106 @@ const char* shift_args(int *argc, const char ***argv) {
     return arg;
 }
 typedef struct {
+    Nob_Fd read, write;
+} Nob_Pipe;
+bool nob_pipe_create(Nob_Pipe* result) {
+#ifdef _WIN32
+#   error Nob_Pipe isnt supported on Windows
+#endif
+    int pipes[2];
+    if(pipe(pipes) == -1) {
+        nob_log(NOB_ERROR, "Could not create pipe %s", strerror(errno));
+        return false;
+    }
+    result->read = pipes[0];
+    result->write = pipes[1];
+    return true;
+}
+ssize_t nob_fd_read(Nob_Fd fd, void* buf, size_t size) {
+#ifdef _WIN32
+#   error Nob_Pipe isnt supported on Windows
+#endif
+    // NOTE: read will automatically set errno
+    return read(fd, buf, size);
+}
+
+typedef struct {
     const char* path;
     bool failed;
     Nob_Proc proc;
+    Nob_Fd fdin, fdout, fderr;
 } Test;
 typedef struct {
     Test* items;
     size_t count, capacity;
+    size_t failed_tests;
 } Tests;
+bool test_create(Test* test, Nob_Cmd* cmd, const char* path) {
+    test->failed = false;  
+    test->fdin = test->fdout = test->fderr = NOB_INVALID_FD;
+    test->proc = nob_cmd_run_async_and_reset(cmd);
+    if(test->proc == NOB_INVALID_PROC) {
+        nob_log(NOB_ERROR, "Failed to spawn test `%s`", test->path);
+        return false;
+    }
+    return true;
+}
+void wait_tests(Tests* tests) {
+    for(size_t i = 0; i < tests->count; ++i) {
+        if((tests->items[i].failed = !nob_proc_wait(tests->items[i].proc))) {
+            tests->failed_tests++;
+        }
+    }
+}
+void log_tests(Tests* tests) {
+    for(size_t i = 0; i < tests->count; ++i) {
+        if(tests->items[i].failed) {
+            nob_log(NOB_ERROR, "Test %zu (%s) failed to record", i, tests->items[i].path);
+        }
+    }
+    if(tests->failed_tests) {
+        nob_log(NOB_ERROR, "%zu/%zu tests failed", tests->failed_tests, tests->count);
+        return;
+    }
+    nob_log(NOB_INFO, "OK all tests passed (%zu/%zu)", tests->count, tests->count);
+}
+void cleanup_tests(Tests* tests) {
+    for(size_t i = 0; i < tests->count; ++i) {
+        if(tests->items[i].fdin  != NOB_INVALID_FD) nob_fd_close(tests->items[i].fdin);
+        if(tests->items[i].fdout != NOB_INVALID_FD) nob_fd_close(tests->items[i].fdout);
+        if(tests->items[i].fderr != NOB_INVALID_FD) nob_fd_close(tests->items[i].fderr);
+    }
+    nob_da_free(*tests);
+}
+bool log_and_cleanup_tests(Tests* tests) {
+    wait_tests(tests);
+    log_tests(tests);
+    size_t failed_tests = tests->failed_tests;
+    cleanup_tests(tests);
+    return failed_tests == 0;
+}
 bool record_tests(int argc, const char** argv) {
     Tests tests = {0};
     Nob_Cmd cmd = {0};
+    Test test;
     if(argc) {
-        Test test;
         while((test.path=shift_args(&argc, &argv))) {
-            cmd.count = 0;
-            test.failed = false;  
             test_record(&cmd, test.path);
-            test.proc = nob_cmd_run_async(cmd);
-            if(test.proc == NOB_INVALID_PROC) {
-                nob_log(NOB_ERROR, "Failed to spawn test `%s`", test.path);
-                continue;
+            if(test_create(&test, &cmd, test.path)) {
+                nob_da_append(&tests, test);
             }
-            nob_da_append(&tests, test);
         }
     } else {
-        Test test;
         for(size_t i = 0; i < NOB_ARRAY_LEN(all_tests); ++i) {
             test.path = all_tests[i];
-            cmd.count = 0;
-            test.failed = false;  
             test_record(&cmd, test.path);
-            test.proc = nob_cmd_run_async(cmd);
-            if(test.proc == NOB_INVALID_PROC) {
-                nob_log(NOB_ERROR, "Failed to spawn test `%s`", test.path);
-                continue;
+            if(test_create(&test, &cmd, test.path)) {
+                nob_da_append(&tests, test);
             }
-            nob_da_append(&tests, test);
         }
     }
     nob_da_free(cmd);
-    size_t failed_tests = 0;
-    for(size_t i = 0; i < tests.count; ++i) {
-        if((tests.items[i].failed = !nob_proc_wait(tests.items[i].proc))) {
-            failed_tests++;
-        }
-    }
-    for(size_t i = 0; i < tests.count; ++i) {
-        if(tests.items[i].failed) {
-            nob_log(NOB_ERROR, "Test %zu (%s) failed to record", i, tests.items[i].path);
-        }
-    }
-    if(failed_tests) {
-        nob_log(NOB_ERROR, "%zu/%zu tests failed", failed_tests, tests.count);
-        nob_da_free(tests);
-        return false;
-    }
-    nob_da_free(tests);
-    nob_log(NOB_INFO, "OK recorded all tests (%zu/%zu)", tests.count, tests.count);
-    return true;
+    return log_and_cleanup_tests(&tests);
 }
 bool run_tests(int argc, const char** argv) {
     Tests tests = {0};
@@ -103,51 +144,23 @@ bool run_tests(int argc, const char** argv) {
     if(argc) {
         Test test;
         while((test.path=shift_args(&argc, &argv))) {
-            cmd.count = 0;
-            test.failed = false;  
             test_replay(&cmd, test.path);
-            test.proc = nob_cmd_run_async(cmd);
-            if(test.proc == NOB_INVALID_PROC) {
-                nob_log(NOB_ERROR, "Failed to spawn test `%s`", test.path);
-                continue;
+            if(test_create(&test, &cmd, test.path)) {
+                nob_da_append(&tests, test);
             }
-            nob_da_append(&tests, test);
         }
     } else {
         Test test;
         for(size_t i = 0; i < NOB_ARRAY_LEN(all_tests); ++i) {
             test.path = all_tests[i];
-            cmd.count = 0;
-            test.failed = false;  
             test_replay(&cmd, test.path);
-            test.proc = nob_cmd_run_async(cmd);
-            if(test.proc == NOB_INVALID_PROC) {
-                nob_log(NOB_ERROR, "Failed to spawn test `%s`", test.path);
-                continue;
+            if(test_create(&test, &cmd, test.path)) {
+                nob_da_append(&tests, test);
             }
-            nob_da_append(&tests, test);
         }
     }
     nob_da_free(cmd);
-    size_t failed_tests = 0;
-    for(size_t i = 0; i < tests.count; ++i) {
-        if((tests.items[i].failed = !nob_proc_wait(tests.items[i].proc))) {
-            failed_tests++;
-        }
-    }
-    for(size_t i = 0; i < tests.count; ++i) {
-        if(tests.items[i].failed) {
-            nob_log(NOB_ERROR, "Test %zu (%s) failed", i, tests.items[i].path);
-        }
-    }
-    if(failed_tests) {
-        nob_log(NOB_ERROR, "%zu/%zu tests failed", failed_tests, tests.count);
-        nob_da_free(tests);
-        return false;
-    }
-    nob_da_free(tests);
-    nob_log(NOB_INFO, "OK replayed all tests (%zu/%zu)", tests.count, tests.count);
-    return true;
+    return log_and_cleanup_tests(&tests);
 }
 
 bool nob_mkdir_if_not_exists_silent(const char *path) {
