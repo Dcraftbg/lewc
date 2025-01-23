@@ -2,12 +2,11 @@
 #include "parser.h"
 #include "darray.h"
 
-Scope* new_scope(Arena* arena, Scope* parent, int kind) {
+Scope* new_scope(Arena* arena, Scope* parent) {
     Scope* s = arena_alloc(arena, sizeof(*s));
     if(!s) return s;
     memset(s, 0, sizeof(*s));
     s->parent = parent;
-    s->kind = kind;
     return s;
 }
 Scope* funcs_find(FuncMap* funcs, Atom* name) {
@@ -237,7 +236,6 @@ Statement* parse_statement(Parser* parser, Token t) {
 }
 void parse_func_body(Parser* parser, Scope* s) {
     Token t;
-    assert(s->kind == SCOPE_FUNC);
     while((t=lexer_peak_next(parser->lexer)).kind != '}') {
         if(t.kind >= TOKEN_END) {
             if(t.kind >= TOKEN_ERR) {
@@ -275,12 +273,7 @@ void parse(Parser* parser, Lexer* lexer, Arena* arena) {
                 eprintfln("ERROR:%s: Too many '}' brackets",tloc(t));
                 exit(1);
             }
-            Scope* s = parser->head;
             parser->head = parser->head->parent;
-            switch(s->kind) {
-            case SCOPE_FUNC:
-                break;
-            }
         } break;
         case TOKEN_EXTERN: {
             lexer_eat(parser->lexer, 1);
@@ -323,7 +316,7 @@ void parse(Parser* parser, Lexer* lexer, Arena* arena) {
                     eprintfln("ERROR:%s: Missing '{' at the start of function. Got: %s", tloc(t), tdisplay(t));
                     exit(1);
                 }
-                Scope* s = new_scope(parser->arena, parser->head, SCOPE_FUNC);
+                Scope* s = new_scope(parser->arena, parser->head);
                 parser->head = s;
                 parse_func_body(parser, s);
                 parser->head = parser->head->parent;

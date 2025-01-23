@@ -6,10 +6,6 @@ enum {
     STATEMENT_EVAL,
     STATEMENT_COUNT
 };
-enum {
-    SCOPE_GLOBAL,
-    SCOPE_FUNC
-};
 typedef struct Statement Statement;
 typedef struct {
     Statement **items;
@@ -18,7 +14,6 @@ typedef struct {
 typedef struct Scope Scope;
 struct Scope {
     Scope* parent;
-    int kind;
     Statements statements;
 };
 struct Statement {
