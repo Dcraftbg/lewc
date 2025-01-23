@@ -2,11 +2,10 @@
 #include "parser.h"
 #include "darray.h"
 
-Scope* new_scope(Arena* arena, Scope* parent) {
+Scope* new_scope(Arena* arena) {
     Scope* s = arena_alloc(arena, sizeof(*s));
     if(!s) return s;
     memset(s, 0, sizeof(*s));
-    s->parent = parent;
     return s;
 }
 Scope* funcs_find(FuncMap* funcs, Atom* name) {
@@ -21,7 +20,6 @@ void parser_create(Parser* this, Lexer* lexer, Arena* arena, ProgramState* state
     memset(this, 0, sizeof(*this));
     this->arena = arena;
     this->lexer = lexer;
-    this->head = &state->global;
     this->state = state;
     // scope_init(&this->global);
 }
@@ -272,19 +270,10 @@ void parse(Parser* parser, Lexer* lexer, Arena* arena) {
             if((t = lexer_next(parser->lexer)).kind == TOKEN_ATOM && lexer_peak_next(parser->lexer).kind == ':' && lexer_peak(parser->lexer, 1).kind == ':' && lexer_peak(parser->lexer, 2).kind == '(') {
                 Atom* name = t.atom;
                 lexer_eat(parser->lexer, 2);
-                if(parser->head->parent != NULL) {
-                    eprintfln("ERROR:%s: Nested `extern` definitions are not allowed. Please use `extern` in the global scope", tloc(t));
-                    exit(1);
-                }
-
                 Type* fid = type_new(parser->arena);
                 fid->core    = CORE_FUNC;
                 fid->attribs = TYPE_ATTRIB_EXTERN;
                 parse_func_signature(parser, &fid->signature);
-                if(parser->head->parent != NULL) {
-                    eprintfln("ERROR:%s: Nested function definitions are not yet implemented", tloc(t));
-                    exit(1);
-                }
                 funcs_insert(&parser->state->funcs, name, fid, NULL);
             } else {
                 eprintfln("ERROR:%s: Expected signature of external function to follow the syntax:", tloc(t));
@@ -300,18 +289,12 @@ void parse(Parser* parser, Lexer* lexer, Arena* arena) {
                 fid->core = CORE_FUNC;
 
                 parse_func_signature(parser, &fid->signature);
-                if(parser->head->parent != NULL) {
-                    eprintfln("ERROR:%s: Nested function definitions are not yet implemented", tloc(t));
-                    exit(1);
-                }
                 if((t=lexer_next(parser->lexer)).kind != '{') {
                     eprintfln("ERROR:%s: Missing '{' at the start of function. Got: %s", tloc(t), tdisplay(t));
                     exit(1);
                 }
-                Scope* s = new_scope(parser->arena, parser->head);
-                parser->head = s;
+                Scope* s = new_scope(parser->arena);
                 parse_func_body(parser, s);
-                parser->head = parser->head->parent;
                 funcs_insert(&parser->state->funcs, name, fid, s);
             } else {
                 eprintfln("ERROR:%s: Unexpected Atom: %s",tloc(t), t.atom->data);

@@ -26,7 +26,6 @@ static void _example_dump() {
 typedef struct {
     Arena* arena;
     Lexer* lexer;
-    Scope* head;
     ProgramState* state;
 } Parser;
 void parser_create(Parser* this, Lexer* lexer, Arena* arena, ProgramState* state);
