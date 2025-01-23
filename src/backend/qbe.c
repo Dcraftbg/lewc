@@ -109,7 +109,7 @@ size_t build_qbe_ast(Qbe* qbe, AST* ast) {
         global.kind = GLOBAL_ARRAY;
         global.array.type = &type_u8;
         global.array.data = ast->as.str.str;
-        global.array.len  = ast->as.str.len;
+        global.array.len  = ast->as.str.len+1;
         da_push(&qbe->globals, global);
         nprintf("    %%s%zu =", n=qbe->inst++);nprintfln("l copy $.g%zu", global.unnamed_i);
     } break;
