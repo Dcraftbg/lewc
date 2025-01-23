@@ -267,14 +267,6 @@ void parse(Parser* parser, Lexer* lexer, Arena* arena) {
         }
         static_assert(TOKEN_COUNT == 266, "Update parser");
         switch(t.kind) {
-        case '}': {
-            lexer_eat(parser->lexer, 1);
-            if(parser->head->parent == NULL) {
-                eprintfln("ERROR:%s: Too many '}' brackets",tloc(t));
-                exit(1);
-            }
-            parser->head = parser->head->parent;
-        } break;
         case TOKEN_EXTERN: {
             lexer_eat(parser->lexer, 1);
             if((t = lexer_next(parser->lexer)).kind == TOKEN_ATOM && lexer_peak_next(parser->lexer).kind == ':' && lexer_peak(parser->lexer, 1).kind == ':' && lexer_peak(parser->lexer, 2).kind == '(') {
