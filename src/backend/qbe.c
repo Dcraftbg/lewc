@@ -165,15 +165,15 @@ bool build_qbe_qbe(Qbe* qbe) {
             nprintfln(") {");
             nprintfln("@start");
             for(size_t j = 0; j < func->scope->statements.len; ++j) {
-                Statement* statement = &func->scope->statements.items[j];
+                Statement* statement = func->scope->statements.items[j];
                 static_assert(STATEMENT_COUNT == 2, "Update build_qbe_qbe");
                 size_t n = 0;
                 switch(statement->kind) {
                 case STATEMENT_EVAL:
-                    build_qbe_ast(qbe, statement->ast);
+                    build_qbe_ast(qbe, statement->as.ast);
                     break;
                 case STATEMENT_RETURN:
-                    n = build_qbe_ast(qbe, statement->ast);
+                    n = build_qbe_ast(qbe, statement->as.ast);
                     nprintfln("    ret %%s%zu", n);
                     break;
                 }

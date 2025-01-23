@@ -6,27 +6,30 @@ enum {
     STATEMENT_EVAL,
     STATEMENT_COUNT
 };
-typedef struct {
-    int kind;
-    union {
-        AST* ast;
-    };
-    /*metadata*/;
-} Statement;
 enum {
     SCOPE_GLOBAL,
     SCOPE_FUNC
 };
+typedef struct Statement Statement;
 typedef struct {
-    Statement *items;
+    Statement **items;
     size_t len, cap;
 } Statements;
-typedef struct Scope {
-    struct Scope* parent;
+typedef struct Scope Scope;
+struct Scope {
+    Scope* parent;
     int kind;
     Statements statements;
-} Scope;
-
+};
+struct Statement {
+    int kind;
+    union {
+        AST* ast;
+    } as;
+    /*metadata*/;
+};
+Statement* statement_return(Arena* arena, AST* ast);
+Statement* statement_eval(Arena* arena, AST* ast);
 #include "func.h"
 #include "syn_analys.h"
 typedef struct ProgramState ProgramState;

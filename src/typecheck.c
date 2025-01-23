@@ -96,14 +96,14 @@ bool typecheck(ProgramState* state) {
             if(func->type->attribs & TYPE_ATTRIB_EXTERN) continue;
             node = func->symtab_node;
             for(size_t j = 0; j < func->scope->statements.len; ++j) {
-                Statement* statement = &func->scope->statements.items[j];
+                Statement* statement = func->scope->statements.items[j];
                 static_assert(STATEMENT_COUNT == 2, "Update syn_analyse");
                 switch(statement->kind) {
                 case STATEMENT_RETURN:
-                    if(!typecheck_ast(state, node, statement->ast)) return false;
+                    if(!typecheck_ast(state, node, statement->as.ast)) return false;
                     break;
                 case STATEMENT_EVAL:
-                    if(!typecheck_ast(state, node, statement->ast)) return false;
+                    if(!typecheck_ast(state, node, statement->as.ast)) return false;
                     break;
                 default:
                     eprintfln("UNHANDLED STATEMENT %d",statement->kind);

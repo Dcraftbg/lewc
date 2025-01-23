@@ -216,7 +216,7 @@ AST* parse_ast(Parser* parser) {
     }
     return v;
 }
-Statement parse_statement(Parser* parser, Token t) {
+Statement* parse_statement(Parser* parser, Token t) {
     switch(t.kind) {
         case TOKEN_RETURN: {
             lexer_eat(parser->lexer, 1);
@@ -225,7 +225,7 @@ Statement parse_statement(Parser* parser, Token t) {
                 eprintfln("ERROR:%s: Failed to parse return statement",tloc(t));
                 exit(1);
             }
-            return (Statement) { STATEMENT_RETURN, .ast=ast };
+            return statement_return(parser->arena, ast);
         } break;
     }
     AST* ast = parse_ast(parser);
@@ -233,7 +233,7 @@ Statement parse_statement(Parser* parser, Token t) {
         eprintfln("ERROR:%s: Unknown token in statement: %s", tloc(t), tdisplay(t));
         exit(1);
     }
-    return (Statement) { STATEMENT_EVAL, .ast=ast };
+    return statement_eval(parser->arena, ast);
 }
 void parse_func_body(Parser* parser, Scope* s) {
     Token t;

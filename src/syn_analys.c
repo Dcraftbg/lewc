@@ -94,14 +94,14 @@ bool syn_analyse(ProgramState* state) {
                     }
                 }
                 for(size_t j=0; j < func->scope->statements.len; ++j) {
-                    Statement* statement = &func->scope->statements.items[j];
+                    Statement* statement = func->scope->statements.items[j];
                     static_assert(STATEMENT_COUNT == 2, "Update syn_analyse");
                     switch(statement->kind) {
                     case STATEMENT_RETURN:
-                        if(!syn_analyse_ast(node, statement->ast)) return false;
+                        if(!syn_analyse_ast(node, statement->as.ast)) return false;
                         break;
                     case STATEMENT_EVAL:
-                        if(!syn_analyse_ast(node, statement->ast)) return false;
+                        if(!syn_analyse_ast(node, statement->as.ast)) return false;
                         break;
                     default:
                         eprintfln("UNHANDLED STATEMENT %d",statement->kind);
