@@ -12,6 +12,8 @@ enum {
     TOKEN_EXTERN,
     TOKEN_C_STR,
     TOKEN_INT,
+    TOKEN_EQEQ,
+    TOKEN_WHILE,
     // Tokens to stop 
     TOKEN_END,
     TOKEN_EOF=TOKEN_END,

@@ -230,6 +230,13 @@ Token lexer_next(Lexer* lexer) {
     case '*':
         lexer_next_c(lexer);
         return MAKE_TOKEN(c);
+    case '=':
+        lexer_next_c(lexer);
+        if(lexer_peak_c(lexer) == '=') {
+            lexer_next_c(lexer);
+            return MAKE_TOKEN(TOKEN_EQEQ);
+        }
+        return MAKE_TOKEN(c);
     case '-':
         lexer_next_c(lexer);
         if(lexer_peak_c(lexer) == '>') {
@@ -260,6 +267,7 @@ Token lexer_next(Lexer* lexer) {
             Word word = lexer_parse_word(lexer);
                  if (wordeq(word, "return")) return MAKE_TOKEN(TOKEN_RETURN);
             else if (wordeq(word, "extern")) return MAKE_TOKEN(TOKEN_EXTERN);
+            else if (wordeq(word, "while" )) return MAKE_TOKEN(TOKEN_WHILE);
             return MAKE_TOKEN(TOKEN_ATOM, .atom = atom_alloc(lexer->atom_table,word.start, (size_t)(word.end-word.start)));
         }
     }
