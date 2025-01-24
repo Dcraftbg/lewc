@@ -73,7 +73,7 @@ bool syn_analyse_ast(SymTabNode* node, AST* ast) {
 
 bool syn_analyse_scope(SymTabNode* node, Statements* scope);
 bool syn_analyse_statement(SymTabNode* node, Statement* statement) {
-    static_assert(STATEMENT_COUNT == 3, "Update syn_analyse");
+    static_assert(STATEMENT_COUNT == 4, "Update syn_analyse");
     switch(statement->kind) {
     case STATEMENT_RETURN:
         if(!syn_analyse_ast(node, statement->as.ast)) return false;
@@ -83,6 +83,10 @@ bool syn_analyse_statement(SymTabNode* node, Statement* statement) {
         break;
     case STATEMENT_SCOPE:
         if(!syn_analyse_scope(node, statement->as.scope)) return false;
+        break;
+    case STATEMENT_WHILE:
+        if(!syn_analyse_ast(node, statement->as.whil.cond)) return false;
+        if(!syn_analyse_statement(node, statement->as.whil.body)) return false;
         break;
     default:
         unreachable("statement->kind=%d", statement->kind);

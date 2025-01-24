@@ -5,6 +5,7 @@ enum {
     STATEMENT_RETURN,
     STATEMENT_EVAL,
     STATEMENT_SCOPE,
+    STATEMENT_WHILE,
     STATEMENT_COUNT
 };
 typedef struct Statement Statement;
@@ -19,6 +20,7 @@ struct Statement {
     union {
         AST* ast;
         Statements* scope;
+        struct { AST* cond; Statement* body; } whil;
     } as;
     /*metadata*/;
 };

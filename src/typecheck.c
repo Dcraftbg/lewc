@@ -84,7 +84,7 @@ bool typecheck_ast(ProgramState* state, SymTabNode* node, AST* ast) {
 }
 bool typecheck_scope(ProgramState* state, SymTabNode* node, Statements* scope);
 bool typecheck_statement(ProgramState* state, SymTabNode* node, Statement* statement) {
-    static_assert(STATEMENT_COUNT == 3, "Update syn_analyse");
+    static_assert(STATEMENT_COUNT == 4, "Update syn_analyse");
     switch(statement->kind) {
     case STATEMENT_RETURN:
         if(!typecheck_ast(state, node, statement->as.ast)) return false;
@@ -95,6 +95,15 @@ bool typecheck_statement(ProgramState* state, SymTabNode* node, Statement* state
     case STATEMENT_SCOPE:
         if(!typecheck_scope(state, node, statement->as.scope)) return false;
         break;
+    case STATEMENT_WHILE: {
+        if(!typecheck_ast(state, node, statement->as.whil.cond)) return false;
+        AST* cond = statement->as.whil.cond;
+        if(!type_eq(cond->type, &type_bool)) {
+            eprintf("While loop condition has type "); type_dump(stderr, cond->type); eprintfln(" Expected type bool");
+            return false;
+        }
+        if(!typecheck_statement(state, node, statement->as.whil.body)) return false;
+    } break;
     default:
         unreachable("statement->kind=%d", statement->kind);
     }

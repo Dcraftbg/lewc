@@ -7,6 +7,7 @@
 // TODO: A way to dump a type
 enum {
     CORE_PTR,
+    CORE_BOOL,
     CORE_I8,
     CORE_I32,
     CORE_FUNC,
@@ -44,6 +45,7 @@ MAKE_HASHMAP_EX(TypeTable, type_table, Type*, const char*, djb2_cstr, cstr_eq, T
 #ifdef TYPE_TABLE_DEFINE
 #   undef HASHMAP_DEFINE
 #endif
+extern Type type_bool;
 extern Type type_u8;
 extern Type type_i32;
 Type* type_ptr(Arena* arena, Type* to, size_t ptr_count);
