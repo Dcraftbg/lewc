@@ -47,8 +47,7 @@ bool dump_type_to_qbe_full(Qbe* qbe, Type* t) {
         nprintf("w");
         break;
     default:
-        eprintfln("(dump_type_to_qbe) UNREACHABLE");
-        return false;
+        unreachable("t->core=%d", t->core);
     }
     return true;
 }
@@ -64,8 +63,7 @@ bool dump_type_to_qbe(Qbe* qbe, Type* t) {
         nprintf("w");
         break;
     default:
-        eprintfln("(dump_type_to_qbe) UNREACHABLE");
-        return false;
+        unreachable("t->core=%d", t->core);
     }
     return true;
 }
@@ -143,6 +141,8 @@ bool build_qbe_scope(Qbe* qbe, Statements* scope) {
             n = build_qbe_ast(qbe, statement->as.ast);
             nprintfln("    ret %%s%zu", n);
             break;
+        default:
+            unreachable("statement->kind=%d", statement->kind);
         }
     }
     return true;
