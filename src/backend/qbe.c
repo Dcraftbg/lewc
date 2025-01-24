@@ -164,8 +164,8 @@ bool build_qbe_qbe(Qbe* qbe) {
             }
             nprintfln(") {");
             nprintfln("@start");
-            for(size_t j = 0; j < func->scope->statements.len; ++j) {
-                Statement* statement = func->scope->statements.items[j];
+            for(size_t j = 0; j < func->scope->len; ++j) {
+                Statement* statement = func->scope->items[j];
                 static_assert(STATEMENT_COUNT == 2, "Update build_qbe_qbe");
                 size_t n = 0;
                 switch(statement->kind) {

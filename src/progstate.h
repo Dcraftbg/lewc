@@ -7,13 +7,10 @@ enum {
     STATEMENT_COUNT
 };
 typedef struct Statement Statement;
-typedef struct {
+typedef struct Statements Statements;
+struct Statements {
     Statement **items;
     size_t len, cap;
-} Statements;
-typedef struct Scope Scope;
-struct Scope {
-    Statements statements;
 };
 struct Statement {
     int kind;

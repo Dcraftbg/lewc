@@ -13,11 +13,11 @@ typedef struct {
     Args input;
     Type* output;
 } FuncSignature;
-typedef struct Scope Scope;
 typedef struct SymTabNode SymTabNode;
+typedef struct Statements Statements;
 typedef struct {
     Type* type;
-    Scope* scope;
+    Statements* scope;
     SymTabNode* symtab_node;
 } Function;
 

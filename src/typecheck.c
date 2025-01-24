@@ -95,8 +95,8 @@ bool typecheck(ProgramState* state) {
             Function* func = &fpair->value;
             if(func->type->attribs & TYPE_ATTRIB_EXTERN) continue;
             node = func->symtab_node;
-            for(size_t j = 0; j < func->scope->statements.len; ++j) {
-                Statement* statement = func->scope->statements.items[j];
+            for(size_t j = 0; j < func->scope->len; ++j) {
+                Statement* statement = func->scope->items[j];
                 static_assert(STATEMENT_COUNT == 2, "Update syn_analyse");
                 switch(statement->kind) {
                 case STATEMENT_RETURN:

@@ -2,18 +2,18 @@
 #include "parser.h"
 #include "darray.h"
 
-Scope* new_scope(Arena* arena) {
-    Scope* s = arena_alloc(arena, sizeof(*s));
+Statements* new_scope(Arena* arena) {
+    Statements* s = arena_alloc(arena, sizeof(*s));
     if(!s) return s;
     memset(s, 0, sizeof(*s));
     return s;
 }
-Scope* funcs_find(FuncMap* funcs, Atom* name) {
+Statements* funcs_find(FuncMap* funcs, Atom* name) {
     Function* func;
     if((func=func_map_get(funcs, name))) return func->scope;
     return NULL;
 }
-void funcs_insert(FuncMap* funcs, Atom* name, Type* id, Scope* scope) {
+void funcs_insert(FuncMap* funcs, Atom* name, Type* id, Statements* scope) {
     assert(func_map_insert(funcs, name, (Function){id, scope}));
 }
 void parser_create(Parser* this, Lexer* lexer, Arena* arena, ProgramState* state) {
@@ -232,7 +232,7 @@ Statement* parse_statement(Parser* parser, Token t) {
     }
     return statement_eval(parser->arena, ast);
 }
-void parse_func_body(Parser* parser, Scope* s) {
+void parse_func_body(Parser* parser, Statements* s) {
     Token t;
     while((t=lexer_peak_next(parser->lexer)).kind != '}') {
         if(t.kind >= TOKEN_END) {
@@ -248,7 +248,7 @@ void parse_func_body(Parser* parser, Scope* s) {
             lexer_eat(parser->lexer, 1);
             continue;
         }
-        da_push(&s->statements, parse_statement(parser, t));
+        da_push(s, parse_statement(parser, t));
     }
     t = lexer_next(parser->lexer);
     if(t.kind != '}') {
@@ -293,7 +293,7 @@ void parse(Parser* parser, Lexer* lexer, Arena* arena) {
                     eprintfln("ERROR:%s: Missing '{' at the start of function. Got: %s", tloc(t), tdisplay(t));
                     exit(1);
                 }
-                Scope* s = new_scope(parser->arena);
+                Statements* s = new_scope(parser->arena);
                 parse_func_body(parser, s);
                 funcs_insert(&parser->state->funcs, name, fid, s);
             } else {

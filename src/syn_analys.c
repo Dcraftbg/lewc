@@ -93,8 +93,8 @@ bool syn_analyse(ProgramState* state) {
                         sym_tab_insert(&node->symtab, type->signature.input.items[j].name, symbol_new(state->arena, type->signature.input.items[j].type));
                     }
                 }
-                for(size_t j=0; j < func->scope->statements.len; ++j) {
-                    Statement* statement = func->scope->statements.items[j];
+                for(size_t j=0; j < func->scope->len; ++j) {
+                    Statement* statement = func->scope->items[j];
                     static_assert(STATEMENT_COUNT == 2, "Update syn_analyse");
                     switch(statement->kind) {
                     case STATEMENT_RETURN:
