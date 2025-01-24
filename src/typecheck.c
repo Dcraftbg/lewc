@@ -78,8 +78,7 @@ bool typecheck_ast(ProgramState* state, SymTabNode* node, AST* ast) {
         ast->type = type_ptr(state->arena, &type_u8, 1);
         break;
     default:
-        eprintfln("(typecheck_ast) UNHANDLED AST %d", ast->kind);
-        exit(1);
+        unreachable("ast->kind=%d", ast->kind);
     }
     return true;
 }
