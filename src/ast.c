@@ -10,9 +10,10 @@ static AST* ast_new(Arena* arena) {
     memset(ast, 0, sizeof(*ast));
     return ast;
 }
-AST* ast_new_binop(Arena* arena, int kind, AST* lhs, AST* rhs) {
+AST* ast_new_binop(Arena* arena, int op, AST* lhs, AST* rhs) {
     AST* ast = ast_new(arena);
-    ast->kind = kind;
+    ast->kind = AST_BINOP;
+    ast->as.binop.op = op;
     ast->as.binop.lhs = lhs;
     ast->as.binop.rhs = rhs;
     return ast;

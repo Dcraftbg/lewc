@@ -69,13 +69,19 @@ bool dump_type_to_qbe(Qbe* qbe, Type* t) {
 }
 size_t build_qbe_ast(Qbe* qbe, AST* ast) {
     size_t n=0;
-    static_assert(AST_KIND_COUNT == 262, "Update build_qbe_ast");
+    static_assert(AST_KIND_COUNT == 7, "Update build_qbe_ast");
     switch(ast->kind) {
-    case '+':
-        size_t v0 = build_qbe_ast(qbe, ast->as.binop.lhs);
-        size_t v1 = build_qbe_ast(qbe, ast->as.binop.rhs);
-        if(!v0 || !v1) return 0;
-        nprintf("    %%s%zu =", n=qbe->inst++);dump_type_to_qbe(qbe, ast->as.binop.lhs->type);nprintfln(" add %%s%zu, %%s%zu", v0, v1);
+    case AST_BINOP:
+        switch(ast->as.binop.op) {
+        case '+': {
+            size_t v0 = build_qbe_ast(qbe, ast->as.binop.lhs);
+            size_t v1 = build_qbe_ast(qbe, ast->as.binop.rhs);
+            if(!v0 || !v1) return 0;
+            nprintf("    %%s%zu =", n=qbe->inst++);dump_type_to_qbe(qbe, ast->as.binop.lhs->type);nprintfln(" add %%s%zu, %%s%zu", v0, v1);
+        } break;
+        default:
+            unreachable("ast->as.binop.op=%d", ast->as.binop.op);
+        }
         break;
     case AST_CALL: {
         assert(ast->as.call.what->kind == AST_SYMBOL);

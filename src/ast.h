@@ -3,12 +3,13 @@
 #include <stdint.h>
 #include "atom.h"
 enum {
-    AST_SET=256,
+    AST_SET,
     AST_CALL,
     AST_C_STR,
     AST_INT,
     AST_SYMBOL,
     AST_DEREF,
+    AST_BINOP,
     AST_KIND_COUNT
 };
 typedef struct AST AST;
@@ -22,7 +23,7 @@ struct AST {
     int kind;
     Type* type;
     union {
-        struct { AST *lhs, *rhs; } binop;
+        struct { int op; AST *lhs, *rhs; } binop;
         struct { AST *what; } deref;
         struct { AST *what; CallArgs args; } call;
         struct { uint64_t value; } integer;
@@ -31,7 +32,7 @@ struct AST {
     } as;
 };
 
-AST* ast_new_binop(Arena* arena, int kind, AST* lhs, AST* rhs);
+AST* ast_new_binop(Arena* arena, int op, AST* lhs, AST* rhs);
 AST* ast_new_symbol(Arena* arena, Atom* symbol);
 AST* ast_new_cstr(Arena* arena, const char* str, size_t len);
 AST* ast_new_int(Arena* arena, uint64_t value);

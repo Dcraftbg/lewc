@@ -1,7 +1,7 @@
 #include "typecheck.h"
 // TODO: Actually decent error reporting
 bool typecheck_ast(ProgramState* state, SymTabNode* node, AST* ast) {
-    static_assert(AST_KIND_COUNT == 262, "Update typecheck_ast");
+    static_assert(AST_KIND_COUNT == 7, "Update typecheck_ast");
     switch(ast->kind) {
     case AST_CALL: {
         if(!typecheck_ast(state, node, ast->as.call.what)) return false;
@@ -43,19 +43,25 @@ bool typecheck_ast(ProgramState* state, SymTabNode* node, AST* ast) {
             return false;
         }
         break;
-    case '+':
-        if(!typecheck_ast(state, node, ast->as.binop.lhs)) return false;
-        if(!typecheck_ast(state, node, ast->as.binop.rhs)) return false;
-        ast->type = ast->as.binop.lhs->type;
-        if(!type_eq(ast->as.binop.lhs->type, ast->as.binop.rhs->type)) {
-            eprintfln("Trying to add two different types together with '+'");
-            type_dump(stderr, ast->as.binop.lhs->type); eprintf(" + "); type_dump(stderr, ast->as.binop.rhs->type); eprintf("\n");
-            return false;
-        }
-        if(!type_isbinary(ast->as.binop.lhs->type)) {
-            eprintfln("ERROR: We don't support addition between nonbinary types:");
-            type_dump(stderr, ast->as.binop.lhs->type); eprintf(" + "); type_dump(stderr, ast->as.binop.rhs->type); eprintf("\n");
-            return false;
+    case AST_BINOP:
+        switch(ast->as.binop.op) {
+        case '+':
+            if(!typecheck_ast(state, node, ast->as.binop.lhs)) return false;
+            if(!typecheck_ast(state, node, ast->as.binop.rhs)) return false;
+            ast->type = ast->as.binop.lhs->type;
+            if(!type_eq(ast->as.binop.lhs->type, ast->as.binop.rhs->type)) {
+                eprintfln("Trying to add two different types together with '+'");
+                type_dump(stderr, ast->as.binop.lhs->type); eprintf(" + "); type_dump(stderr, ast->as.binop.rhs->type); eprintf("\n");
+                return false;
+            }
+            if(!type_isbinary(ast->as.binop.lhs->type)) {
+                eprintfln("ERROR: We don't support addition between nonbinary types:");
+                type_dump(stderr, ast->as.binop.lhs->type); eprintf(" + "); type_dump(stderr, ast->as.binop.rhs->type); eprintf("\n");
+                return false;
+            }
+            break;
+        default:
+            unreachable("ast->as.binop.op=%d", ast->as.binop.op);
         }
         break;
     case AST_DEREF: {
