@@ -13,7 +13,6 @@ typedef struct {
 } Statements;
 typedef struct Scope Scope;
 struct Scope {
-    Scope* parent;
     Statements statements;
 };
 struct Statement {
