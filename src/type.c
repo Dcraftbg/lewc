@@ -39,6 +39,9 @@ void type_dump(FILE* f, Type* t) {
     case CORE_PTR:
         type_dump(f, t->inner_type);
         break;
+    case CORE_BOOL:
+        fprintf(f, "bool");
+        break;
     case CORE_I8:
         fprintf(f, "%c8", t->unsign ? 'u' : 'i');
         break;
