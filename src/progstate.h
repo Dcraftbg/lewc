@@ -29,7 +29,6 @@ Statement* statement_eval(Arena* arena, AST* ast);
 typedef struct ProgramState ProgramState;
 struct ProgramState {
     TypeTable type_table;
-    Scope global;
     FuncMap funcs;
     SymTabNode symtab_root;
     Arena* arena;
