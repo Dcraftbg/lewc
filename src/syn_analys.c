@@ -70,23 +70,28 @@ bool syn_analyse_ast(SymTabNode* node, AST* ast) {
     }
     return true;
 }
+
+bool syn_analyse_scope(SymTabNode* node, Statements* scope);
+bool syn_analyse_statement(SymTabNode* node, Statement* statement) {
+    static_assert(STATEMENT_COUNT == 3, "Update syn_analyse");
+    switch(statement->kind) {
+    case STATEMENT_RETURN:
+        if(!syn_analyse_ast(node, statement->as.ast)) return false;
+        break;
+    case STATEMENT_EVAL:
+        if(!syn_analyse_ast(node, statement->as.ast)) return false;
+        break;
+    case STATEMENT_SCOPE:
+        if(!syn_analyse_scope(node, statement->as.scope)) return false;
+        break;
+    default:
+        unreachable("statement->kind=%d", statement->kind);
+    }
+    return true;
+}
 bool syn_analyse_scope(SymTabNode* node, Statements* scope) {
     for(size_t j=0; j < scope->len; ++j) {
-        Statement* statement = scope->items[j];
-        static_assert(STATEMENT_COUNT == 3, "Update syn_analyse");
-        switch(statement->kind) {
-        case STATEMENT_RETURN:
-            if(!syn_analyse_ast(node, statement->as.ast)) return false;
-            break;
-        case STATEMENT_EVAL:
-            if(!syn_analyse_ast(node, statement->as.ast)) return false;
-            break;
-        case STATEMENT_SCOPE:
-            if(!syn_analyse_scope(node, statement->as.scope)) return false;
-            break;
-        default:
-            unreachable("statement->kind=%d", statement->kind);
-        }
+        if(!syn_analyse_statement(node, scope->items[j])) return false;
     }
     return true;
 }

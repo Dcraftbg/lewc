@@ -82,23 +82,27 @@ bool typecheck_ast(ProgramState* state, SymTabNode* node, AST* ast) {
     }
     return true;
 }
+bool typecheck_scope(ProgramState* state, SymTabNode* node, Statements* scope);
+bool typecheck_statement(ProgramState* state, SymTabNode* node, Statement* statement) {
+    static_assert(STATEMENT_COUNT == 3, "Update syn_analyse");
+    switch(statement->kind) {
+    case STATEMENT_RETURN:
+        if(!typecheck_ast(state, node, statement->as.ast)) return false;
+        break;
+    case STATEMENT_EVAL:
+        if(!typecheck_ast(state, node, statement->as.ast)) return false;
+        break;
+    case STATEMENT_SCOPE:
+        if(!typecheck_scope(state, node, statement->as.scope)) return false;
+        break;
+    default:
+        unreachable("statement->kind=%d", statement->kind);
+    }
+    return true;
+}
 bool typecheck_scope(ProgramState* state, SymTabNode* node, Statements* scope) {
     for(size_t j = 0; j < scope->len; ++j) {
-        Statement* statement = scope->items[j];
-        static_assert(STATEMENT_COUNT == 3, "Update syn_analyse");
-        switch(statement->kind) {
-        case STATEMENT_RETURN:
-            if(!typecheck_ast(state, node, statement->as.ast)) return false;
-            break;
-        case STATEMENT_EVAL:
-            if(!typecheck_ast(state, node, statement->as.ast)) return false;
-            break;
-        case STATEMENT_SCOPE:
-            if(!typecheck_scope(state, node, statement->as.scope)) return false;
-            break;
-        default:
-            unreachable("statement->kind=%d", statement->kind);
-        }
+        if(!typecheck_statement(state, node, scope->items[j])) return false;
     }
     return true;
 }
