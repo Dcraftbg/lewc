@@ -13,6 +13,7 @@ struct Statements {
     Statement **items;
     size_t len, cap;
 };
+Statements* scope_new(Arena* arena);
 struct Statement {
     int kind;
     union {
@@ -23,6 +24,7 @@ struct Statement {
 };
 Statement* statement_return(Arena* arena, AST* ast);
 Statement* statement_eval(Arena* arena, AST* ast);
+Statement* statement_scope(Arena* arena);
 #include "func.h"
 #include "syn_analys.h"
 typedef struct ProgramState ProgramState;

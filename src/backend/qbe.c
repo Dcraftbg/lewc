@@ -142,7 +142,7 @@ bool build_qbe_scope(Qbe* qbe, Statements* scope) {
             nprintfln("    ret %%s%zu", n);
             break;
         case STATEMENT_SCOPE:
-            if(!build_qbe_scope(qbe, scope)) return false;
+            if(!build_qbe_scope(qbe, statement->as.scope)) return false;
             break;
         default:
             unreachable("statement->kind=%d", statement->kind);

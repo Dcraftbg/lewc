@@ -94,7 +94,8 @@ bool typecheck_scope(ProgramState* state, SymTabNode* node, Statements* scope) {
             if(!typecheck_ast(state, node, statement->as.ast)) return false;
             break;
         case STATEMENT_SCOPE:
-            return typecheck_scope(state, node, statement->as.scope);
+            if(!typecheck_scope(state, node, statement->as.scope)) return false;
+            break;
         default:
             unreachable("statement->kind=%d", statement->kind);
         }

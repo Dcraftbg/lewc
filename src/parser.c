@@ -2,12 +2,6 @@
 #include "parser.h"
 #include "darray.h"
 
-Statements* new_scope(Arena* arena) {
-    Statements* s = arena_alloc(arena, sizeof(*s));
-    if(!s) return s;
-    memset(s, 0, sizeof(*s));
-    return s;
-}
 Statements* funcs_find(FuncMap* funcs, Atom* name) {
     Function* func;
     if((func=func_map_get(funcs, name))) return func->scope;
@@ -224,6 +218,32 @@ Statement* parse_statement(Parser* parser, Token t) {
             }
             return statement_return(parser->arena, ast);
         } break;
+        case '{': {
+            lexer_eat(parser->lexer, 1);
+            Statement* scope = statement_scope(parser->arena);
+            while((t=lexer_peak_next(parser->lexer)).kind != '}') {
+                if(t.kind >= TOKEN_END) {
+                    if(t.kind >= TOKEN_ERR) {
+                        eprintfln("ERROR:%s: Lexer error %s", tloc(t), tdisplay(t));
+                        exit(1);
+                    } else {
+                        eprintfln("ERROR:%s: Unexpected token in scope body: %s", tloc(t), tdisplay(t));
+                        exit(1);
+                    }
+                }
+                if(t.kind == ';') {
+                    lexer_eat(parser->lexer, 1);
+                    continue;
+                }
+                da_push(scope->as.scope, parse_statement(parser, t));
+            }
+            t = lexer_next(parser->lexer);
+            if(t.kind != '}') {
+                eprintfln("ERROR:%s: Expected '}' at the end of function body, but found: %s", tloc(t), tdisplay(t));
+                exit(1);
+            }
+            return scope;
+        } break;
     }
     AST* ast = parse_ast(parser);
     if(!ast) {
@@ -293,7 +313,7 @@ void parse(Parser* parser, Lexer* lexer, Arena* arena) {
                     eprintfln("ERROR:%s: Missing '{' at the start of function. Got: %s", tloc(t), tdisplay(t));
                     exit(1);
                 }
-                Statements* s = new_scope(parser->arena);
+                Statements* s = scope_new(parser->arena);
                 parse_func_body(parser, s);
                 funcs_insert(&parser->state->funcs, name, fid, s);
             } else {
