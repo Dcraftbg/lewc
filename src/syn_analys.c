@@ -66,8 +66,27 @@ bool syn_analyse_ast(SymTabNode* node, AST* ast) {
     case AST_C_STR:
         break;
     default:
-        eprintfln("UNHANDLED AST %d", ast->kind);
-        exit(1);
+        unreachable("ast->kind=%d", ast->kind);
+    }
+    return true;
+}
+bool syn_analyse_scope(SymTabNode* node, Statements* scope) {
+    for(size_t j=0; j < scope->len; ++j) {
+        Statement* statement = scope->items[j];
+        static_assert(STATEMENT_COUNT == 3, "Update syn_analyse");
+        switch(statement->kind) {
+        case STATEMENT_RETURN:
+            if(!syn_analyse_ast(node, statement->as.ast)) return false;
+            break;
+        case STATEMENT_EVAL:
+            if(!syn_analyse_ast(node, statement->as.ast)) return false;
+            break;
+        case STATEMENT_SCOPE:
+            if(!syn_analyse_scope(node, statement->as.scope)) return false;
+            break;
+        default:
+            unreachable("statement->kind=%d", statement->kind);
+        }
     }
     return true;
 }
@@ -93,21 +112,7 @@ bool syn_analyse(ProgramState* state) {
                         sym_tab_insert(&node->symtab, type->signature.input.items[j].name, symbol_new(state->arena, type->signature.input.items[j].type));
                     }
                 }
-                for(size_t j=0; j < func->scope->len; ++j) {
-                    Statement* statement = func->scope->items[j];
-                    static_assert(STATEMENT_COUNT == 2, "Update syn_analyse");
-                    switch(statement->kind) {
-                    case STATEMENT_RETURN:
-                        if(!syn_analyse_ast(node, statement->as.ast)) return false;
-                        break;
-                    case STATEMENT_EVAL:
-                        if(!syn_analyse_ast(node, statement->as.ast)) return false;
-                        break;
-                    default:
-                        eprintfln("UNHANDLED STATEMENT %d",statement->kind);
-                        exit(1);
-                    }
-                } 
+                if(!syn_analyse_scope(node, func->scope)) return false;
                 node = node->parent;
             }
             fpair = fpair->next; 

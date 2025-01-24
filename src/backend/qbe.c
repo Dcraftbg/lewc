@@ -131,7 +131,7 @@ size_t build_qbe_ast(Qbe* qbe, AST* ast) {
 bool build_qbe_scope(Qbe* qbe, Statements* scope) {
     for(size_t j = 0; j < scope->len; ++j) {
         Statement* statement = scope->items[j];
-        static_assert(STATEMENT_COUNT == 2, "Update build_qbe_qbe");
+        static_assert(STATEMENT_COUNT == 3, "Update build_qbe_qbe");
         size_t n = 0;
         switch(statement->kind) {
         case STATEMENT_EVAL:
@@ -140,6 +140,9 @@ bool build_qbe_scope(Qbe* qbe, Statements* scope) {
         case STATEMENT_RETURN:
             n = build_qbe_ast(qbe, statement->as.ast);
             nprintfln("    ret %%s%zu", n);
+            break;
+        case STATEMENT_SCOPE:
+            if(!build_qbe_scope(qbe, scope)) return false;
             break;
         default:
             unreachable("statement->kind=%d", statement->kind);

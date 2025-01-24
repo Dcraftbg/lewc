@@ -83,6 +83,25 @@ bool typecheck_ast(ProgramState* state, SymTabNode* node, AST* ast) {
     }
     return true;
 }
+bool typecheck_scope(ProgramState* state, SymTabNode* node, Statements* scope) {
+    for(size_t j = 0; j < scope->len; ++j) {
+        Statement* statement = scope->items[j];
+        static_assert(STATEMENT_COUNT == 3, "Update syn_analyse");
+        switch(statement->kind) {
+        case STATEMENT_RETURN:
+            if(!typecheck_ast(state, node, statement->as.ast)) return false;
+            break;
+        case STATEMENT_EVAL:
+            if(!typecheck_ast(state, node, statement->as.ast)) return false;
+            break;
+        case STATEMENT_SCOPE:
+            return typecheck_scope(state, node, statement->as.scope);
+        default:
+            unreachable("statement->kind=%d", statement->kind);
+        }
+    }
+    return true;
+}
 bool typecheck(ProgramState* state) {
     SymTabNode* node = &state->symtab_root;
     for(size_t i = 0; i < state->funcs.buckets.len; ++i) {
@@ -95,21 +114,7 @@ bool typecheck(ProgramState* state) {
             Function* func = &fpair->value;
             if(func->type->attribs & TYPE_ATTRIB_EXTERN) continue;
             node = func->symtab_node;
-            for(size_t j = 0; j < func->scope->len; ++j) {
-                Statement* statement = func->scope->items[j];
-                static_assert(STATEMENT_COUNT == 2, "Update syn_analyse");
-                switch(statement->kind) {
-                case STATEMENT_RETURN:
-                    if(!typecheck_ast(state, node, statement->as.ast)) return false;
-                    break;
-                case STATEMENT_EVAL:
-                    if(!typecheck_ast(state, node, statement->as.ast)) return false;
-                    break;
-                default:
-                    eprintfln("UNHANDLED STATEMENT %d",statement->kind);
-                    exit(1);
-                }
-            } 
+            if(!typecheck_scope(state, node, func->scope)) return false;
             node = old;
         }
     }

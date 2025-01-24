@@ -4,6 +4,7 @@
 enum {
     STATEMENT_RETURN,
     STATEMENT_EVAL,
+    STATEMENT_SCOPE,
     STATEMENT_COUNT
 };
 typedef struct Statement Statement;
@@ -16,6 +17,7 @@ struct Statement {
     int kind;
     union {
         AST* ast;
+        Statements* scope;
     } as;
     /*metadata*/;
 };
