@@ -1,0 +1,4 @@
+./bin/lewc examples/while.lew -o ./int/tests/while.s
+as ./int/tests/while.s -o ./int/tests/while.o
+gcc -static ./int/tests/while.o -o ./bin/tests/while
+./bin/tests/while
