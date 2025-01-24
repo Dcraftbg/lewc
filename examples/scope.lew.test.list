@@ -1,0 +1,4 @@
+./bin/lewc examples/scope.lew -o ./int/tests/scope.s
+as ./int/tests/scope.s -o ./int/tests/scope.o
+gcc -static ./int/tests/scope.o -o ./bin/tests/scope
+./bin/tests/scope
