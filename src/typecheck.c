@@ -1,4 +1,5 @@
 #include "typecheck.h"
+#include "token.h"
 // TODO: Actually decent error reporting
 bool typecheck_ast(ProgramState* state, SymTabNode* node, AST* ast) {
     static_assert(AST_KIND_COUNT == 7, "Update typecheck_ast");
@@ -57,6 +58,21 @@ bool typecheck_ast(ProgramState* state, SymTabNode* node, AST* ast) {
             if(!type_isbinary(ast->as.binop.lhs->type)) {
                 eprintfln("ERROR: We don't support addition between nonbinary types:");
                 type_dump(stderr, ast->as.binop.lhs->type); eprintf(" + "); type_dump(stderr, ast->as.binop.rhs->type); eprintf("\n");
+                return false;
+            }
+            break;
+        case TOKEN_EQEQ:
+            if(!typecheck_ast(state, node, ast->as.binop.lhs)) return false;
+            if(!typecheck_ast(state, node, ast->as.binop.rhs)) return false;
+            ast->type = &type_bool;
+            if(!type_eq(ast->as.binop.lhs->type, ast->as.binop.rhs->type)) {
+                eprintfln("Trying to add two different types together with '=='");
+                type_dump(stderr, ast->as.binop.lhs->type); eprintf(" == "); type_dump(stderr, ast->as.binop.rhs->type); eprintf("\n");
+                return false;
+            }
+            if(!type_isbinary(ast->as.binop.lhs->type)) {
+                eprintfln("ERROR: We don't support addition between nonbinary types:");
+                type_dump(stderr, ast->as.binop.lhs->type); eprintf(" == "); type_dump(stderr, ast->as.binop.rhs->type); eprintf("\n");
                 return false;
             }
             break;

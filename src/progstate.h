@@ -27,6 +27,7 @@ struct Statement {
 Statement* statement_return(Arena* arena, AST* ast);
 Statement* statement_eval(Arena* arena, AST* ast);
 Statement* statement_scope(Arena* arena);
+Statement* statement_while(Arena* arena, AST* cond, Statement* body);
 #include "func.h"
 #include "syn_analys.h"
 typedef struct ProgramState ProgramState;

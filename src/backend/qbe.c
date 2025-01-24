@@ -1,4 +1,5 @@
 #include "qbe.h"
+#include "../token.h"
 #include "../darray.h"
 #include <errno.h>
 typedef struct {
@@ -79,6 +80,12 @@ size_t build_qbe_ast(Qbe* qbe, AST* ast) {
             if(!v0 || !v1) return 0;
             nprintf("    %%s%zu =", n=qbe->inst++);dump_type_to_qbe(qbe, ast->as.binop.lhs->type);nprintfln(" add %%s%zu, %%s%zu", v0, v1);
         } break;
+        case TOKEN_EQEQ: {
+            size_t v0 = build_qbe_ast(qbe, ast->as.binop.lhs);
+            size_t v1 = build_qbe_ast(qbe, ast->as.binop.rhs);
+            if(!v0 || !v1) return 0;
+            nprintf("    %%s%zu =", n=qbe->inst++);dump_type_to_qbe(qbe, ast->as.binop.lhs->type);nprintf(" ceq");dump_type_to_qbe(qbe, ast->as.binop.lhs->type);nprintfln(" %%s%zu, %%s%zu", v0, v1);
+        } break;
         default:
             unreachable("ast->as.binop.op=%d", ast->as.binop.op);
         }
@@ -154,9 +161,10 @@ bool build_qbe_statement(Qbe* qbe, Statement* statement) {
         n = qbe->inst;
         nprintfln("@while_cond_%zu", n);
         size_t cond = build_qbe_ast(qbe, statement->as.whil.cond);
-        nprintfln("    jnz %%s%zu @while_body_%zu, @while_end_%zu", cond, n, n);
+        nprintfln("    jnz %%s%zu, @while_body_%zu, @while_end_%zu", cond, n, n);
         nprintfln("@while_body_%zu", n);
         if(!build_qbe_statement(qbe, statement->as.whil.body)) return false;
+        nprintfln("    jmp @while_cond_%zu", n);
         nprintfln("@while_end_%zu", n);
     } break;
     default:

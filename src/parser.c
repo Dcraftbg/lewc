@@ -103,12 +103,15 @@ AST* parse_basic(Parser* parser) {
 }
 
 #define OPS \
-    X('+')
+    X('+') \
+    X(TOKEN_EQEQ)
 
 int op_prec(int op) {
     switch(op) {
     case '+':
-        return 12;
+        return 5;
+    case TOKEN_EQEQ:
+        return 7;
     default:
         eprintfln("UNKNOWN OP: %d",op);
         abort();
@@ -207,6 +210,46 @@ AST* parse_ast(Parser* parser) {
     }
     return v;
 }
+
+Statement* parse_statement(Parser* parser, Token t);
+Statement* parse_scope(Parser* parser) {
+    Token t;
+    assert((t=lexer_next(parser->lexer)).kind == '{');
+    Statement* scope = statement_scope(parser->arena);
+    while((t=lexer_peak_next(parser->lexer)).kind != '}') {
+        if(t.kind >= TOKEN_END) {
+            if(t.kind >= TOKEN_ERR) {
+                eprintfln("ERROR:%s: Lexer error %s", tloc(t), tdisplay(t));
+                exit(1);
+            } else {
+                eprintfln("ERROR:%s: Unexpected token in scope body: %s", tloc(t), tdisplay(t));
+                exit(1);
+            }
+        }
+        if(t.kind == ';') {
+            lexer_eat(parser->lexer, 1);
+            continue;
+        }
+        da_push(scope->as.scope, parse_statement(parser, t));
+    }
+    t = lexer_next(parser->lexer);
+    if(t.kind != '}') {
+        eprintfln("ERROR:%s: Expected '}' at the end of function body, but found: %s", tloc(t), tdisplay(t));
+        exit(1);
+    }
+    return scope;
+}
+Statement* parse_body(Parser* parser) {
+    Token t = lexer_peak_next(parser->lexer);
+    switch(t.kind) {
+    case '{':
+        return parse_scope(parser);
+    default:
+        eprintfln("ERROR:%s: body must either start with `then` or `{`. Found %s", tloc(t), tdisplay(t));
+        exit(1);
+    }
+    return NULL;
+}
 Statement* parse_statement(Parser* parser, Token t) {
     switch(t.kind) {
         case TOKEN_RETURN: {
@@ -218,32 +261,17 @@ Statement* parse_statement(Parser* parser, Token t) {
             }
             return statement_return(parser->arena, ast);
         } break;
-        case '{': {
+        case '{':
+            return parse_scope(parser);
+        case TOKEN_WHILE: {
             lexer_eat(parser->lexer, 1);
-            Statement* scope = statement_scope(parser->arena);
-            while((t=lexer_peak_next(parser->lexer)).kind != '}') {
-                if(t.kind >= TOKEN_END) {
-                    if(t.kind >= TOKEN_ERR) {
-                        eprintfln("ERROR:%s: Lexer error %s", tloc(t), tdisplay(t));
-                        exit(1);
-                    } else {
-                        eprintfln("ERROR:%s: Unexpected token in scope body: %s", tloc(t), tdisplay(t));
-                        exit(1);
-                    }
-                }
-                if(t.kind == ';') {
-                    lexer_eat(parser->lexer, 1);
-                    continue;
-                }
-                da_push(scope->as.scope, parse_statement(parser, t));
-            }
-            t = lexer_next(parser->lexer);
-            if(t.kind != '}') {
-                eprintfln("ERROR:%s: Expected '}' at the end of function body, but found: %s", tloc(t), tdisplay(t));
+            AST* ast = parse_ast(parser);
+            if(!ast) {
+                eprintfln("ERROR:%s: Failed to parse condition",tloc(t));
                 exit(1);
             }
-            return scope;
-        } break;
+            return statement_while(parser->arena, ast, parse_body(parser));
+        }
     }
     AST* ast = parse_ast(parser);
     if(!ast) {

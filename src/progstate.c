@@ -31,3 +31,10 @@ Statement* statement_eval(Arena* arena, AST* ast) {
     me->as.ast = ast;
     return me;
 }
+Statement* statement_while(Arena* arena, AST* cond, Statement* body) {
+    Statement* me = statement_new(arena);
+    me->kind = STATEMENT_WHILE;
+    me->as.whil.cond = cond;
+    me->as.whil.body = body;
+    return me;
+}
