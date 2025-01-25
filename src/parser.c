@@ -95,7 +95,7 @@ AST* parse_basic(Parser* parser) {
     case TOKEN_C_STR:
         return ast_new_cstr(parser->arena, t.str, t.str_len); 
     case TOKEN_INT:
-        return ast_new_int(parser->arena, t.integer.value); 
+        return ast_new_int(parser->arena, t.integer.type, t.integer.value); 
     default:
         eprintfln("ERROR:%s: Unexpected token in expression: %s", tloc(t),tdisplay(t));
         exit(1);

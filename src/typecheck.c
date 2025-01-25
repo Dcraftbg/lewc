@@ -95,8 +95,10 @@ bool typecheck_ast(ProgramState* state, SymTabNode* node, AST* ast) {
         ast->type = stl_lookup(node, ast->as.symbol)->type;
         break;
     case AST_INT:
-        // TODO: Multiple integer types
-        ast->type = &type_i32;
+        // eprintf("AST_INT. type="); type_dump(stderr, ast->as.integer.type); eprintf("\n");
+        ast->type = ast->as.integer.type ?
+                            ast->as.integer.type :
+                            &type_i32;
         break;
     case AST_C_STR:
         ast->type = type_ptr(state->arena, &type_u8, 1);
@@ -106,18 +108,22 @@ bool typecheck_ast(ProgramState* state, SymTabNode* node, AST* ast) {
     }
     return true;
 }
-bool typecheck_scope(ProgramState* state, SymTabNode* node, Statements* scope);
-bool typecheck_statement(ProgramState* state, SymTabNode* node, Statement* statement) {
+bool typecheck_scope(ProgramState* state, SymTabNode* node, Type* return_type, Statements* scope);
+bool typecheck_statement(ProgramState* state, SymTabNode* node, Type* return_type, Statement* statement) {
     static_assert(STATEMENT_COUNT == 4, "Update syn_analyse");
     switch(statement->kind) {
     case STATEMENT_RETURN:
         if(!typecheck_ast(state, node, statement->as.ast)) return false;
+        if(!type_eq(statement->as.ast->type, return_type)) {
+            eprintf("Return type mismatch. Expected "); type_dump(stderr, return_type); eprintf(" but got "); type_dump(stderr, statement->as.ast->type); eprintf("\n");
+            return false;
+        }
         break;
     case STATEMENT_EVAL:
         if(!typecheck_ast(state, node, statement->as.ast)) return false;
         break;
     case STATEMENT_SCOPE:
-        if(!typecheck_scope(state, node, statement->as.scope)) return false;
+        if(!typecheck_scope(state, node, return_type, statement->as.scope)) return false;
         break;
     case STATEMENT_WHILE: {
         if(!typecheck_ast(state, node, statement->as.whil.cond)) return false;
@@ -126,16 +132,16 @@ bool typecheck_statement(ProgramState* state, SymTabNode* node, Statement* state
             eprintf("While loop condition has type "); type_dump(stderr, cond->type); eprintfln(" Expected type bool");
             return false;
         }
-        if(!typecheck_statement(state, node, statement->as.whil.body)) return false;
+        if(!typecheck_statement(state, node, return_type, statement->as.whil.body)) return false;
     } break;
     default:
         unreachable("statement->kind=%d", statement->kind);
     }
     return true;
 }
-bool typecheck_scope(ProgramState* state, SymTabNode* node, Statements* scope) {
+bool typecheck_scope(ProgramState* state, SymTabNode* node, Type* return_type, Statements* scope) {
     for(size_t j = 0; j < scope->len; ++j) {
-        if(!typecheck_statement(state, node, scope->items[j])) return false;
+        if(!typecheck_statement(state, node, return_type, scope->items[j])) return false;
     }
     return true;
 }
@@ -151,7 +157,7 @@ bool typecheck(ProgramState* state) {
             Function* func = &fpair->value;
             if(func->type->attribs & TYPE_ATTRIB_EXTERN) continue;
             node = func->symtab_node;
-            if(!typecheck_scope(state, node, func->scope)) return false;
+            if(!typecheck_scope(state, node, func->type->signature.output, func->scope)) return false;
             node = old;
         }
     }
