@@ -221,6 +221,7 @@ static Token lex_num_by_radix(size_t l0, size_t c0, Lexer* lexer, size_t radix) 
     return MAKE_TOKEN(TOKEN_INVALID_INT_LITERAL);
 }
 #include "type.h"
+// TODO: Check for overflow here maybe?
 static bool lex_num_suffix(Lexer* lexer, Token* t) {
     Word word = lexer_parse_word(lexer);
     if(word.start == word.end) return true;
