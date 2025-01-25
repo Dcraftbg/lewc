@@ -103,9 +103,11 @@ size_t build_qbe_ast(Qbe* qbe, AST* ast) {
             da_push(&result_args, v);
         }
         if(ast->type) {
-            nprintf("    %%.s%zu =", n=qbe->inst++);dump_type_to_qbe(qbe, ast->type);
+            nprintf("    %%.s%zu =", n=qbe->inst++);dump_type_to_qbe(qbe, ast->type); nprintf(" ");
+        } else {
+            nprintf("    ");
         }
-        nprintf("    call $%s(", ast->as.call.what->as.symbol->data);
+        nprintf("call $%s(", ast->as.call.what->as.symbol->data);
         for(size_t i = 0; i < args->len; ++i) {
             if(i > 0) nprintf(", ");
             dump_type_to_qbe(qbe, args->items[i]->type);nprintf(" %%.s%zu", result_args.items[i]);
