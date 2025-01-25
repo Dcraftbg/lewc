@@ -46,18 +46,20 @@ bool typecheck_ast(ProgramState* state, SymTabNode* node, AST* ast) {
         break;
     case AST_BINOP:
         switch(ast->as.binop.op) {
+        case '=':
+        case '&':
         case '+':
             if(!typecheck_ast(state, node, ast->as.binop.lhs)) return false;
             if(!typecheck_ast(state, node, ast->as.binop.rhs)) return false;
             ast->type = ast->as.binop.lhs->type;
             if(!type_eq(ast->as.binop.lhs->type, ast->as.binop.rhs->type)) {
-                eprintfln("Trying to add two different types together with '+'");
-                type_dump(stderr, ast->as.binop.lhs->type); eprintf(" + "); type_dump(stderr, ast->as.binop.rhs->type); eprintf("\n");
+                eprintfln("Trying to add two different types together with '%c'", ast->as.binop.op);
+                type_dump(stderr, ast->as.binop.lhs->type); eprintf(" %c ", ast->as.binop.op); type_dump(stderr, ast->as.binop.rhs->type); eprintf("\n");
                 return false;
             }
             if(!type_isbinary(ast->as.binop.lhs->type)) {
                 eprintfln("ERROR: We don't support addition between nonbinary types:");
-                type_dump(stderr, ast->as.binop.lhs->type); eprintf(" + "); type_dump(stderr, ast->as.binop.rhs->type); eprintf("\n");
+                type_dump(stderr, ast->as.binop.lhs->type); eprintf(" %c ", ast->as.binop.op); type_dump(stderr, ast->as.binop.rhs->type); eprintf("\n");
                 return false;
             }
             break;
