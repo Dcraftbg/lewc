@@ -1,0 +1,4 @@
+./bin/lewc examples/andeq.lew -o ./int/tests/andeq.s
+as ./int/tests/andeq.s -o ./int/tests/andeq.o
+gcc -static ./int/tests/andeq.o -o ./bin/tests/andeq
+./bin/tests/andeq
