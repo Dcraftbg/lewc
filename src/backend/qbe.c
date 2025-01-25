@@ -132,7 +132,7 @@ size_t build_qbe_ast(Qbe* qbe, AST* ast) {
         nprintf("    %%s%zu =", n=qbe->inst++);dump_type_to_qbe(qbe, ast->type);nprintfln(" copy %lu", ast->as.integer.value);
         break;
     case AST_SYMBOL:
-        nprintf("    %%s%zu =", n=qbe->inst++);dump_type_to_qbe(qbe, ast->type);nprintfln(" copy %%%s", ast->as.symbol->data);
+        nprintf("    %%s%zu =", n=qbe->inst++);dump_type_to_qbe(qbe, ast->type);nprintf(" load");dump_type_to_qbe_full(qbe, ast->type);nprintfln(" %%%s", ast->as.symbol->data);
         break;
     default:
         eprintfln("ERROR: Unsupported. I guess :( %d (build_qbe_ast)", ast->kind);
@@ -208,10 +208,30 @@ bool build_qbe_qbe(Qbe* qbe) {
                 if(i > 0) nprintf(", ");
                 Arg* arg = &func->type->signature.input.items[i];
                 dump_type_to_qbe(qbe, arg->type);
-                if(arg->name) nprintf(" %%%s", arg->name->data);
+                nprintf(" %%.a%zu", i);
             }
             nprintfln(") {");
             nprintfln("@start");
+            for(size_t i = 0; i < func->type->signature.input.len; ++i) {
+                Arg* arg = &func->type->signature.input.items[i];
+                size_t sz = 0, count=1;
+                switch(arg->type->core){
+                case CORE_PTR:
+                    sz = 8;
+                    break;
+                case CORE_BOOL:
+                case CORE_I8:
+                case CORE_I32:
+                    sz = 4;
+                    break;
+                default:
+                    unreachable("arg->type->core=%d", arg->type->core);
+                }
+                if(arg->name) {
+                    nprintfln("    %%%s =l alloc%zu %zu", arg->name->data, sz, count);
+                    nprintf("    store");dump_type_to_qbe(qbe, arg->type);nprintfln(" %%.a%zu, %%%s", i, arg->name->data);
+                }
+            }
             if(!build_qbe_scope(qbe, func->scope)) return false;
             nprintfln("}");
         }
