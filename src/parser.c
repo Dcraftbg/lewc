@@ -104,17 +104,24 @@ AST* parse_basic(Parser* parser) {
 
 #define OPS \
     X('+') \
+    X('=') \
+    X('&') \
     X(TOKEN_EQEQ)
 
+// https://en.cppreference.com/w/cpp/language/operator_precedence
 int op_prec(int op) {
     switch(op) {
     case '+':
-        return 5;
+    case '-':
+        return 6;
     case TOKEN_EQEQ:
-        return 7;
+        return 10;
+    case '&':
+        return 11;
+    case '=':
+        return 16;
     default:
-        eprintfln("UNKNOWN OP: %d",op);
-        abort();
+        unreachable("op=%d",op);
         return -1;
     }
 }
@@ -159,54 +166,69 @@ AST* parse_deref(Parser* parser) {
     return ast_new_deref(parser->arena, what);
 }
 AST* parse_ast(Parser* parser) {
+    // eprintfln("parse_ast");
     Token t;
     AST* v = NULL;
     t = lexer_peak_next(parser->lexer);
+    bool running = true;
+    // FIXME: Make this into basic expression as well as function call. Thats kinda important
     switch(t.kind) {
     case '*':
         v = parse_deref(parser);
         break;
     default:
+        // eprintfln("(thingy) (parse_basic)");
         v = parse_basic(parser);
         break;
     }
     if(!v) return NULL;
-    t = lexer_peak_next(parser->lexer);
-    switch(t.kind) {
-    case '(': {
-        return parse_astcall(parser, v);
-    } break;
-    #define X(op) case op:
-    OPS
-    #undef X
-    {
-        int op = t.kind;
-        int precedence = op_prec(op);
-        lexer_eat(parser->lexer, 1);
-        AST* v2 = parse_basic(parser);
-        if(!v2) return NULL;
+    while(running) {
         t = lexer_peak_next(parser->lexer);
         switch(t.kind) {
-        case '(':
-            return ast_new_binop(parser->arena, op, v, parse_astcall(parser, v2));
+        case '(': {
+            v = parse_astcall(parser, v);
+        } break;
         #define X(op) case op:
-        OPS 
+        OPS
         #undef X
         {
-            int newop = t.kind;
-            int newprecedence = op_prec(newop);
-            if (precedence <= newprecedence) {
-                lexer_eat(parser->lexer, 1);
-                AST* v3 = parse_ast(parser);
-                if(!v3) return NULL;
-                v2 = ast_new_binop(parser->arena, newop, v2, v3);
+            int op = t.kind;
+            int precedence = op_prec(op);
+            lexer_eat(parser->lexer, 1);
+            // eprintfln("op='%c' (parse_basic)", op);
+            AST* v2 = parse_basic(parser);
+            if(!v2) return NULL;
+            t = lexer_peak_next(parser->lexer);
+            switch(t.kind) {
+            case '(':
+                v = ast_new_binop(parser->arena, op, v, parse_astcall(parser, v2));
+                break;
+            #define X(op) case op:
+            OPS 
+            #undef X
+            {
+                int newop = t.kind;
+                int newprecedence = op_prec(newop);
+                // eprintfln("newop=%c newprecedence=%d", newop, newprecedence);
+                // eprintfln("op=%c precedence=%d", op, precedence);
+                if (precedence >= newprecedence) {
+                    lexer_eat(parser->lexer, 1);
+                    // eprintfln("newop=%c (parse_ast)", newop); 
+                    AST* v3 = parse_ast(parser);
+                    if(!v3) return NULL;
+                    v2 = ast_new_binop(parser->arena, newop, v2, v3);
+                }
+                v = ast_new_binop(parser->arena, op, v, v2);
+            } break;
+            default:
+                v = ast_new_binop(parser->arena, op, v, v2);
+                break;
             }
-            return ast_new_binop(parser->arena, op, v, v2);
         } break;
         default:
-            return ast_new_binop(parser->arena, op, v, v2);
+            running = false;
+            break;
         }
-    } break;
     }
     return v;
 }
