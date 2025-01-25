@@ -136,10 +136,11 @@ static size_t lex_prefix_to_radix(Lexer* lexer) {
     }
     return 10;
 }
+#define is_base16 isxdigit
 static Token lex_num_base16(size_t l0, size_t c0, Lexer* lexer) {
     uint32_t c;
     uint64_t result=0;
-    while(lexer->cursor < lexer->end && (isalnum((c=lexer_peak_c(lexer))) || c == '_')) {
+    while(lexer->cursor < lexer->end && (is_base16((c=lexer_peak_c(lexer))) || c == '_')) {
         c = lexer_next_c(lexer);
         if(c >= '0' && c <= '9') {
             result = result * 16 + (c - '0');
@@ -155,12 +156,15 @@ static Token lex_num_base16(size_t l0, size_t c0, Lexer* lexer) {
     }
     return MAKE_TOKEN(TOKEN_INT, .integer={ .value = result });
 }
+static bool is_base2(uint32_t c) {
+    return c >= '0' && c <= '1';
+}
 static Token lex_num_base2(size_t l0, size_t c0, Lexer* lexer) {
     uint32_t c;
     uint64_t result=0;
-    while(lexer->cursor < lexer->end && (isalnum((c=lexer_peak_c(lexer))) || c == '_')) {
+    while(lexer->cursor < lexer->end && (is_base2((c=lexer_peak_c(lexer))) || c == '_')) {
         c = lexer_next_c(lexer);
-        if(c >= '0' && c <= '1') {
+        if(is_base2(c)) {
             result = result * 2 + (c - '0');
         } else if (c == '_') {}
         else {
@@ -170,12 +174,13 @@ static Token lex_num_base2(size_t l0, size_t c0, Lexer* lexer) {
     }
     return MAKE_TOKEN(TOKEN_INT, .integer={ .value = result });
 }
+#define is_base10 isdigit
 static Token lex_num_base10(size_t l0, size_t c0, Lexer* lexer) {
     uint32_t c;
     uint64_t result=0;
-    while(lexer->cursor < lexer->end && (isalnum((c=lexer_peak_c(lexer))) || c == '_')) {
+    while(lexer->cursor < lexer->end && (is_base10((c=lexer_peak_c(lexer))) || c == '_')) {
         c = lexer_next_c(lexer);
-        if(c >= '0' && c <= '9') {
+        if(is_base10(c)) {
             result = result * 10 + (c - '0');
         } else if (c == '_') {}
         else {
@@ -185,12 +190,15 @@ static Token lex_num_base10(size_t l0, size_t c0, Lexer* lexer) {
     }
     return MAKE_TOKEN(TOKEN_INT, .integer={ .value = result });
 }
+static bool is_base8(uint32_t c) {
+    return c >= '0' && c <= '7';
+}
 static Token lex_num_base8(size_t l0, size_t c0, Lexer* lexer) {
     uint32_t c;
     uint64_t result=0;
-    while(lexer->cursor < lexer->end && (isalnum((c=lexer_peak_c(lexer))) || c == '_')) {
+    while(lexer->cursor < lexer->end && (is_base8((c=lexer_peak_c(lexer))) || c == '_')) {
         c = lexer_next_c(lexer);
-        if (c >= '0' && c <= '7') {
+        if (is_base8(c)) {
             result = result * 8 + (c - '0');
         } else if (c == '_') {}
         else {
@@ -211,6 +219,22 @@ static Token lex_num_by_radix(size_t l0, size_t c0, Lexer* lexer, size_t radix) 
         return MAKE_TOKEN(TOKEN_INVALID_INT_LITERAL);
     }
     return MAKE_TOKEN(TOKEN_INVALID_INT_LITERAL);
+}
+#include "type.h"
+static bool lex_num_suffix(Lexer* lexer, Token* t) {
+    Word word = lexer_parse_word(lexer);
+    if(word.start == word.end) return true;
+    if(wordeq(word, "u8")) {
+        t->integer.type = &type_u8;
+    } else if (wordeq(word, "bool")) {
+        t->integer.type = &type_bool;
+    } else if (wordeq(word, "i32")) {
+        t->integer.type = &type_i32;
+    } else {
+        eprintfln("ERROR:%s: Invalid suffix `%.*s`", tloc(*t), (int)(word.end-word.start), word.start);
+        return false;
+    }
+    return true;
 }
 Token lexer_next(Lexer* lexer) {
     lexer_trim(lexer);
@@ -245,7 +269,7 @@ Token lexer_next(Lexer* lexer) {
             return MAKE_TOKEN(TOKEN_ARROW);
         }
         return MAKE_TOKEN(c);
-    case '0':
+    case '0': {
         lexer_next_c(lexer);
         if(lexer->cursor >= lexer->end) return MAKE_TOKEN(TOKEN_INT, .integer= { .value = 0 });
         size_t radix = lex_prefix_to_radix(lexer);
@@ -253,10 +277,21 @@ Token lexer_next(Lexer* lexer) {
             eprintfln("ERROR:%s:%zu:%zu Cannot have an integer with multiple 0's (i.e. 000000)", lexer->path, lexer->l0, lexer->c0);
             return MAKE_TOKEN(TOKEN_INVALID_INT_LITERAL);
         }
-        return lex_num_by_radix(l0, c0, lexer, radix);
+        Token t = lex_num_by_radix(l0, c0, lexer, radix);
+        if(!lex_num_suffix(lexer, &t)) {
+            eprintfln("ERROR:%s:%zu:%zu Invalid type suffix for integer", lexer->path, lexer->l0, lexer->c0);
+            return MAKE_TOKEN(TOKEN_INVALID_INT_LITERAL);
+        }
+        return t;
+    }
     default:
         if (c >= '0' && c <= '9') {
-            return lex_num_by_radix(l0, c0, lexer, 10);
+            Token t = lex_num_by_radix(l0, c0, lexer, 10);
+            if(!lex_num_suffix(lexer, &t)) {
+                eprintfln("ERROR:%s:%zu:%zu Invalid type suffix for integer", lexer->path, lexer->l0, lexer->c0);
+                return MAKE_TOKEN(TOKEN_INVALID_INT_LITERAL);
+            }
+            return t;
         } else if(c == 'c' && lexer_peak_c_n(lexer, 1) == '"') {
             lexer_next_c(lexer);
             const char* str = NULL;

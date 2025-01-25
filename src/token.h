@@ -4,7 +4,6 @@
 #include <stddef.h>
 #include <stdio.h>
 #include "utils.h"
-
 enum {
     TOKEN_ATOM=256,
     TOKEN_ARROW,
@@ -23,6 +22,7 @@ enum {
     TOKEN_INVALID_INT_LITERAL,
     TOKEN_COUNT
 };
+typedef struct Type Type;
 typedef struct {
     const char* path;
     size_t l0, c0;
@@ -36,7 +36,7 @@ typedef struct {
         };
         uint32_t codepoint;
         struct {
-            /*typeid_t typeid;*/ 
+            Type* type;
             uint64_t value;
         } integer;
     };
