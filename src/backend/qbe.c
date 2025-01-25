@@ -78,13 +78,13 @@ size_t build_qbe_ast(Qbe* qbe, AST* ast) {
             size_t v0 = build_qbe_ast(qbe, ast->as.binop.lhs);
             size_t v1 = build_qbe_ast(qbe, ast->as.binop.rhs);
             if(!v0 || !v1) return 0;
-            nprintf("    %%s%zu =", n=qbe->inst++);dump_type_to_qbe(qbe, ast->as.binop.lhs->type);nprintfln(" add %%s%zu, %%s%zu", v0, v1);
+            nprintf("    %%.s%zu =", n=qbe->inst++);dump_type_to_qbe(qbe, ast->as.binop.lhs->type);nprintfln(" add %%.s%zu, %%.s%zu", v0, v1);
         } break;
         case TOKEN_EQEQ: {
             size_t v0 = build_qbe_ast(qbe, ast->as.binop.lhs);
             size_t v1 = build_qbe_ast(qbe, ast->as.binop.rhs);
             if(!v0 || !v1) return 0;
-            nprintf("    %%s%zu =", n=qbe->inst++);dump_type_to_qbe(qbe, ast->as.binop.lhs->type);nprintf(" ceq");dump_type_to_qbe(qbe, ast->as.binop.lhs->type);nprintfln(" %%s%zu, %%s%zu", v0, v1);
+            nprintf("    %%.s%zu =", n=qbe->inst++);dump_type_to_qbe(qbe, ast->as.binop.lhs->type);nprintf(" ceq");dump_type_to_qbe(qbe, ast->as.binop.lhs->type);nprintfln(" %%.s%zu, %%.s%zu", v0, v1);
         } break;
         default:
             unreachable("ast->as.binop.op=%d", ast->as.binop.op);
@@ -103,12 +103,12 @@ size_t build_qbe_ast(Qbe* qbe, AST* ast) {
             da_push(&result_args, v);
         }
         if(ast->type) {
-            nprintf("    %%s%zu =", n=qbe->inst++);dump_type_to_qbe(qbe, ast->type);
+            nprintf("    %%.s%zu =", n=qbe->inst++);dump_type_to_qbe(qbe, ast->type);
         }
         nprintf("    call $%s(", ast->as.call.what->as.symbol->data);
         for(size_t i = 0; i < args->len; ++i) {
             if(i > 0) nprintf(", ");
-            dump_type_to_qbe(qbe, args->items[i]->type);nprintf(" %%s%zu", result_args.items[i]);
+            dump_type_to_qbe(qbe, args->items[i]->type);nprintf(" %%.s%zu", result_args.items[i]);
         }
         nprintfln(")");
         free(args->items);
@@ -122,17 +122,17 @@ size_t build_qbe_ast(Qbe* qbe, AST* ast) {
         global.array.data = ast->as.str.str;
         global.array.len  = ast->as.str.len+1;
         da_push(&qbe->globals, global);
-        nprintf("    %%s%zu =", n=qbe->inst++);nprintfln("l copy $.g%zu", global.unnamed_i);
+        nprintf("    %%.s%zu =", n=qbe->inst++);nprintfln("l copy $.g%zu", global.unnamed_i);
     } break;
     case AST_DEREF: {
         size_t v0 = build_qbe_ast(qbe, ast->as.deref.what);
-        nprintf("    %%s%zu =", n=qbe->inst++); dump_type_to_qbe(qbe, ast->type);nprintf(" load");dump_type_to_qbe_full(qbe, ast->type); nprintfln(" %%s%zu", v0);
+        nprintf("    %%.s%zu =", n=qbe->inst++); dump_type_to_qbe(qbe, ast->type);nprintf(" load");dump_type_to_qbe_full(qbe, ast->type); nprintfln(" %%.s%zu", v0);
     } break;
     case AST_INT: 
-        nprintf("    %%s%zu =", n=qbe->inst++);dump_type_to_qbe(qbe, ast->type);nprintfln(" copy %lu", ast->as.integer.value);
+        nprintf("    %%.s%zu =", n=qbe->inst++);dump_type_to_qbe(qbe, ast->type);nprintfln(" copy %lu", ast->as.integer.value);
         break;
     case AST_SYMBOL:
-        nprintf("    %%s%zu =", n=qbe->inst++);dump_type_to_qbe(qbe, ast->type);nprintf(" load");dump_type_to_qbe_full(qbe, ast->type);nprintfln(" %%%s", ast->as.symbol->data);
+        nprintf("    %%.s%zu =", n=qbe->inst++);dump_type_to_qbe(qbe, ast->type);nprintf(" load");dump_type_to_qbe_full(qbe, ast->type);nprintfln(" %%%s", ast->as.symbol->data);
         break;
     default:
         eprintfln("ERROR: Unsupported. I guess :( %d (build_qbe_ast)", ast->kind);
@@ -152,7 +152,7 @@ bool build_qbe_statement(Qbe* qbe, Statement* statement) {
         break;
     case STATEMENT_RETURN:
         n = build_qbe_ast(qbe, statement->as.ast);
-        nprintfln("    ret %%s%zu", n);
+        nprintfln("    ret %%.s%zu", n);
         break;
     case STATEMENT_SCOPE:
         if(!build_qbe_scope(qbe, statement->as.scope)) return false;
@@ -161,7 +161,7 @@ bool build_qbe_statement(Qbe* qbe, Statement* statement) {
         n = qbe->inst;
         nprintfln("@while_cond_%zu", n);
         size_t cond = build_qbe_ast(qbe, statement->as.whil.cond);
-        nprintfln("    jnz %%s%zu, @while_body_%zu, @while_end_%zu", cond, n, n);
+        nprintfln("    jnz %%.s%zu, @while_body_%zu, @while_end_%zu", cond, n, n);
         nprintfln("@while_body_%zu", n);
         if(!build_qbe_statement(qbe, statement->as.whil.body)) return false;
         nprintfln("    jmp @while_cond_%zu", n);
