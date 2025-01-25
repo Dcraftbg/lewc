@@ -1,0 +1,4 @@
+./bin/lewc examples/suffixes.lew -o ./int/tests/suffixes.s
+as ./int/tests/suffixes.s -o ./int/tests/suffixes.o
+gcc -static ./int/tests/suffixes.o -o ./bin/tests/suffixes
+./bin/tests/suffixes
