@@ -87,9 +87,22 @@ void parse_func_signature(Parser* parser, FuncSignature* sig) {
         }
     }
 }
+
+AST* parse_ast(Parser* parser);
 AST* parse_basic(Parser* parser) {
     Token t = lexer_next(parser->lexer);
     switch(t.kind) {
+    case '(': {
+        AST* v = parse_ast(parser);
+        if(!v) return NULL;
+        Token t2 = lexer_peak_next(parser->lexer);
+        if(t2.kind != ')') {
+            eprintfln("ERROR:%s: Expected closing paren but got %s", tloc(t2), tdisplay(t2));
+            return NULL;
+        }
+        lexer_eat(parser->lexer, 1);
+        return v;
+    } break;
     case TOKEN_ATOM:
         return ast_new_symbol(parser->arena, t.atom);
     case TOKEN_C_STR:
