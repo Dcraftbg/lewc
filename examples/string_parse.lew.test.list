@@ -1,0 +1,4 @@
+./bin/lewc examples/string_parse.lew -o ./int/tests/string_parse.s
+as ./int/tests/string_parse.s -o ./int/tests/string_parse.o
+gcc -static ./int/tests/string_parse.o -o ./bin/tests/string_parse
+./bin/tests/string_parse
