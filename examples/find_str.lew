@@ -1,0 +1,12 @@
+find_unique :: (cstr: *u8, c: u8) -> *u8 {
+    while (*cstr) == c {
+        cstr = cstr + 1;
+    }
+    return cstr;
+}
+find_char :: (cstr: *u8, c: u8) -> *u8 {
+    while (*cstr) == c {
+        cstr = cstr + 1;
+    } 
+    return cstr;
+}

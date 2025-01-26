@@ -1,0 +1,4 @@
+./bin/lewc examples/find_str.lew -o ./int/tests/find_str.s
+as ./int/tests/find_str.s -o ./int/tests/find_str.o
+gcc -static ./examples/find_str.c ./int/tests/find_str.o -o ./bin/tests/find_str
+./bin/tests/find_str
