@@ -53,9 +53,13 @@ bool typecheck_ast(ProgramState* state, SymTabNode* node, AST* ast) {
             if(!typecheck_ast(state, node, ast->as.binop.rhs)) return false;
             ast->type = ast->as.binop.lhs->type;
             if(!type_eq(ast->as.binop.lhs->type, ast->as.binop.rhs->type)) {
-                eprintfln("Trying to add two different types together with '%c'", ast->as.binop.op);
-                type_dump(stderr, ast->as.binop.lhs->type); eprintf(" %c ", ast->as.binop.op); type_dump(stderr, ast->as.binop.rhs->type); eprintf("\n");
-                return false;
+                // Allow offseting with +
+                // TODO: Maybe insert a cast to isize in here 
+                if(ast->as.binop.op != '+' || ast->as.binop.lhs->type->core != CORE_PTR || (!type_isbinary(ast->as.binop.rhs->type))) {
+                    eprintfln("Trying to add two different types together with '%c'", ast->as.binop.op);
+                    type_dump(stderr, ast->as.binop.lhs->type); eprintf(" %c ", ast->as.binop.op); type_dump(stderr, ast->as.binop.rhs->type); eprintf("\n");
+                    return false;
+                }
             }
             if(!type_isbinary(ast->as.binop.lhs->type)) {
                 eprintfln("ERROR: We don't support addition between nonbinary types:");
