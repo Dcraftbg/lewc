@@ -30,6 +30,7 @@ Statement* statement_scope(Arena* arena);
 Statement* statement_while(Arena* arena, AST* cond, Statement* body);
 #include "func.h"
 #include "syn_analys.h"
+#include "constants.h"
 typedef struct ProgramState ProgramState;
 struct ProgramState {
     TypeTable type_table;
