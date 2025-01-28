@@ -72,7 +72,7 @@ bool dump_type_to_qbe(Qbe* qbe, Type* t) {
 }
 size_t build_qbe_ast(Qbe* qbe, AST* ast) {
     size_t n=0;
-    static_assert(AST_KIND_COUNT == 7, "Update build_qbe_ast");
+    static_assert(AST_KIND_COUNT == 6, "Update build_qbe_ast");
     switch(ast->kind) {
     case AST_BINOP:
         switch(ast->as.binop.op) {

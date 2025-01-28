@@ -3,7 +3,6 @@
 #include <stdint.h>
 #include "atom.h"
 enum {
-    AST_SET,
     AST_CALL,
     AST_C_STR,
     AST_INT,

@@ -32,7 +32,7 @@ SymTabNode* symtab_node_new(SymTabNode* parent, Arena* arena) {
 }
 // TODO: Better error messages as AST should probably store location too
 bool syn_analyse_ast(SymTabNode* node, AST* ast) {
-    static_assert(AST_KIND_COUNT == 7, "Update syn_analyse_ast");
+    static_assert(AST_KIND_COUNT == 6, "Update syn_analyse_ast");
     switch(ast->kind) {
     case AST_CALL:
         if(!syn_analyse_ast(node, ast->as.call.what)) return false;
@@ -40,14 +40,6 @@ bool syn_analyse_ast(SymTabNode* node, AST* ast) {
             if(!syn_analyse_ast(node, ast->as.call.args.items[i])) return false;
         }
         break;
-    case AST_SET:
-        // TODO: Make sure this isn't a function we're trying to assign to
-        // For = --------------------
-        // Or pointer when dereferencing
-        if(ast->as.binop.lhs->kind != AST_SYMBOL) {
-            eprintfln("ERROR: Cannot assign to something thats not a variable");
-            return false;
-        }
     case AST_BINOP:
         // ------ For any other binop
         if(!syn_analyse_ast(node, ast->as.binop.lhs)) return false;

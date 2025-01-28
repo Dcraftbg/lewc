@@ -2,7 +2,7 @@
 #include "token.h"
 // TODO: Actually decent error reporting
 bool typecheck_ast(ProgramState* state, SymTabNode* node, AST* ast) {
-    static_assert(AST_KIND_COUNT == 7, "Update typecheck_ast");
+    static_assert(AST_KIND_COUNT == 6, "Update typecheck_ast");
     switch(ast->kind) {
     case AST_CALL: {
         if(!typecheck_ast(state, node, ast->as.call.what)) return false;
@@ -35,15 +35,6 @@ bool typecheck_ast(ProgramState* state, SymTabNode* node, AST* ast) {
         eprintf("Function ");type_dump(stderr, t);eprintfln(" expects %zu arguments, but got %zu", t->signature.input.len, ast->as.call.args.len);
         return false;
     }
-    case AST_SET:
-        if(!typecheck_ast(state, node, ast->as.binop.lhs)) return false;
-        if(!typecheck_ast(state, node, ast->as.binop.rhs)) return false;
-        ast->type = ast->as.binop.lhs->type;
-        if(!type_eq(ast->as.binop.lhs->type, ast->as.binop.rhs->type)) {
-            eprintfln("Trying to assign to a different type");
-            return false;
-        }
-        break;
     case AST_BINOP:
         switch(ast->as.binop.op) {
         case '=':
