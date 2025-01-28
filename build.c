@@ -460,6 +460,7 @@ bool build_testsys(Build* build) {
     return true;
 }
 bool test(Build* b) {
+    if(!build(b)) return false;
     if(!build_testsys(b)) return false; 
     if(!run_testsys(b)) return false;
     return true;
