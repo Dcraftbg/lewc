@@ -10,7 +10,7 @@
 #include "nob.h"
 #include <stdint.h>
 #define CC "gcc"
-#define CFLAGS "-g", "-Werror", "-Wno-unused-function", "-Wall"
+#define CFLAGS "-g", "-Werror", "-Wno-unused-function", "-Wall", "-MMD", "-MP"
 #define LDFLAGS "-g"
 
 const char* get_ext(const char* path) {
@@ -122,6 +122,46 @@ bool nasm(const char* ipath, const char* opath) {
     nob_cmd_free(cmd);
     return true;
 }
+const char* strltrim(const char* data) {
+    while(data[0] && isspace(data[0])) data++;
+    return data;
+}
+void remove_backslashes(char* data) {
+    char* backslash;
+    // NOTE: Assumes strchr returns NULL on not found
+    while((backslash=strchr(data, '\\'))) {
+        switch(backslash[1]) {
+        case '\n':
+            memmove(backslash, backslash+2, strlen(backslash+2)+1);
+            break;
+        default:
+            memmove(backslash, backslash+1, strlen(backslash+1)+1);
+        }
+        data=backslash;
+    }
+}
+bool dep_analyse_str(char* data, char** result, Nob_File_Paths* paths) {
+    // NOTE: Assumes strchr returns NULL on not found
+    char* result_end = strchr(data, ':');
+    if(!result_end) return false;
+    result_end[0] = '\0';
+    *result = data;
+    data = result_end+1;
+    remove_backslashes(data);
+    char* lineend;
+    if((lineend=strchr(data, '\n')))
+        lineend[0] = '\0'; // Ignore all the stuff after the newline
+    while((data=(char*)strltrim(data))[0]) {
+        char* path=data;
+        while(data[0] && data[0] != ' ') data++;
+        nob_da_append(paths, path);
+        if(data[0]) {
+            data[0] = '\0';
+            data++;
+        }
+    }
+    return true;
+}
 bool _build_dir(const char* rootdir, const char* build_dir, const char* srcdir, bool forced) {
    bool result = true;
    Nob_String_Builder opath = {0};
@@ -138,7 +178,7 @@ bool _build_dir(const char* rootdir, const char* build_dir, const char* srcdir, 
         Nob_File_Type type = nob_get_file_type(path);
 
         if(type == NOB_FILE_REGULAR) {
-           if(strcmp(fext, "c")==0) {
+           if(strcmp(fext, "c") == 0) {
                opath.count = 0;
                nob_sb_append_cstr(&opath, build_dir);
                nob_sb_append_cstr(&opath, "/");
@@ -146,10 +186,33 @@ bool _build_dir(const char* rootdir, const char* build_dir, const char* srcdir, 
                Nob_String_View sv = nob_sv_from_cstr(file);
                sv.count-=2; // Remove .c
                nob_sb_append_buf(&opath,sv.data,sv.count);
-               nob_sb_append_cstr(&opath, ".o");
+               nob_sb_append_cstr(&opath, ".d");
                nob_sb_append_null(&opath);
-               if((!nob_file_exists(opath.items)) || nob_needs_rebuild1(opath.items,path) || forced) {
-                   if(!cc(path,opath.items)) nob_return_defer(false);
+               if((!nob_file_exists(opath.items)) || nob_needs_rebuild1(opath.items, path) || forced) {
+                   opath.items[opath.count-2] = 'o';
+                   if(!cc(path, opath.items)) nob_return_defer(false);
+               } else {
+                   Nob_String_Builder dep_sb={0};
+                   if(!nob_read_entire_file(opath.items, &dep_sb)) {
+                       nob_return_defer(false);
+                   }
+                   nob_sb_append_null(&dep_sb);
+                   Nob_File_Paths dep_paths={0};
+                   char* obj=NULL;
+                   if(!dep_analyse_str(dep_sb.items, &obj, &dep_paths)) {
+                       nob_sb_free(dep_sb);
+                       nob_da_free(dep_paths);
+                       nob_return_defer(false);
+                   }
+                   if(nob_needs_rebuild(opath.items, dep_paths.items, dep_paths.count)) {
+                       if(!cc(path, obj)) {
+                           nob_sb_free(dep_sb);
+                           nob_da_free(dep_paths);
+                           nob_return_defer(false);
+                       }
+                   }
+                   nob_sb_free(dep_sb);
+                   nob_da_free(dep_paths);
                }
            } else if(strcmp(fext, "nasm") == 0) {
                opath.count = 0;
@@ -167,7 +230,6 @@ bool _build_dir(const char* rootdir, const char* build_dir, const char* srcdir, 
            }
         }
         if (type == NOB_FILE_DIRECTORY && strcmp(ent->d_name, ".") != 0 && strcmp(ent->d_name, "..") != 0) {
-         
            opath.count = 0;
            nob_sb_append_cstr(&opath, build_dir);
            nob_sb_append_cstr(&opath, "/");
