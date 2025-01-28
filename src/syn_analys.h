@@ -4,6 +4,7 @@
 #include "arena.h"
 #include "atom.h"
 #include "type.h"
+#include "constants.h"
 
 typedef struct SymTabNode SymTabNode;
 // TODO: Keep track of the type of symbol.
@@ -11,6 +12,15 @@ typedef struct SymTabNode SymTabNode;
 // And checks for trying to assign to a function and so on
 typedef struct {
     Type* type;
+    enum {
+        SYMBOL_FUNCTION,
+        SYMBOL_CONSTANT,
+        SYMBOL_VARIABLE,
+        SYMBOL_COUNT
+    } kind;
+    union {
+        Constant* constant;
+    } as;
 } Symbol;
 #ifdef SYMTAB_DEFINE
 #define HASHMAP_DEFINE

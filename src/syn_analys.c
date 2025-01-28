@@ -1,3 +1,4 @@
+#include "constants.h"
 #define SYMTAB_DEFINE
 #include "progstate.h"
 #include "syn_analys.h"
@@ -21,6 +22,25 @@ static Symbol* symbol_new(Arena* arena, Type* type) {
     memset(symbol, 0, sizeof(*symbol));
     symbol->type = type;
     return symbol;
+}
+static Symbol* symbol_new_func(Arena* arena, Type* type) {
+    Symbol* me = symbol_new(arena, type);
+    if(!me) return NULL;
+    me->kind = SYMBOL_FUNCTION;
+    return me;
+}
+static Symbol* symbol_new_var(Arena* arena, Type* type) {
+    Symbol* me = symbol_new(arena, type);
+    if(!me) return NULL;
+    me->kind = SYMBOL_VARIABLE;
+    return me;
+}
+static Symbol* symbol_new_constant(Arena* arena, Constant* constant) {
+    Symbol* me = symbol_new(arena, constant->type);
+    if(!me) return NULL;
+    me->kind = SYMBOL_CONSTANT;
+    me->as.constant = constant;
+    return me;
 }
 SymTabNode* symtab_node_new(SymTabNode* parent, Arena* arena) {
     SymTabNode* node = arena_alloc(arena, sizeof(*node));
@@ -93,10 +113,17 @@ bool syn_analyse_scope(SymTabNode* node, Statements* scope) {
 }
 bool syn_analyse(ProgramState* state) {
     SymTabNode* node = &state->symtab_root;
+    for(size_t i = 0; i < state->consts.buckets.len; ++i) {
+        Pair_ConstTab* cpair = state->consts.buckets.items[i].first;
+        while(cpair) {
+            sym_tab_insert(&node->symtab, cpair->key, symbol_new_constant(state->arena, cpair->value));
+            cpair = cpair->next; 
+        }
+    }
     for(size_t i = 0; i < state->funcs.buckets.len; ++i) {
         Pair_FuncMap* fpair = state->funcs.buckets.items[i].first;
         while(fpair) {
-            sym_tab_insert(&node->symtab, fpair->key, symbol_new(state->arena, fpair->value.type));
+            sym_tab_insert(&node->symtab, fpair->key, symbol_new_func(state->arena, fpair->value.type));
             fpair = fpair->next; 
         }
     }
@@ -110,7 +137,7 @@ bool syn_analyse(ProgramState* state) {
                 func->symtab_node = node = symtab_node_new(node, state->arena);
                 for(size_t j=0; j < type->signature.input.len; ++j) {
                     if(type->signature.input.items[j].name) {
-                        sym_tab_insert(&node->symtab, type->signature.input.items[j].name, symbol_new(state->arena, type->signature.input.items[j].type));
+                        sym_tab_insert(&node->symtab, type->signature.input.items[j].name, symbol_new_var(state->arena, type->signature.input.items[j].type));
                     }
                 }
                 if(!syn_analyse_scope(node, func->scope)) return false;

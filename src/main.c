@@ -21,6 +21,7 @@
 #include "progstate.h"
 #include "syn_analys.h"
 #include "typecheck.h"
+#include "const_eval.h"
 #include "build.h"
 
 const char* shift_args(int *argc, const char ***argv) {
@@ -142,7 +143,8 @@ int main(int argc, const char** argv) {
     parse(&parser, &lexer, &arena);
 
     if(!syn_analyse(&state)) exit(1);
-    if(!typecheck(&state)) exit(1);
+    if(!typecheck(&state))   exit(1);
+    if(!const_eval(&state))  exit(1);
     Build build = {0};
     build.target  = &target;
     build.options = &build_options;
