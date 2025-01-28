@@ -35,6 +35,7 @@ typedef struct ProgramState ProgramState;
 struct ProgramState {
     TypeTable type_table;
     FuncMap funcs;
+    ConstTab consts;
     SymTabNode symtab_root;
     Arena* arena;
 };
