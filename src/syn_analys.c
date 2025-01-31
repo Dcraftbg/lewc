@@ -127,6 +127,13 @@ bool syn_analyse(ProgramState* state) {
             fpair = fpair->next; 
         }
     }
+    for(size_t i = 0; i < state->consts.buckets.len; ++i) {
+        Pair_ConstTab* cpair = state->consts.buckets.items[i].first;
+        while(cpair) {
+            if(!syn_analyse_ast(node, cpair->value->ast)) return false;
+            cpair = cpair->next; 
+        }
+    }
     for(size_t i = 0; i < state->funcs.buckets.len; ++i) {
         Pair_FuncMap* fpair = state->funcs.buckets.items[i].first;
         while(fpair) {
