@@ -270,6 +270,14 @@ Token lexer_next(Lexer* lexer) {
             return MAKE_TOKEN(TOKEN_ARROW);
         }
         return MAKE_TOKEN(c);
+    case '/': 
+        lexer_next_c(lexer);
+        if(lexer_peak_c(lexer) == '/') {
+            lexer_next_c(lexer);
+            while (lexer->cursor < lexer->end && lexer_peak_c(lexer) != '\n') lexer_next_c(lexer);
+            return lexer_next(lexer);
+        }
+        return MAKE_TOKEN(c);
     case '0': {
         lexer_next_c(lexer);
         if(lexer->cursor >= lexer->end) return MAKE_TOKEN(TOKEN_INT, .integer= { .value = 0 });
