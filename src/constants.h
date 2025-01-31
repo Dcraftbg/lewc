@@ -16,3 +16,4 @@ MAKE_HASHMAP_EX(ConstTab, const_tab, Constant*, Atom*, atom_hash, atom_eq, CONST
 #ifdef CONSTTAB_DEFINE
 #   undef HASHMAP_DEFINE
 #endif
+Constant* const_new(Arena* arena, AST* ast, Type* type);
