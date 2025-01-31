@@ -379,6 +379,21 @@ void parse(Parser* parser, Lexer* lexer, Arena* arena) {
                 Statements* s = scope_new(parser->arena);
                 parse_func_body(parser, s);
                 funcs_insert(&parser->state->funcs, name, fid, s);
+            } else if (lexer_peak(parser->lexer, 1).kind == ':') {
+                Atom* name = t.atom;
+                lexer_eat(parser->lexer, 2);
+                if(lexer_peak_next(parser->lexer).kind == ':') {
+                    eprintfln("ERROR:%s: Type inference in constant defintion isn't allowed yet", tloc(t));
+                    exit(1);
+                }
+                Type* type = parse_type(parser);
+                if((t=lexer_next(parser->lexer)).kind != ':') {
+                    eprintfln("ERROR:%s: Expected constant to follow the syntax: ", tloc(t));
+                    eprintfln("  <const name> : (type) : <expression>");
+                    exit(1);
+                }
+                AST* ast = parse_ast(parser);
+                const_tab_insert(&parser->state->consts, name, const_new(arena, ast, type));
             } else {
                 eprintfln("ERROR:%s: Unexpected Atom: %s",tloc(t), t.atom->data);
                 exit(1);
