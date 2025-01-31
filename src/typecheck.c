@@ -58,6 +58,8 @@ bool typecheck_ast(ProgramState* state, SymTabNode* node, AST* ast) {
                 return false;
             }
             break;
+        // FIXME: Error messages are invalid
+        case TOKEN_NEQ:
         case TOKEN_EQEQ:
             if(!typecheck_ast(state, node, ast->as.binop.lhs)) return false;
             if(!typecheck_ast(state, node, ast->as.binop.rhs)) return false;

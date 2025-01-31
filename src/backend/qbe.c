@@ -106,6 +106,12 @@ size_t build_qbe_ast(Qbe* qbe, AST* ast) {
             }
             nprintf("    %%.s%zu =", n=qbe->inst++);dump_type_to_qbe(qbe, ast->as.binop.lhs->type);nprintfln(" add %%.s%zu, %%.s%zu", v0, v1);
         } break;
+        case TOKEN_NEQ: {
+            size_t v0 = build_qbe_ast(qbe, ast->as.binop.lhs);
+            size_t v1 = build_qbe_ast(qbe, ast->as.binop.rhs);
+            if(!v0 || !v1) return 0;
+            nprintf("    %%.s%zu =", n=qbe->inst++);dump_type_to_qbe(qbe, ast->as.binop.lhs->type);nprintf(" cne");dump_type_to_qbe(qbe, ast->as.binop.lhs->type);nprintfln(" %%.s%zu, %%.s%zu", v0, v1);
+        } break;
         case TOKEN_EQEQ: {
             size_t v0 = build_qbe_ast(qbe, ast->as.binop.lhs);
             size_t v1 = build_qbe_ast(qbe, ast->as.binop.rhs);

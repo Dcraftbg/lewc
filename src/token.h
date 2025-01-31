@@ -12,6 +12,7 @@ enum {
     TOKEN_C_STR,
     TOKEN_INT,
     TOKEN_EQEQ,
+    TOKEN_NEQ,
     TOKEN_WHILE,
     // Tokens to stop 
     TOKEN_END,

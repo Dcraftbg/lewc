@@ -120,6 +120,7 @@ AST* parse_basic(Parser* parser) {
     X('+') \
     X('=') \
     X('&') \
+    X(TOKEN_NEQ) \
     X(TOKEN_EQEQ)
 
 // https://en.cppreference.com/w/cpp/language/operator_precedence
@@ -128,6 +129,7 @@ int op_prec(int op) {
     case '+':
     case '-':
         return 6;
+    case TOKEN_NEQ:
     case TOKEN_EQEQ:
         return 10;
     case '&':
@@ -347,7 +349,7 @@ void parse(Parser* parser, Lexer* lexer, Arena* arena) {
             eprintfln("ERROR:%s: Lexer: %s", tloc(t), tdisplay(t));
             exit(1);
         }
-        static_assert(TOKEN_COUNT == 268, "Update parser");
+        static_assert(TOKEN_COUNT == 269, "Update parser");
         switch(t.kind) {
         case TOKEN_EXTERN: {
             lexer_eat(parser->lexer, 1);
