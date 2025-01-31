@@ -9,6 +9,7 @@ enum {
     CORE_PTR,
     CORE_BOOL,
     CORE_I8,
+    CORE_I16,
     CORE_I32,
     CORE_FUNC,
 };
@@ -47,6 +48,7 @@ MAKE_HASHMAP_EX(TypeTable, type_table, Type*, const char*, djb2_cstr, cstr_eq, T
 #endif
 extern Type type_bool;
 extern Type type_u8;
+extern Type type_u16;
 extern Type type_i32;
 Type* type_ptr(Arena* arena, Type* to, size_t ptr_count);
 void type_table_move(TypeTable* into, TypeTable* from);

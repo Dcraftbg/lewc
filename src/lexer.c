@@ -225,8 +225,10 @@ static Token lex_num_by_radix(size_t l0, size_t c0, Lexer* lexer, size_t radix) 
 static bool lex_num_suffix(Lexer* lexer, Token* t) {
     Word word = lexer_parse_word(lexer);
     if(word.start == word.end) return true;
-    if(wordeq(word, "u8")) {
+    if (wordeq(word, "u8")) {
         t->integer.type = &type_u8;
+    } else if (wordeq(word, "u16")) {
+        t->integer.type = &type_u16;
     } else if (wordeq(word, "bool")) {
         t->integer.type = &type_bool;
     } else if (wordeq(word, "i32")) {
