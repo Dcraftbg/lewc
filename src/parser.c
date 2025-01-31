@@ -30,11 +30,12 @@ Type* parse_type(Parser* parser) {
         eprintfln("ERROR:%s: Expected name of type but got: %s", tloc(t), tdisplay(t));
         exit(1);
     }
-    Type* id = *type_table_get(&parser->state->type_table, t.atom->data);
-    if(!id) {
+    Type** idp = type_table_get(&parser->state->type_table, t.atom->data);
+    if(!idp) {
         eprintfln("ERROR:%s: Unknown type name: %s", tloc(t), t.atom->data);
         exit(1);
     }
+    Type* id = *idp;
     if(ptr_count) return type_ptr(parser->arena, id, ptr_count);
     return id;
 }
