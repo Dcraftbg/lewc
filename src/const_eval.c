@@ -31,7 +31,7 @@ AST* const_eval_ast(ProgramState* state, SymTabNode* node, AST* ast) {
     case AST_BINOP: {
         AST *lhs = NULL, *rhs = NULL;
         if(!(lhs = const_eval_ast(state, node, ast->as.binop.lhs))) return NULL;
-        if(!(rhs = const_eval_ast(state, node, ast->as.binop.lhs))) return NULL;
+        if(!(rhs = const_eval_ast(state, node, ast->as.binop.rhs))) return NULL;
         switch(ast->as.binop.op) {
         case '+':
             assert(lhs->kind == AST_INT);
