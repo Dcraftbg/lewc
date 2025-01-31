@@ -44,6 +44,11 @@ bool dump_type_to_qbe_full(Qbe* qbe, Type* t) {
         else nprintf("s");
         nprintf("b");
         break;
+    case CORE_I16:
+        if(t->unsign) nprintf("u");
+        else nprintf("s");
+        nprintf("h");
+        break;
     case CORE_I32:
         if(t->unsign) nprintf("u");
         else nprintf("s");
@@ -62,6 +67,7 @@ bool dump_type_to_qbe(Qbe* qbe, Type* t) {
         nprintf("l");
         break;
     case CORE_I8:
+    case CORE_I16:
     case CORE_I32:
         nprintf("w");
         break;
