@@ -29,6 +29,7 @@ AST* ast_new_call(Arena* arena, AST* what, CallArgs args) {
 AST* ast_new_int(Arena* arena, Type* type, uint64_t value) {
     AST* ast = ast_new(arena);
     ast->kind = AST_INT;
+    ast->type = type;
     ast->as.integer.type  = type;
     ast->as.integer.value = value;
     return ast;
