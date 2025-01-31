@@ -18,6 +18,12 @@ const char* tdisplay(Token t) {
            TPRINTF("UNPARSABLE (%08X)",t.codepoint);
         }
         return tdisplay_buf;
+    case TOKEN_INVALID_STR:
+        TPRINTF("Invalid String");
+        return tdisplay_buf;
+    case TOKEN_INVALID_INT_LITERAL:
+        TPRINTF("Invalid integer literal");
+        return tdisplay_buf;
     case TOKEN_ARROW:
         TPRINTF("->");
         return tdisplay_buf;
