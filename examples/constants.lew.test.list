@@ -1,0 +1,4 @@
+./bin/lewc examples/constants.lew -o ./int/tests/constants.s
+as ./int/tests/constants.s -o ./int/tests/constants.o
+gcc -static ./int/tests/constants.o -o ./bin/tests/constants
+./bin/tests/constants

@@ -1,0 +1,6 @@
+nice : i32 : 69;
+extern printf :: (fmt: *u8, arg: i32);
+main :: () -> i32 {
+    printf(c"Nice %d", nice);
+    return 0;
+}
