@@ -26,6 +26,8 @@ AST* const_eval_ast(ProgramState* state, SymTabNode* node, AST* ast) {
         if(!const_eval_const(state, node, c)) return NULL;
         return c->ast;
     } break;
+    case AST_INT:
+        return ast;
     case AST_BINOP: {
         AST *lhs = NULL, *rhs = NULL;
         if(!(lhs = const_eval_ast(state, node, ast->as.binop.lhs))) return NULL;
