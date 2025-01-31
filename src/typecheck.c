@@ -142,6 +142,20 @@ bool typecheck_scope(ProgramState* state, SymTabNode* node, Type* return_type, S
 }
 bool typecheck(ProgramState* state) {
     SymTabNode* node = &state->symtab_root;
+    for(size_t i = 0; i < state->consts.buckets.len; ++i) {
+        Pair_ConstTab* cpair = state->consts.buckets.items[i].first;
+        while(cpair) {
+            Constant* c = cpair->value;
+            if(!typecheck_ast(state, node, c->ast)) return false;
+            if(!type_eq(c->type, c->ast->type)) {
+                eprintfln("ERROR: Mismatch in definition of constant `%s`", cpair->key->data);
+                eprintf(" Constant type: "); type_dump(stderr, c->type); eprintf(NEWLINE);
+                eprintf(" Value: "); type_dump(stderr, c->ast->type); eprintf(NEWLINE);
+                return false;
+            }
+            cpair = cpair->next; 
+        }
+    }
     for(size_t i = 0; i < state->funcs.buckets.len; ++i) {
         for(
             Pair_FuncMap* fpair = state->funcs.buckets.items[i].first;
