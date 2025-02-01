@@ -1,0 +1,1 @@
+./bin/lewc examples/loop.lew -o ./int/tests/loop.s

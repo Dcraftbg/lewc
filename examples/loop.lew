@@ -1,0 +1,6 @@
+extern puts :: (cstr: *u8);
+main :: () {
+    puts(c"yaey nothing!");
+    loop {}
+    puts(c"naey something :(");
+}
