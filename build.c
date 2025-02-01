@@ -10,8 +10,12 @@
 #include "nob.h"
 #include <stdint.h>
 #define CC "gcc"
-#define CFLAGS "-g", "-Werror", "-Wno-unused-function", "-Wall", "-MMD", "-MP"
-#define LDFLAGS "-g"
+#define CFLAGS "-Werror", "-Wno-unused-function", "-Wall", "-MMD", "-MP"
+#define CFLAGS_DEBUG "-g"
+#define CFLAGS_DIST  "-O3"
+
+#define LDFLAGS_DEBUG "-g"
+#define LDFLAGS_DIST  "-static"
 
 const char* get_ext(const char* path) {
     const char* end = path;
@@ -101,10 +105,25 @@ void cleanup_d(const char* obj) {
     nob_temp_rewind(temp);
 }
 // TODO: cc but async
-bool cc(const char* ipath, const char* opath) {
+bool cc_debug(const char* ipath, const char* opath) {
     Nob_Cmd cmd = {0};
     nob_cmd_append(&cmd, CC);
     nob_cmd_append(&cmd, CFLAGS);
+    nob_cmd_append(&cmd, CFLAGS_DEBUG);
+    nob_cmd_append(&cmd, "-c", ipath, "-o", opath);
+    if(!nob_cmd_run_sync(cmd)) {
+       nob_cmd_free(cmd);
+       cleanup_d(opath);
+       return false;
+    }
+    nob_cmd_free(cmd);
+    return true;
+}
+bool cc_dist(const char* ipath, const char* opath) {
+    Nob_Cmd cmd = {0};
+    nob_cmd_append(&cmd, CC);
+    nob_cmd_append(&cmd, CFLAGS);
+    nob_cmd_append(&cmd, CFLAGS_DIST);
     nob_cmd_append(&cmd, "-c", ipath, "-o", opath);
     if(!nob_cmd_run_sync(cmd)) {
        nob_cmd_free(cmd);
@@ -173,7 +192,7 @@ bool dep_analyse_str(char* data, char** result, Nob_File_Paths* paths) {
     }
     return true;
 }
-bool _build_dir(const char* rootdir, const char* build_dir, const char* srcdir, bool forced) {
+bool _build_dir(const char* rootdir, const char* build_dir, const char* srcdir, bool forced, bool (*cc)(const char* ipath, const char* opath)) {
    bool result = true;
    Nob_String_Builder opath = {0};
    DIR *dir = opendir(srcdir);
@@ -250,7 +269,7 @@ bool _build_dir(const char* rootdir, const char* build_dir, const char* srcdir, 
            opath.count = 0;
            nob_sb_append_cstr(&opath, path);
            nob_sb_append_null(&opath);
-           if(!_build_dir(rootdir, build_dir, opath.items, forced)) nob_return_defer(false);
+           if(!_build_dir(rootdir, build_dir, opath.items, forced, cc)) nob_return_defer(false);
         }
         ent = readdir(dir);
    }
@@ -260,17 +279,17 @@ defer:
    return result;
 }
 
-static bool build_dir(const char* rootdir, const char* build_dir, bool forced) {
-   return _build_dir(rootdir, build_dir, rootdir, forced);
+static bool build_dir(const char* rootdir, const char* build_dir, bool forced, bool (*cc)(const char* ipath, const char* opath)) {
+   return _build_dir(rootdir, build_dir, rootdir, forced, cc);
 }
-bool build_lewc(bool forced) {
-    if(!build_dir("./src"  , "./int/lewc", forced)) return false;
+bool build_lewc(bool forced, bool dist) {
+    if(!build_dir("./src"  , "./int/lewc", forced, dist ? cc_dist : cc_debug)) return false;
     nob_log(NOB_INFO, "Built lewc successfully");
     return true;
 }
 
 bool compile_testsys(bool forced) {
-    if(!build_dir("./testsys/src"  , "./int/testsys", forced)) return false;
+    if(!build_dir("./testsys/src"  , "./int/testsys", forced, cc_debug)) return false;
     nob_log(NOB_INFO, "Built testsys successfully");
     return true;
 }
@@ -319,12 +338,15 @@ defer:
     nob_sb_free(sb);
     return result;
 }
-bool ld(Nob_File_Paths* paths, const char* opath) {
+bool ld_debug(Nob_File_Paths* paths, const char* opath) {
     nob_log(NOB_INFO, "Linking %s",opath);
     Nob_Cmd cmd = {0};
     nob_cmd_append(&cmd, CC);
 #ifdef LDFLAGS
     nob_cmd_append(&cmd, LDFLAGS);
+#endif
+#ifdef LDFLAGS_DEBUG
+    nob_cmd_append(&cmd, LDFLAGS_DEBUG);
 #endif
     nob_cmd_append(&cmd, "-o", opath);
     for(size_t i = 0; i < paths->count; ++i) {
@@ -338,13 +360,35 @@ bool ld(Nob_File_Paths* paths, const char* opath) {
     nob_log(NOB_INFO, "Linked %s successfully", opath);
     return true;
 }
-bool link_lewc() {
+bool ld_dist(Nob_File_Paths* paths, const char* opath) {
+    nob_log(NOB_INFO, "[dist] Linking %s",opath);
+    Nob_Cmd cmd = {0};
+    nob_cmd_append(&cmd, CC);
+#ifdef LDFLAGS
+    nob_cmd_append(&cmd, LDFLAGS);
+#endif
+#ifdef LDFLAGS_DIST
+    nob_cmd_append(&cmd, LDFLAGS_DIST);
+#endif
+    nob_cmd_append(&cmd, "-o", opath);
+    for(size_t i = 0; i < paths->count; ++i) {
+        nob_cmd_append(&cmd, paths->items[i]);
+    }
+    if(!nob_cmd_run_sync(cmd)) {
+        nob_cmd_free(cmd);
+        return false;
+    }
+    nob_cmd_free(cmd);
+    nob_log(NOB_INFO, "[dist] Linked %s successfully", opath);
+    return true;
+}
+bool link_lewc(bool dist) {
     nob_log(NOB_INFO, "Linking lewc");
     Nob_File_Paths paths = {0};
     if(!find_objs("./int/lewc",&paths)) {
         return false;
     }
-    if(!ld(&paths, "./bin/lewc")) {
+    if(!(dist ? ld_dist : ld_debug)(&paths, "./bin/lewc")) {
         nob_da_free(paths);
         return false;
     }
@@ -360,7 +404,7 @@ bool link_testsys() {
     if(!find_objs("./int/testsys",&paths)) {
         return false;
     }
-    if(!ld(&paths, "./bin/testsys")) {
+    if(!ld_debug(&paths, "./bin/testsys")) {
         nob_da_free(paths);
         return false;
     }
@@ -370,6 +414,7 @@ bool link_testsys() {
 }
 typedef struct {
     char* exe;
+    bool dist;
     int argc;
     char** argv;
 } Build;
@@ -418,8 +463,22 @@ bool build(Build* build) {
         forced = true;
         shift_args(&build->argc, &build->argv);
     }
-    if(!build_lewc(forced)) return false;
-    if(!link_lewc()) return false;
+    if(build->argc > 0 && strcmp(build->argv[0], "-dist")==0) {
+        build->dist = true;
+        shift_args(&build->argc, &build->argv);
+    }
+    if(!build_lewc(forced, build->dist)) return false;
+    if(!link_lewc(build->dist)) return false;
+    if(build->dist) {
+        Nob_Cmd cmd = {0};
+        nob_cmd_append(&cmd, "strip");
+        nob_cmd_append(&cmd, "bin/lewc");
+        if (!nob_cmd_run_sync(cmd)) {
+            nob_cmd_free(cmd);
+            return false;
+        }
+        nob_cmd_free(cmd);
+    }
     return true;
 }
 bool run(Build* build) {
@@ -490,7 +549,7 @@ int main(int argc, char** argv) {
         return 1;
     }
     for(size_t i = 0; i < NOB_ARRAY_LEN(commands); ++i) {
-        if(strcmp(commands[i].name,cmd) == 0) {
+        if(strcmp(commands[i].name, cmd) == 0) {
             if(!commands[i].run(&build)) return 1;
             return 0;
         }
