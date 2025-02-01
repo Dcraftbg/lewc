@@ -111,7 +111,7 @@ bool typecheck_ast(ProgramState* state, SymTabNode* node, AST* ast) {
 }
 bool typecheck_scope(ProgramState* state, SymTabNode* node, Type* return_type, Statements* scope);
 bool typecheck_statement(ProgramState* state, SymTabNode* node, Type* return_type, Statement* statement) {
-    static_assert(STATEMENT_COUNT == 4, "Update syn_analyse");
+    static_assert(STATEMENT_COUNT == 5, "Update syn_analyse");
     switch(statement->kind) {
     case STATEMENT_RETURN:
         if(!statement->as.ast && !return_type) return true;
@@ -131,6 +131,9 @@ bool typecheck_statement(ProgramState* state, SymTabNode* node, Type* return_typ
         break;
     case STATEMENT_EVAL:
         if(!typecheck_ast(state, node, statement->as.ast)) return false;
+        break;
+    case STATEMENT_LOOP:
+        if(!typecheck_statement(state, node, return_type, statement->as.loop.body)) return false;
         break;
     case STATEMENT_SCOPE:
         if(!typecheck_scope(state, node, return_type, statement->as.scope)) return false;

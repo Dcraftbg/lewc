@@ -185,7 +185,7 @@ size_t build_qbe_ast(Qbe* qbe, AST* ast) {
 bool build_qbe_scope(Qbe* qbe, Statements* scope);
 bool build_qbe_statement(Qbe* qbe, Statement* statement) {
     size_t n = 0;
-    static_assert(STATEMENT_COUNT == 4, "Update build_qbe_statement");
+    static_assert(STATEMENT_COUNT == 5, "Update build_qbe_statement");
     switch(statement->kind) {
     case STATEMENT_EVAL:
         build_qbe_ast(qbe, statement->as.ast);
@@ -201,6 +201,13 @@ bool build_qbe_statement(Qbe* qbe, Statement* statement) {
     case STATEMENT_SCOPE:
         if(!build_qbe_scope(qbe, statement->as.scope)) return false;
         break;
+    case STATEMENT_LOOP: {
+        n = qbe->inst;
+        nprintfln("@loop%zu", n);
+        if(!build_qbe_statement(qbe, statement->as.loop.body)) return false;
+        nprintfln("    jmp @loop%zu", n);
+        nprintfln("@loop_end_%zu", n);
+    } break;
     case STATEMENT_WHILE: {
         n = qbe->inst;
         nprintfln("@while_cond_%zu", n);

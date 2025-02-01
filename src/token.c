@@ -3,7 +3,7 @@
 #define TPRINTF(...) snprintf(tdisplay_buf, sizeof(tdisplay_buf), __VA_ARGS__)
 const char* tdisplay(Token t) {
     static char tdisplay_buf[1024];
-    static_assert(TOKEN_COUNT == 269, "Update tdisplay");
+    static_assert(TOKEN_COUNT == 270, "Update tdisplay");
     switch(t.kind) {
     case TOKEN_ATOM:
         TPRINTF("Word(%s)",t.atom->data);
@@ -49,6 +49,9 @@ const char* tdisplay(Token t) {
         return tdisplay_buf;
     case TOKEN_WHILE:
         TPRINTF("while");
+        return tdisplay_buf;
+    case TOKEN_LOOP:
+        TPRINTF("loop");
         return tdisplay_buf;
     default:
         if(t.kind < 256) {

@@ -34,12 +34,14 @@ AST* const_expand_ast(ProgramState* state, SymTabNode* node, AST* ast) {
 }
 bool const_expand_scope(ProgramState* state, SymTabNode* node, Statements* scope);
 bool const_expand_statement(ProgramState* state, SymTabNode* node, Statement* statement) {
-    static_assert(STATEMENT_COUNT == 4, "Update syn_analyse");
+    static_assert(STATEMENT_COUNT == 5, "Update syn_analyse");
     switch(statement->kind) {
     case STATEMENT_RETURN:
         if(!statement->as.ast) return true;
     case STATEMENT_EVAL:
         return (statement->as.ast = const_expand_ast(state, node, statement->as.ast)) != NULL;
+    case STATEMENT_LOOP:
+        return const_expand_statement(state, node, statement->as.loop.body);
     case STATEMENT_SCOPE:
         return const_expand_scope(state, node, statement->as.scope);
     case STATEMENT_WHILE: {

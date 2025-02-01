@@ -38,3 +38,10 @@ Statement* statement_while(Arena* arena, AST* cond, Statement* body) {
     me->as.whil.body = body;
     return me;
 }
+
+Statement* statement_loop(Arena* arena, Statement* body) {
+    Statement* me = statement_new(arena);
+    me->kind = STATEMENT_LOOP;
+    me->as.loop.body = body;
+    return me;
+}

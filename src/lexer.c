@@ -322,6 +322,7 @@ Token lexer_next(Lexer* lexer) {
                  if (wordeq(word, "return")) return MAKE_TOKEN(TOKEN_RETURN);
             else if (wordeq(word, "extern")) return MAKE_TOKEN(TOKEN_EXTERN);
             else if (wordeq(word, "while" )) return MAKE_TOKEN(TOKEN_WHILE);
+            else if (wordeq(word, "loop"  )) return MAKE_TOKEN(TOKEN_LOOP);
             return MAKE_TOKEN(TOKEN_ATOM, .atom = atom_alloc(lexer->atom_table,word.start, (size_t)(word.end-word.start)));
         }
     }

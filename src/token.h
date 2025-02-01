@@ -14,6 +14,7 @@ enum {
     TOKEN_EQEQ,
     TOKEN_NEQ,
     TOKEN_WHILE,
+    TOKEN_LOOP,
     // Tokens to stop 
     TOKEN_END,
     TOKEN_EOF=TOKEN_END,

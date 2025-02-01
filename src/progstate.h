@@ -6,6 +6,7 @@ enum {
     STATEMENT_EVAL,
     STATEMENT_SCOPE,
     STATEMENT_WHILE,
+    STATEMENT_LOOP,
     STATEMENT_COUNT
 };
 typedef struct Statement Statement;
@@ -21,6 +22,7 @@ struct Statement {
         AST* ast;
         Statements* scope;
         struct { AST* cond; Statement* body; } whil;
+        struct { Statement* body; } loop;
     } as;
     /*metadata*/;
 };
@@ -28,6 +30,7 @@ Statement* statement_return(Arena* arena, AST* ast);
 Statement* statement_eval(Arena* arena, AST* ast);
 Statement* statement_scope(Arena* arena);
 Statement* statement_while(Arena* arena, AST* cond, Statement* body);
+Statement* statement_loop(Arena* arena, Statement* body);
 #include "func.h"
 #include "syn_analys.h"
 #include "constants.h"

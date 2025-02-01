@@ -348,6 +348,9 @@ Statement* parse_statement(Parser* parser, Token t) {
         } break;
         case '{':
             return parse_scope(parser);
+        case TOKEN_LOOP:
+            lexer_eat(parser->lexer, 1);
+            return statement_loop(parser->arena, parse_body(parser));
         case TOKEN_WHILE: {
             lexer_eat(parser->lexer, 1);
             AST* ast = parse_ast(parser, INIT_PRECEDENCE);
@@ -396,7 +399,7 @@ void parse(Parser* parser, Lexer* lexer, Arena* arena) {
             eprintfln("ERROR:%s: Lexer: %s", tloc(t), tdisplay(t));
             exit(1);
         }
-        static_assert(TOKEN_COUNT == 269, "Update parser");
+        static_assert(TOKEN_COUNT == 270, "Update parser");
         switch(t.kind) {
         case TOKEN_EXTERN: {
             lexer_eat(parser->lexer, 1);
