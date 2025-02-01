@@ -1,0 +1,4 @@
+extern puts :: (cstr: *u8);
+foo :: () {
+    puts(c"Hello from foo (void function)");
+}
