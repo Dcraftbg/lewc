@@ -9,8 +9,8 @@ AST* const_eval_ast(ProgramState* state, SymTabNode* node, AST* ast) {
     case AST_CALL:
         eprintfln("ERROR: Cannot call inside constant expression");
         return NULL;
-    case AST_DEREF:
-        eprintfln("ERROR: Cannot dereference inside constant expression");
+    case AST_UNARY:
+        eprintfln("ERROR: Unary operators not supported inside constant expression");
         return NULL;
     case AST_C_STR:
         eprintfln("ERROR: C strings in constant expressions are currently forbidden. Sorry.");

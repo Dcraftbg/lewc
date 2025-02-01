@@ -36,12 +36,12 @@ bool typecheck_ast(ProgramState* state, SymTabNode* node, AST* ast) {
         return false;
     }
     case AST_BINOP:
+        if(!typecheck_ast(state, node, ast->as.binop.lhs)) return false;
+        if(!typecheck_ast(state, node, ast->as.binop.rhs)) return false;
         switch(ast->as.binop.op) {
         case '=':
         case '&':
         case '+':
-            if(!typecheck_ast(state, node, ast->as.binop.lhs)) return false;
-            if(!typecheck_ast(state, node, ast->as.binop.rhs)) return false;
             ast->type = ast->as.binop.lhs->type;
             if(!type_eq(ast->as.binop.lhs->type, ast->as.binop.rhs->type)) {
                 // Allow offseting with +
@@ -61,8 +61,6 @@ bool typecheck_ast(ProgramState* state, SymTabNode* node, AST* ast) {
         // FIXME: Error messages are invalid
         case TOKEN_NEQ:
         case TOKEN_EQEQ:
-            if(!typecheck_ast(state, node, ast->as.binop.lhs)) return false;
-            if(!typecheck_ast(state, node, ast->as.binop.rhs)) return false;
             ast->type = &type_bool;
             if(!type_eq(ast->as.binop.lhs->type, ast->as.binop.rhs->type)) {
                 eprintfln("Trying to add two different types together with '=='");
@@ -79,14 +77,20 @@ bool typecheck_ast(ProgramState* state, SymTabNode* node, AST* ast) {
             unreachable("ast->as.binop.op=%d", ast->as.binop.op);
         }
         break;
-    case AST_DEREF: {
-        if(!typecheck_ast(state, node, ast->as.deref.what)) return false;
-        AST* what = ast->as.deref.what;
-        if(!what->type || what->type->core != CORE_PTR) {
-            eprintf("Trying to dereference an expression of type "); type_dump(stderr, what->type); eprintf("\n");
-            return false;
+    case AST_UNARY: {
+        if(!typecheck_ast(state, node, ast->as.unary.rhs)) return false;
+        AST* rhs = ast->as.unary.rhs;
+        switch(ast->as.unary.op) {
+        case '*':
+            if(!rhs->type || rhs->type->core != CORE_PTR) {
+                eprintf("Trying to dereference an expression of type "); type_dump(stderr, rhs->type); eprintf("\n");
+                return false;
+            }
+            ast->type = rhs->type->ptr_count == 1 ? rhs->type->inner_type : type_ptr(state->arena, rhs->type->inner_type, rhs->type->ptr_count-1);
+            break;
+        default:
+            unreachable("unary.op=%c", ast->as.unary.op);
         }
-        ast->type = what->type->ptr_count == 1 ? what->type->inner_type : type_ptr(state->arena, what->type->inner_type, what->type->ptr_count-1);
     } break;
     case AST_SYMBOL: 
         ast->type = stl_lookup(node, ast->as.symbol)->type;

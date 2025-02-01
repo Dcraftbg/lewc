@@ -65,8 +65,8 @@ bool syn_analyse_ast(SymTabNode* node, AST* ast) {
         if(!syn_analyse_ast(node, ast->as.binop.lhs)) return false;
         if(!syn_analyse_ast(node, ast->as.binop.rhs)) return false;
         break;
-    case AST_DEREF:
-        if(!syn_analyse_ast(node, ast->as.deref.what)) return false;
+    case AST_UNARY:
+        if(!syn_analyse_ast(node, ast->as.unary.rhs)) return false;
         break;
     case AST_SYMBOL:
         if(!stl_lookup(node, ast->as.symbol)) {

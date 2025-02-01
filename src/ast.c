@@ -48,10 +48,12 @@ AST* ast_new_symbol(Arena* arena, Atom* symbol) {
     ast->as.symbol = symbol;
     return ast;
 }
-AST* ast_new_deref(Arena* arena, AST* what) {
+
+AST* ast_new_unary(Arena* arena, int op, AST* rhs) {
     AST* ast = ast_new(arena);
-    ast->kind = AST_DEREF;
-    ast->as.deref.what = what;
+    ast->kind = AST_UNARY;
+    ast->as.unary.op  = op;
+    ast->as.unary.rhs = rhs;
     return ast;
 }
 

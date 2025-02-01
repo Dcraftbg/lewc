@@ -158,9 +158,15 @@ size_t build_qbe_ast(Qbe* qbe, AST* ast) {
         da_push(&qbe->globals, global);
         nprintf("    %%.s%zu =", n=qbe->inst++);nprintfln("l copy $.g%zu", global.unnamed_i);
     } break;
-    case AST_DEREF: {
-        size_t v0 = build_qbe_ast(qbe, ast->as.deref.what);
-        nprintf("    %%.s%zu =", n=qbe->inst++); dump_type_to_qbe(qbe, ast->type);nprintf(" load");dump_type_to_qbe_full(qbe, ast->type); nprintfln(" %%.s%zu", v0);
+    case AST_UNARY: {
+        size_t v0 = build_qbe_ast(qbe, ast->as.unary.rhs);
+        switch(ast->as.unary.op) {
+        case '*':
+            nprintf("    %%.s%zu =", n=qbe->inst++); dump_type_to_qbe(qbe, ast->type);nprintf(" load");dump_type_to_qbe_full(qbe, ast->type); nprintfln(" %%.s%zu", v0);
+            break;
+        default:
+            unreachable("unary.op=%c", ast->as.unary.op);
+        }
     } break;
     case AST_INT: 
         nprintf("    %%.s%zu =", n=qbe->inst++);dump_type_to_qbe(qbe, ast->type);nprintfln(" copy %lu", ast->as.integer.value);

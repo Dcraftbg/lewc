@@ -177,9 +177,9 @@ AST* parse_astcall(Parser* parser, AST* what) {
 }
 AST* parse_deref(Parser* parser) {
     assert(lexer_next(parser->lexer).kind == '*');
-    AST* what = parse_ast(parser);
-    if(!what) return NULL;
-    return ast_new_deref(parser->arena, what);
+    AST* rhs = parse_ast(parser);
+    if(!rhs) return NULL;
+    return ast_new_unary(parser->arena, '*', rhs);
 }
 AST* parse_ast(Parser* parser) {
     // eprintfln("parse_ast");
@@ -211,7 +211,6 @@ AST* parse_ast(Parser* parser) {
             int op = t.kind;
             int precedence = op_prec(op);
             lexer_eat(parser->lexer, 1);
-            // eprintfln("op='%c' (parse_basic)", op);
             AST* v2 = parse_basic(parser);
             if(!v2) return NULL;
             t = lexer_peak_next(parser->lexer);
@@ -225,11 +224,8 @@ AST* parse_ast(Parser* parser) {
             {
                 int newop = t.kind;
                 int newprecedence = op_prec(newop);
-                // eprintfln("newop=%c newprecedence=%d", newop, newprecedence);
-                // eprintfln("op=%c precedence=%d", op, precedence);
                 if (precedence >= newprecedence) {
                     lexer_eat(parser->lexer, 1);
-                    // eprintfln("newop=%c (parse_ast)", newop); 
                     AST* v3 = parse_ast(parser);
                     if(!v3) return NULL;
                     v2 = ast_new_binop(parser->arena, newop, v2, v3);

@@ -20,8 +20,8 @@ AST* const_expand_ast(ProgramState* state, SymTabNode* node, AST* ast) {
     case AST_C_STR:
     case AST_INT:
         return ast;
-    case AST_DEREF:
-        if(!(ast->as.deref.what = const_expand_ast(state, node, ast->as.deref.what))) return NULL;
+    case AST_UNARY:
+        if(!(ast->as.unary.rhs = const_expand_ast(state, node, ast->as.unary.rhs))) return NULL;
         return ast;
     case AST_CALL:
         if(!(ast->as.call.what = const_expand_ast(state, node, ast->as.call.what))) return NULL;
