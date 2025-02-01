@@ -116,7 +116,7 @@ AST* parse_basic(Parser* parser) {
     }
 }
 
-#define OPS \
+#define BINOPS \
     X('+') \
     X('=') \
     X('&') \
@@ -124,7 +124,7 @@ AST* parse_basic(Parser* parser) {
     X(TOKEN_EQEQ)
 
 // https://en.cppreference.com/w/cpp/language/operator_precedence
-int op_prec(int op) {
+int binop_prec(int op) {
     switch(op) {
     case '+':
     case '-':
@@ -203,11 +203,11 @@ AST* parse_ast(Parser* parser, int expr_precedence) {
             v = parse_astcall(parser, v);
         } break;
         #define X(op) case op:
-        OPS
+        BINOPS
         #undef X
         {
             int binop = t.kind;
-            int bin_precedence = op_prec(binop);
+            int bin_precedence = binop_prec(binop);
             if (bin_precedence < expr_precedence) return v;
             lexer_eat(parser->lexer, 1);
             AST* v2 = parse_basic(parser);
@@ -217,9 +217,9 @@ AST* parse_ast(Parser* parser, int expr_precedence) {
             int next_op = 0;
             switch(t.kind) {
             #define X(op) case op:
-            OPS
+            BINOPS
             #undef X
-                next_prec = op_prec(next_op = t.kind);
+                next_prec = binop_prec(next_op = t.kind);
                 break;
             }
             if (next_prec > 0 && bin_precedence > next_prec) {
@@ -247,7 +247,7 @@ AST* parse_ast(Parser* parser, int expr_precedence) {
         #undef X
         {
             int curop = t.kind;
-            int curprecedence = op_prec(op);
+            int curprecedence = binop_prec(op);
             AST* v2 = parse_basic(parser);
             if(!v2) return NULL;
             t = lexer_peak_next(parser->lexer);
@@ -260,7 +260,7 @@ AST* parse_ast(Parser* parser, int expr_precedence) {
             #undef X
             {
                 int newop = t.kind;
-                int newprecedence = op_prec(newop);
+                int newprecedence = binop_prec(newop);
                 if (precedence >= newprecedence) {
                     lexer_eat(parser->lexer, 1);
                     AST* v3 = parse_ast(parser);
