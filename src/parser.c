@@ -335,6 +335,10 @@ Statement* parse_statement(Parser* parser, Token t) {
     switch(t.kind) {
         case TOKEN_RETURN: {
             lexer_eat(parser->lexer, 1);
+            if(lexer_peak_next(parser->lexer).kind == ';') {
+                lexer_eat(parser->lexer, 1);
+                return statement_return(parser->arena, NULL);
+            }
             AST* ast = parse_ast(parser, INIT_PRECEDENCE);
             if(!ast) {
                 eprintfln("ERROR:%s: Failed to parse return statement",tloc(t));
