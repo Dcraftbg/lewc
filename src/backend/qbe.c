@@ -94,11 +94,18 @@ size_t build_qbe_ast(Qbe* qbe, AST* ast) {
             if(!v0 || !v1) return 0;
             nprintf("    %%.s%zu =", n=qbe->inst++);dump_type_to_qbe(qbe, ast->as.binop.lhs->type);nprintfln(" and %%.s%zu, %%.s%zu", v0, v1);
         } break;
+        case '-': {
+            size_t v0 = build_qbe_ast(qbe, ast->as.binop.lhs);
+            size_t v1 = build_qbe_ast(qbe, ast->as.binop.rhs);
+            if(!v0 || !v1) return 0;
+            nprintf("    %%.s%zu =", n=qbe->inst++);dump_type_to_qbe(qbe, ast->as.binop.lhs->type);nprintfln(" sub %%.s%zu, %%.s%zu", v0, v1);
+        } break;
         case '+': {
             size_t v0 = build_qbe_ast(qbe, ast->as.binop.lhs);
             size_t v1 = build_qbe_ast(qbe, ast->as.binop.rhs);
             if(!v0 || !v1) return 0;
             // TODO: Is integer instead
+            // TODO: Pointer arithmetic
             if(ast->as.binop.lhs->type->core == CORE_PTR && type_isbinary(ast->as.binop.rhs->type)) {
                 size_t new = qbe->inst++;
                 nprintf("    %%.s%zu =l", new);nprintf(" ext");dump_type_to_qbe_full(qbe, ast->as.binop.rhs->type);nprintfln(" %%.s%zu", v1);

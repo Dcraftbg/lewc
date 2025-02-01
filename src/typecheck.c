@@ -42,6 +42,7 @@ bool typecheck_ast(ProgramState* state, SymTabNode* node, AST* ast) {
         case '=':
         case '&':
         case '+':
+        case '-':
             ast->type = ast->as.binop.lhs->type;
             if(!type_eq(ast->as.binop.lhs->type, ast->as.binop.rhs->type)) {
                 // Allow offseting with +

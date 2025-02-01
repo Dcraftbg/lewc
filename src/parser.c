@@ -92,6 +92,7 @@ void parse_func_signature(Parser* parser, FuncSignature* sig) {
 #define INIT_PRECEDENCE (100)
 #define BINOPS \
     X('+') \
+    X('-') \
     X('=') \
     X('&') \
     X(TOKEN_NEQ) \
