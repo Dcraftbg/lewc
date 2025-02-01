@@ -31,6 +31,7 @@ struct Type {
 };
 static bool type_eq(Type* a, Type* b) {
     if(a == NULL && b == NULL) return true;
+    if(a == NULL || b == NULL) return false;
     if(a->core != b->core || a->ptr_count != b->ptr_count) return false;
     if(a->core == CORE_PTR) return type_eq(a->inner_type, b->inner_type);
     return true;
