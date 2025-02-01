@@ -53,10 +53,14 @@ bool nob_mkdir_if_not_exists_silent(const char *path) {
      return nob_mkdir_if_not_exists(path);
 }
 bool make_build_dirs() {
-    if(!nob_mkdir_if_not_exists_silent("./bin"         )) return false;
-    if(!nob_mkdir_if_not_exists_silent("./int"         )) return false;
-    if(!nob_mkdir_if_not_exists_silent("./int/lewc")) return false;
-    if(!nob_mkdir_if_not_exists_silent("./int/testsys" )) return false;
+    if(!nob_mkdir_if_not_exists_silent("./bin"          )) return false;
+    if(!nob_mkdir_if_not_exists_silent("./int"          )) return false;
+    if(!nob_mkdir_if_not_exists_silent("./int/lewc"     )) return false;
+    if(!nob_mkdir_if_not_exists_silent("./bin/dist"     )) return false;
+    if(!nob_mkdir_if_not_exists_silent("./int/dist"     )) return false;
+    if(!nob_mkdir_if_not_exists_silent("./bin/dist"     )) return false;
+    if(!nob_mkdir_if_not_exists_silent("./int/dist/lewc")) return false;
+    if(!nob_mkdir_if_not_exists_silent("./int/testsys"  )) return false;
     return true;
 }
 bool remove_objs(const char* dirpath) {
@@ -283,7 +287,7 @@ static bool build_dir(const char* rootdir, const char* build_dir, bool forced, b
    return _build_dir(rootdir, build_dir, rootdir, forced, cc);
 }
 bool build_lewc(bool forced, bool dist) {
-    if(!build_dir("./src"  , "./int/lewc", forced, dist ? cc_dist : cc_debug)) return false;
+    if(!build_dir("./src"  , dist ? "./int/dist/lewc" : "./int/lewc", forced, dist ? cc_dist : cc_debug)) return false;
     nob_log(NOB_INFO, "Built lewc successfully");
     return true;
 }
@@ -385,10 +389,10 @@ bool ld_dist(Nob_File_Paths* paths, const char* opath) {
 bool link_lewc(bool dist) {
     nob_log(NOB_INFO, "Linking lewc");
     Nob_File_Paths paths = {0};
-    if(!find_objs("./int/lewc",&paths)) {
+    if(!find_objs(dist ? "./int/dist/lewc" : "./int/lewc",&paths)) {
         return false;
     }
-    if(!(dist ? ld_dist : ld_debug)(&paths, "./bin/lewc")) {
+    if(!(dist ? ld_dist : ld_debug)(&paths, dist ? "./bin/dist/lewc" : "./bin/lewc")) {
         nob_da_free(paths);
         return false;
     }
@@ -472,7 +476,7 @@ bool build(Build* build) {
     if(build->dist) {
         Nob_Cmd cmd = {0};
         nob_cmd_append(&cmd, "strip");
-        nob_cmd_append(&cmd, "bin/lewc");
+        nob_cmd_append(&cmd, "bin/dist/lewc");
         if (!nob_cmd_run_sync(cmd)) {
             nob_cmd_free(cmd);
             return false;
