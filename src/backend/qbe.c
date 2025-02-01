@@ -191,8 +191,12 @@ bool build_qbe_statement(Qbe* qbe, Statement* statement) {
         build_qbe_ast(qbe, statement->as.ast);
         break;
     case STATEMENT_RETURN:
-        n = build_qbe_ast(qbe, statement->as.ast);
-        nprintfln("    ret %%.s%zu", n);
+        if(statement->as.ast) {
+            n = build_qbe_ast(qbe, statement->as.ast);
+            nprintfln("    ret %%.s%zu", n);
+        } else {
+            nprintfln("    ret");
+        }
         break;
     case STATEMENT_SCOPE:
         if(!build_qbe_scope(qbe, statement->as.scope)) return false;

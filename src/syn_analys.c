@@ -88,6 +88,7 @@ bool syn_analyse_statement(SymTabNode* node, Statement* statement) {
     static_assert(STATEMENT_COUNT == 4, "Update syn_analyse");
     switch(statement->kind) {
     case STATEMENT_RETURN:
+        if(!statement->as.ast) return true;
         if(!syn_analyse_ast(node, statement->as.ast)) return false;
         break;
     case STATEMENT_EVAL:

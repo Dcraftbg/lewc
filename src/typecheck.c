@@ -114,7 +114,16 @@ bool typecheck_statement(ProgramState* state, SymTabNode* node, Type* return_typ
     static_assert(STATEMENT_COUNT == 4, "Update syn_analyse");
     switch(statement->kind) {
     case STATEMENT_RETURN:
+        if(!statement->as.ast && !return_type) return true;
+        if(!statement->as.ast && return_type) {
+            eprintf("Expected return value as function returns "); type_dump(stderr, return_type); eprintfln(" but got empty return");
+            return false;
+        }
         if(!typecheck_ast(state, node, statement->as.ast)) return false;
+        if(statement->as.ast && !return_type) {
+            eprintf("Expected empty return as the function doesn't have a return type but got "); type_dump(stderr, statement->as.ast->type); eprintf(NEWLINE);
+            return false;
+        }
         if(!type_eq(statement->as.ast->type, return_type)) {
             eprintf("Return type mismatch. Expected "); type_dump(stderr, return_type); eprintf(" but got "); type_dump(stderr, statement->as.ast->type); eprintf("\n");
             return false;
