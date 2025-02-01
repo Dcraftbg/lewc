@@ -89,12 +89,12 @@ void parse_func_signature(Parser* parser, FuncSignature* sig) {
     }
 }
 
-AST* parse_ast(Parser* parser);
+AST* parse_ast(Parser* parser, int expr_precedence);
 AST* parse_basic(Parser* parser) {
     Token t = lexer_next(parser->lexer);
     switch(t.kind) {
     case '(': {
-        AST* v = parse_ast(parser);
+        AST* v = parse_ast(parser, 0);
         if(!v) return NULL;
         Token t2 = lexer_peak_next(parser->lexer);
         if(t2.kind != ')') {
@@ -142,7 +142,6 @@ int op_prec(int op) {
     }
 }
 
-AST* parse_ast(Parser* parser);
 AST* parse_astcall(Parser* parser, AST* what) {
     Token t;
     if((t=lexer_next(parser->lexer)).kind != '(') {
@@ -153,7 +152,7 @@ AST* parse_astcall(Parser* parser, AST* what) {
     for(;;) {
         t = lexer_peak_next(parser->lexer);
         if(t.kind == ')') break;
-        AST* value = parse_ast(parser);
+        AST* value = parse_ast(parser, 0);
         if(!value) {
             call_args_dealloc(&args);
             return NULL;
@@ -177,16 +176,15 @@ AST* parse_astcall(Parser* parser, AST* what) {
 }
 AST* parse_deref(Parser* parser) {
     assert(lexer_next(parser->lexer).kind == '*');
-    AST* rhs = parse_ast(parser);
+    AST* rhs = parse_ast(parser, 0);
     if(!rhs) return NULL;
     return ast_new_unary(parser->arena, '*', rhs);
 }
-AST* parse_ast(Parser* parser) {
+AST* parse_ast(Parser* parser, int expr_precedence) {
     // eprintfln("parse_ast");
     Token t;
     AST* v = NULL;
     t = lexer_peak_next(parser->lexer);
-    bool running = true;
     // FIXME: Make this into basic expression as well as function call. Thats kinda important
     switch(t.kind) {
     case '*':
@@ -198,7 +196,7 @@ AST* parse_ast(Parser* parser) {
         break;
     }
     if(!v) return NULL;
-    while(running) {
+    while(true) {
         t = lexer_peak_next(parser->lexer);
         switch(t.kind) {
         case '(': {
@@ -208,9 +206,48 @@ AST* parse_ast(Parser* parser) {
         OPS
         #undef X
         {
-            int op = t.kind;
-            int precedence = op_prec(op);
+            int binop = t.kind;
+            int bin_precedence = op_prec(binop);
+            if (bin_precedence < expr_precedence) return v;
             lexer_eat(parser->lexer, 1);
+            AST* v2 = parse_basic(parser);
+            if(!v2) return NULL;
+            t = lexer_peak_next(parser->lexer);
+            int next_prec = -1;
+            int next_op = 0;
+            switch(t.kind) {
+            #define X(op) case op:
+            OPS
+            #undef X
+                next_prec = op_prec(next_op = t.kind);
+                break;
+            }
+            if (next_prec > 0 && bin_precedence > next_prec) {
+                lexer_eat(parser->lexer, 1);
+                v2 = ast_new_binop(
+                    parser->arena,
+                    next_op,
+                    v2, 
+                    parse_ast(parser, next_prec)
+                );
+            }
+            v = ast_new_binop(parser->arena, binop, v, v2);
+        } break;
+        default:
+            return v;
+        }
+#if 0
+        t = lexer_peak_next(parser->lexer);
+        switch(t.kind) {
+        case '(': {
+            v = parse_astcall(parser, v);
+        } break;
+        #define X(op) case op:
+        OPS
+        #undef X
+        {
+            int curop = t.kind;
+            int curprecedence = op_prec(op);
             AST* v2 = parse_basic(parser);
             if(!v2) return NULL;
             t = lexer_peak_next(parser->lexer);
@@ -241,6 +278,7 @@ AST* parse_ast(Parser* parser) {
             running = false;
             break;
         }
+#endif
     }
     return v;
 }
@@ -288,7 +326,7 @@ Statement* parse_statement(Parser* parser, Token t) {
     switch(t.kind) {
         case TOKEN_RETURN: {
             lexer_eat(parser->lexer, 1);
-            AST* ast = parse_ast(parser);
+            AST* ast = parse_ast(parser, 0);
             if(!ast) {
                 eprintfln("ERROR:%s: Failed to parse return statement",tloc(t));
                 exit(1);
@@ -299,7 +337,7 @@ Statement* parse_statement(Parser* parser, Token t) {
             return parse_scope(parser);
         case TOKEN_WHILE: {
             lexer_eat(parser->lexer, 1);
-            AST* ast = parse_ast(parser);
+            AST* ast = parse_ast(parser, 0);
             if(!ast) {
                 eprintfln("ERROR:%s: Failed to parse condition",tloc(t));
                 exit(1);
@@ -307,7 +345,7 @@ Statement* parse_statement(Parser* parser, Token t) {
             return statement_while(parser->arena, ast, parse_body(parser));
         }
     }
-    AST* ast = parse_ast(parser);
+    AST* ast = parse_ast(parser, 0);
     if(!ast) {
         eprintfln("ERROR:%s: Unknown token in statement: %s", tloc(t), tdisplay(t));
         exit(1);
@@ -391,7 +429,7 @@ void parse(Parser* parser, Lexer* lexer, Arena* arena) {
                     eprintfln("  <const name> : (type) : <expression>");
                     exit(1);
                 }
-                AST* ast = parse_ast(parser);
+                AST* ast = parse_ast(parser, 0);
                 const_tab_insert(&parser->state->consts, name, const_new(arena, ast, type));
             } else {
                 eprintfln("ERROR:%s: Unexpected Atom: %s",tloc(t), t.atom->data);
