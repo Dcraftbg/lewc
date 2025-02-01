@@ -15,7 +15,7 @@ serial_write_char :: (c: u8) -> i32 {
     return 0;
 }
 serial_write_cstr :: (c_str: *u8) -> i32 {
-    while (*c_str) != 0u8 {
+    while *c_str != 0u8 {
         serial_write_char(*c_str);
         c_str = c_str + 1;
     }
