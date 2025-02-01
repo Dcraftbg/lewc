@@ -18,6 +18,7 @@ const char* all_tests[] = {
     "find_str.lew",
     "constants.lew",
     "comments.lew",
+    "void.lew",
 };
 #define python_interp(cmd) nob_cmd_append(cmd, "python3")
 #define python_rere(cmd) (python_interp(cmd), nob_cmd_append(&cmd, 
