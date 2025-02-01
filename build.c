@@ -90,6 +90,16 @@ bool remove_objs(const char* dirpath) {
    if (dir) closedir(dir);
    return true;
 }
+
+void cleanup_d(const char* obj) {
+    size_t temp = nob_temp_save();
+    char* str = nob_temp_strdup(obj);
+    size_t str_len = strlen(str);
+    assert(str_len);
+    str[str_len-1] = 'd';
+    remove(str);
+    nob_temp_rewind(temp);
+}
 // TODO: cc but async
 bool cc(const char* ipath, const char* opath) {
     Nob_Cmd cmd = {0};
@@ -98,6 +108,7 @@ bool cc(const char* ipath, const char* opath) {
     nob_cmd_append(&cmd, "-c", ipath, "-o", opath);
     if(!nob_cmd_run_sync(cmd)) {
        nob_cmd_free(cmd);
+       cleanup_d(opath);
        return false;
     }
     nob_cmd_free(cmd);
