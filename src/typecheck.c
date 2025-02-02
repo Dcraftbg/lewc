@@ -70,6 +70,10 @@ bool typecheck_ast(ProgramState* state, SymTabNode* node, AST* ast) {
         // FIXME: Error messages are invalid
         case TOKEN_NEQ:
         case TOKEN_EQEQ:
+        case TOKEN_LTEQ:
+        case TOKEN_GTEQ:
+        case '<':
+        case '>':
             ast->type = &type_bool;
             if(!type_eq(ast->as.binop.lhs->type, ast->as.binop.rhs->type)) {
                 eprintfln("Trying to add two different types together with '=='");

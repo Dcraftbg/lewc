@@ -66,6 +66,7 @@ bool dump_type_to_qbe(Qbe* qbe, Type* t) {
     case CORE_PTR:
         nprintf("l");
         break;
+    case CORE_BOOL:
     case CORE_I8:
     case CORE_I16:
     case CORE_I32:
@@ -124,6 +125,7 @@ size_t build_qbe_ast(Qbe* qbe, AST* ast) {
             if(!v0 || !v1) return 0;
             nprintf("    %%.s%zu =", n=qbe->inst++);dump_type_to_qbe(qbe, ast->as.binop.lhs->type);nprintfln(" mul %%.s%zu, %%.s%zu", v0, v1);
         } break;
+        // TODO: udiv for unsigned
         case '/': {
             size_t v0 = build_qbe_ast(qbe, ast->as.binop.lhs);
             size_t v1 = build_qbe_ast(qbe, ast->as.binop.rhs);
@@ -154,6 +156,30 @@ size_t build_qbe_ast(Qbe* qbe, AST* ast) {
                 v1 = new;
             }
             nprintf("    %%.s%zu =", n=qbe->inst++);dump_type_to_qbe(qbe, ast->as.binop.lhs->type);nprintfln(" add %%.s%zu, %%.s%zu", v0, v1);
+        } break;
+        case '<': {
+            size_t v0 = build_qbe_ast(qbe, ast->as.binop.lhs);
+            size_t v1 = build_qbe_ast(qbe, ast->as.binop.rhs);
+            if(!v0 || !v1) return 0;
+            nprintf("    %%.s%zu =", n=qbe->inst++);dump_type_to_qbe(qbe, ast->as.binop.lhs->type);nprintf(" c"); nprintf("%c", ast->as.binop.lhs->type->unsign ? 'u' : 's'); nprintf("lt");dump_type_to_qbe(qbe, ast->as.binop.lhs->type);nprintfln(" %%.s%zu, %%.s%zu", v0, v1);
+        } break;
+        case TOKEN_LTEQ: {
+            size_t v0 = build_qbe_ast(qbe, ast->as.binop.lhs);
+            size_t v1 = build_qbe_ast(qbe, ast->as.binop.rhs);
+            if(!v0 || !v1) return 0;
+            nprintf("    %%.s%zu =", n=qbe->inst++);dump_type_to_qbe(qbe, ast->as.binop.lhs->type);nprintf(" c"); nprintf("%c", ast->as.binop.lhs->type->unsign ? 'u' : 's'); nprintf("le");dump_type_to_qbe(qbe, ast->as.binop.lhs->type);nprintfln(" %%.s%zu, %%.s%zu", v0, v1);
+        } break;
+        case '>': {
+            size_t v0 = build_qbe_ast(qbe, ast->as.binop.lhs);
+            size_t v1 = build_qbe_ast(qbe, ast->as.binop.rhs);
+            if(!v0 || !v1) return 0;
+            nprintf("    %%.s%zu =", n=qbe->inst++);dump_type_to_qbe(qbe, ast->as.binop.lhs->type);nprintf(" c"); nprintf("%c", ast->as.binop.lhs->type->unsign ? 'u' : 's'); nprintf("gt");dump_type_to_qbe(qbe, ast->as.binop.lhs->type);nprintfln(" %%.s%zu, %%.s%zu", v0, v1);
+        } break;
+        case TOKEN_GTEQ: {
+            size_t v0 = build_qbe_ast(qbe, ast->as.binop.lhs);
+            size_t v1 = build_qbe_ast(qbe, ast->as.binop.rhs);
+            if(!v0 || !v1) return 0;
+            nprintf("    %%.s%zu =", n=qbe->inst++);dump_type_to_qbe(qbe, ast->as.binop.lhs->type);nprintf(" c"); nprintf("%c", ast->as.binop.lhs->type->unsign ? 'u' : 's'); nprintf("ge");dump_type_to_qbe(qbe, ast->as.binop.lhs->type);nprintfln(" %%.s%zu, %%.s%zu", v0, v1);
         } break;
         case TOKEN_NEQ: {
             size_t v0 = build_qbe_ast(qbe, ast->as.binop.lhs);

@@ -100,6 +100,10 @@ void parse_func_signature(Parser* parser, FuncSignature* sig) {
     X('^') \
     X('|') \
     X('=') \
+    X('<') \
+    X('>') \
+    X(TOKEN_LTEQ) \
+    X(TOKEN_GTEQ) \
     X(TOKEN_SHL) \
     X(TOKEN_SHR) \
     X(TOKEN_NEQ) \
@@ -118,6 +122,11 @@ int binop_prec(int op) {
     case TOKEN_SHL:
     case TOKEN_SHR:
         return 7;
+    case '<':
+    case TOKEN_LTEQ:
+    case '>':
+    case TOKEN_GTEQ:
+        return 9;
     case TOKEN_NEQ:
     case TOKEN_EQEQ:
         return 10;
@@ -418,7 +427,7 @@ void parse(Parser* parser, Lexer* lexer, Arena* arena) {
             eprintfln("ERROR:%s: Lexer: %s", tloc(t), tdisplay(t));
             exit(1);
         }
-        static_assert(TOKEN_COUNT == 272, "Update parser");
+        static_assert(TOKEN_COUNT == 274, "Update parser");
         switch(t.kind) {
         case TOKEN_EXTERN: {
             lexer_eat(parser->lexer, 1);
