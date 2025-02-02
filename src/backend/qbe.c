@@ -77,6 +77,24 @@ bool dump_type_to_qbe(Qbe* qbe, Type* t) {
     }
     return true;
 }
+
+size_t build_qbe_ast(Qbe* qbe, AST* ast);
+// For assignments. i.e.:
+//    foo = 69
+//    *bar = 420
+size_t build_ptr_to(Qbe* qbe, AST* ast) {
+    size_t n = 0;
+    switch(ast->kind) {
+    case AST_SYMBOL:
+        nprintfln("    %%.s%zu = copy %%%s", n=qbe->inst++, ast->as.symbol->data);
+        return n;
+    case AST_UNARY: 
+        if(ast->as.unary.op == '*') return build_qbe_ast(qbe, ast->as.unary.rhs);
+        else unreachable("unary.op = %d", ast->as.unary.op);
+    default:
+        unreachable("ast->kind = %d", ast->kind);
+    }
+}
 size_t build_qbe_ast(Qbe* qbe, AST* ast) {
     size_t n=0;
     static_assert(AST_KIND_COUNT == 6, "Update build_qbe_ast");
@@ -84,10 +102,11 @@ size_t build_qbe_ast(Qbe* qbe, AST* ast) {
     case AST_BINOP:
         switch(ast->as.binop.op) {
         case '=': {
-            assert(ast->as.binop.lhs->kind == AST_SYMBOL);
+            size_t v0 = build_ptr_to(qbe, ast->as.binop.lhs);
             size_t v1 = build_qbe_ast(qbe, ast->as.binop.rhs);
-            if(!v1) return 0;
-            nprintf("    store"); dump_type_to_qbe(qbe, ast->type); nprintfln(" %%.s%zu, %%%s", v1, ast->as.binop.lhs->as.symbol->data);
+            if(!v0 || !v1) return 0;
+            nprintf("    store"); dump_type_to_qbe(qbe, ast->type); nprintfln(" %%.s%zu, %%.s%zu", v1, v0);
+            n = v1;
         } break;
         case TOKEN_SHL: {
             size_t v0 = build_qbe_ast(qbe, ast->as.binop.lhs);
