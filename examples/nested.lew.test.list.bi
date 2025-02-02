@@ -4,6 +4,6 @@
 :i returncode 1
 :b stdout 0
 
-:b stderr 67
-ERROR:examples/nested.lew:2:8: Unexpected token in expression: ':'
+:b stderr 66
+ERROR:examples/nested.lew:2:9: Expected name of type but got: ':'
 
