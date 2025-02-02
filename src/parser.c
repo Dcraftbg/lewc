@@ -359,6 +359,7 @@ Statement* parse_body(Parser* parser) {
     }
     return NULL;
 }
+// TODO: Maybe this should be errorable?
 Statement* parse_statement(Parser* parser, Token t) {
     switch(t.kind) {
         case TOKEN_RETURN: {
@@ -373,6 +374,26 @@ Statement* parse_statement(Parser* parser, Token t) {
                 exit(1);
             }
             return statement_return(parser->arena, ast);
+        } break;
+        case TOKEN_ATOM: {
+            Atom* name = t.atom;
+            if(lexer_peak(parser->lexer, 1).kind == ':') {
+                lexer_eat(parser->lexer, 2);
+                if(lexer_peak_next(parser->lexer).kind == '=') {
+                    eprintfln("ERROR:%s: Type inference isn't yet supported. Sorry", tloc(t));
+                    exit(1);
+                }
+                Type* type = parse_type(parser);
+                if(!type) exit(1);
+                AST* init = NULL;
+                if(lexer_peak_next(parser->lexer).kind == '=') {
+                    lexer_eat(parser->lexer, 1);
+                    // TODO: Maybe the precedence isn't correct. Just make sure it is
+                    if(!(init = parse_ast(parser, INIT_PRECEDENCE))) 
+                        exit(1);
+                }
+                return statement_local_def(parser->arena, name, type, init);
+            }
         } break;
         case '{':
             return parse_scope(parser);

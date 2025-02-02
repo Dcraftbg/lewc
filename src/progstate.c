@@ -45,3 +45,12 @@ Statement* statement_loop(Arena* arena, Statement* body) {
     me->as.loop.body = body;
     return me;
 }
+
+Statement* statement_local_def(Arena* arena, Atom* name, Type* type, AST* init) {
+    Statement* me = statement_new(arena);
+    me->kind = STATEMENT_LOCAL_DEF;
+    me->as.local_def.name = name;
+    me->as.local_def.type = type;
+    me->as.local_def.init = init;
+    return me;
+}

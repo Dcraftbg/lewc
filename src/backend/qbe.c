@@ -279,7 +279,7 @@ size_t build_qbe_ast(Qbe* qbe, AST* ast) {
 bool build_qbe_scope(Qbe* qbe, Statements* scope);
 bool build_qbe_statement(Qbe* qbe, Statement* statement) {
     size_t n = 0;
-    static_assert(STATEMENT_COUNT == 5, "Update build_qbe_statement");
+    static_assert(STATEMENT_COUNT == 6, "Update build_qbe_statement");
     switch(statement->kind) {
     case STATEMENT_EVAL:
         build_qbe_ast(qbe, statement->as.ast);
@@ -292,6 +292,30 @@ bool build_qbe_statement(Qbe* qbe, Statement* statement) {
             nprintfln("    ret");
         }
         break;
+    case STATEMENT_LOCAL_DEF: {
+        Type* type = statement->as.local_def.type;
+        Atom* name = statement->as.local_def.name;
+        AST * init = statement->as.local_def.init;
+        // TODO: Unduplicate this code with the building arg thingy
+        size_t sz = 0, count=1;
+        switch(type->core){
+        case CORE_PTR:
+            sz = 8;
+            break;
+        case CORE_BOOL:
+        case CORE_I8:
+        case CORE_I32:
+            sz = 4;
+            break;
+        default:
+            unreachable("type->core=%d", type->core);
+        }
+        nprintfln("    %%%s =l alloc%zu %zu", name->data, sz, count);
+        if(init) {
+            size_t n = build_qbe_ast(qbe, init);
+            nprintf("    store");dump_type_to_qbe(qbe, type);nprintfln(" %%.s%zu, %%%s", n, name->data);
+        }
+    } break;
     case STATEMENT_SCOPE:
         if(!build_qbe_scope(qbe, statement->as.scope)) return false;
         break;

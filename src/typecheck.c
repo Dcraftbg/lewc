@@ -124,7 +124,7 @@ bool typecheck_ast(ProgramState* state, SymTabNode* node, AST* ast) {
 }
 bool typecheck_scope(ProgramState* state, SymTabNode* node, Type* return_type, Statements* scope);
 bool typecheck_statement(ProgramState* state, SymTabNode* node, Type* return_type, Statement* statement) {
-    static_assert(STATEMENT_COUNT == 5, "Update syn_analyse");
+    static_assert(STATEMENT_COUNT == 6, "Update syn_analyse");
     switch(statement->kind) {
     case STATEMENT_RETURN:
         if(!statement->as.ast && !return_type) return true;
@@ -138,8 +138,18 @@ bool typecheck_statement(ProgramState* state, SymTabNode* node, Type* return_typ
             return false;
         }
         if(!type_eq(statement->as.ast->type, return_type)) {
-            eprintf("Return type mismatch. Expected "); type_dump(stderr, return_type); eprintf(" but got "); type_dump(stderr, statement->as.ast->type); eprintf("\n");
+            eprintf("Return type mismatch. Expected "); type_dump(stderr, return_type); eprintf(" but got "); type_dump(stderr, statement->as.ast->type); eprintf(NEWLINE);
             return false;
+        }
+        break;
+    case STATEMENT_LOCAL_DEF:
+        if(statement->as.local_def.init) {
+            if(!typecheck_ast(state, node, statement->as.local_def.init)) return false;
+            if(!type_eq(statement->as.local_def.type, statement->as.local_def.init->type)) {
+                eprintfln("Type mismatch in variable definition %s.", statement->as.local_def.name->data);
+                eprintf("Variable defined as "); type_dump(stderr, statement->as.local_def.type); eprintf(" but got "); type_dump(stderr, statement->as.local_def.init->type); eprintf(NEWLINE);
+                return false;
+            }
         }
         break;
     case STATEMENT_EVAL:

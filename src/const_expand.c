@@ -34,7 +34,7 @@ AST* const_expand_ast(ProgramState* state, SymTabNode* node, AST* ast) {
 }
 bool const_expand_scope(ProgramState* state, SymTabNode* node, Statements* scope);
 bool const_expand_statement(ProgramState* state, SymTabNode* node, Statement* statement) {
-    static_assert(STATEMENT_COUNT == 5, "Update syn_analyse");
+    static_assert(STATEMENT_COUNT == 6, "Update syn_analyse");
     switch(statement->kind) {
     case STATEMENT_RETURN:
         if(!statement->as.ast) return true;
@@ -47,6 +47,10 @@ bool const_expand_statement(ProgramState* state, SymTabNode* node, Statement* st
     case STATEMENT_WHILE: {
         if(!(statement->as.whil.cond = const_expand_ast(state, node, statement->as.whil.cond))) return false;
         return const_expand_statement(state, node, statement->as.whil.body);
+    } break;
+    case STATEMENT_LOCAL_DEF: {
+        if(!statement->as.local_def.init) return true;
+        return (statement->as.local_def.init = const_expand_ast(state, node, statement->as.local_def.init)) != NULL;
     } break;
     default:
         unreachable("statement->kind=%d", statement->kind);
