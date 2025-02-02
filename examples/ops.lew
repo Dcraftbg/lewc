@@ -10,6 +10,9 @@ mul_lew :: (a: i32, b: i32) -> i32 {
 div_lew :: (a: i32, b: i32) -> i32 {
     return a / b;
 }
+mod_lew :: (a: i32, b: i32) -> i32 {
+    return a % b;
+}
 and_lew :: (a: i32, b: i32) -> i32 {
     return a & b;
 }

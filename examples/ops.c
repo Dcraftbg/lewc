@@ -5,6 +5,7 @@
     X(sub, -) \
     X(mul, *) \
     X(div, /) \
+    X(mod, %) \
     X(and, &) \
     X(or , |) \
     X(xor, ^)
