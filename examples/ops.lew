@@ -28,3 +28,15 @@ shl_lew :: (a: i32, b: i32) -> i32 {
 shr_lew :: (a: i32, b: i32) -> i32 {
     return a >> b;
 }
+bool_lt_lew :: (a: i32, b: i32) -> bool {
+    return a < b;
+}
+bool_le_lew :: (a: i32, b: i32) -> bool {
+    return a <= b;
+}
+bool_gt_lew :: (a: i32, b: i32) -> bool {
+    return a > b;
+}
+bool_ge_lew :: (a: i32, b: i32) -> bool {
+    return a >= b;
+}

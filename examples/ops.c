@@ -10,7 +10,11 @@
     X(or , |) \
     X(xor, ^) \
     X(shl, <<) \
-    X(shr, >>)
+    X(shr, >>) \
+    X(bool_lt, < ) \
+    X(bool_le, <=) \
+    X(bool_gt, > ) \
+    X(bool_ge, >=)
 
 #define X(name, ...) \
     int name##_lew (int a, int b);
