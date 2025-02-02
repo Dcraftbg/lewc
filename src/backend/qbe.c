@@ -168,11 +168,33 @@ size_t build_qbe_ast(Qbe* qbe, AST* ast) {
             size_t v1 = build_qbe_ast(qbe, ast->as.binop.rhs);
             if(!v0 || !v1) return 0;
             // TODO: Is integer instead
-            // TODO: Pointer arithmetic
             if(ast->as.binop.lhs->type->core == CORE_PTR && type_isbinary(ast->as.binop.rhs->type)) {
-                size_t new = qbe->inst++;
-                nprintf("    %%.s%zu =l", new);nprintf(" ext");dump_type_to_qbe_full(qbe, ast->as.binop.rhs->type);nprintfln(" %%.s%zu", v1);
-                v1 = new;
+                size_t index = qbe->inst++;
+                nprintf("    %%.s%zu =l", index);nprintf(" ext");dump_type_to_qbe_full(qbe, ast->as.binop.rhs->type);nprintfln(" %%.s%zu", v1);
+                size_t offset = qbe->inst++;
+                size_t byte_size = 0;
+                Type* type = ast->as.binop.lhs->type->inner_type;
+                // TODO: factor this out
+                switch(type->core) {
+                case CORE_BOOL:
+                case CORE_I8:
+                    byte_size = 1;
+                    break;
+                case CORE_I16:
+                    byte_size = 2;
+                    break;
+                case CORE_I32:
+                    byte_size = 4;
+                    break;
+                case CORE_PTR:
+                    byte_size = 8;
+                    break;
+                default:
+                    unreachable("type->core=%d", type->core);
+                }
+                if(byte_size > 1) nprintfln("    %%.s%zu =l mul %%.s%zu, %zu", offset, index, byte_size);
+                else offset = index;
+                v1 = offset;
             }
             nprintf("    %%.s%zu =", n=qbe->inst++);dump_type_to_qbe(qbe, ast->as.binop.lhs->type);nprintfln(" add %%.s%zu, %%.s%zu", v0, v1);
         } break;
