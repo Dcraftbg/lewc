@@ -1,0 +1,4 @@
+./bin/lewc examples/deref_assign.lew -o ./int/tests/deref_assign.s
+as ./int/tests/deref_assign.s -o ./int/tests/deref_assign.o
+gcc -static ./examples/deref_assign.c ./int/tests/deref_assign.o -o ./bin/tests/deref_assign
+./bin/tests/deref_assign
