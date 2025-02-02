@@ -1,0 +1,9 @@
+ret_69 :: () -> i32 {
+    a : i32 = 69;
+    return a;
+}
+extern printf :: (fmt: *u8, arg: i32);
+main :: () -> i32 {
+    printf(c"ret_69 => %d", ret_69());
+    return 0;
+}
