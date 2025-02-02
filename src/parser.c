@@ -94,6 +94,7 @@ void parse_func_signature(Parser* parser, FuncSignature* sig) {
     X('+') \
     X('-') \
     X('/') \
+    X('%') \
     X('*') \
     X('&') \
     X('^') \
@@ -107,6 +108,7 @@ int binop_prec(int op) {
     switch(op) {
     case '*':
     case '/':
+    case '%':
         return 5;
     case '+':
     case '-':
