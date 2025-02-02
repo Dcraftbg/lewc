@@ -93,14 +93,21 @@ void parse_func_signature(Parser* parser, FuncSignature* sig) {
 #define BINOPS \
     X('+') \
     X('-') \
-    X('=') \
+    X('/') \
+    X('*') \
     X('&') \
+    X('^') \
+    X('|') \
+    X('=') \
     X(TOKEN_NEQ) \
     X(TOKEN_EQEQ)
 
 // https://en.cppreference.com/w/cpp/language/operator_precedence
 int binop_prec(int op) {
     switch(op) {
+    case '*':
+    case '/':
+        return 5;
     case '+':
     case '-':
         return 6;
@@ -109,6 +116,10 @@ int binop_prec(int op) {
         return 10;
     case '&':
         return 11;
+    case '^':
+        return 12;
+    case '|':
+        return 13;
     case '=':
         return 16;
     default:

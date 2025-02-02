@@ -252,6 +252,8 @@ Token lexer_next(Lexer* lexer) {
     case '}':
     case ',':
     case '+':
+    case '|':
+    case '^':
     case ';':    
     case ':':
     case '&':
