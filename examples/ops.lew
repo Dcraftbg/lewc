@@ -22,3 +22,9 @@ or_lew :: (a: i32, b: i32) -> i32 {
 xor_lew :: (a: i32, b: i32) -> i32 {
     return a ^ b;
 }
+shl_lew :: (a: i32, b: i32) -> i32 {
+    return a << b;
+}
+shr_lew :: (a: i32, b: i32) -> i32 {
+    return a >> b;
+}

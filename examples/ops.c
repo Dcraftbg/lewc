@@ -8,7 +8,9 @@
     X(mod, %) \
     X(and, &) \
     X(or , |) \
-    X(xor, ^)
+    X(xor, ^) \
+    X(shl, <<) \
+    X(shr, >>)
 
 #define X(name, ...) \
     int name##_lew (int a, int b);
