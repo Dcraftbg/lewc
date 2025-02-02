@@ -86,7 +86,7 @@ size_t build_ptr_to(Qbe* qbe, AST* ast) {
     size_t n = 0;
     switch(ast->kind) {
     case AST_SYMBOL:
-        nprintfln("    %%.s%zu = copy %%%s", n=qbe->inst++, ast->as.symbol->data);
+        nprintfln("    %%.s%zu =l copy %%%s", n=qbe->inst++, ast->as.symbol->data);
         return n;
     case AST_UNARY: 
         if(ast->as.unary.op == '*') return build_qbe_ast(qbe, ast->as.unary.rhs);
