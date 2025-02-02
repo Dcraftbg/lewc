@@ -1,0 +1,4 @@
+./bin/lewc examples/ops.lew -o ./int/tests/ops.s
+as ./int/tests/ops.s -o ./int/tests/ops.o
+gcc -static ./int/tests/ops.o ./examples/ops.c -o ./bin/tests/ops
+./bin/tests/ops

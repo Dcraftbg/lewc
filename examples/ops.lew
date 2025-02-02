@@ -1,0 +1,21 @@
+add_lew :: (a: i32, b: i32) -> i32 {
+    return a + b;
+}
+sub_lew :: (a: i32, b: i32) -> i32 {
+    return a - b;
+}
+mul_lew :: (a: i32, b: i32) -> i32 {
+    return a * b;
+}
+div_lew :: (a: i32, b: i32) -> i32 {
+    return a / b;
+}
+and_lew :: (a: i32, b: i32) -> i32 {
+    return a & b;
+}
+or_lew :: (a: i32, b: i32) -> i32 {
+    return a | b;
+}
+xor_lew :: (a: i32, b: i32) -> i32 {
+    return a ^ b;
+}
