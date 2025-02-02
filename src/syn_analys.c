@@ -60,10 +60,32 @@ bool syn_analyse_ast(SymTabNode* node, AST* ast) {
             if(!syn_analyse_ast(node, ast->as.call.args.items[i])) return false;
         }
         break;
+    // TODO: For = force the lhs to be either SYMBOL (non constant/function!!) or *
     case AST_BINOP:
         // ------ For any other binop
         if(!syn_analyse_ast(node, ast->as.binop.lhs)) return false;
         if(!syn_analyse_ast(node, ast->as.binop.rhs)) return false;
+        if(ast->as.binop.op == '=') {
+            AST* lhs = ast->as.binop.lhs;
+            switch(lhs->kind) {
+            case AST_SYMBOL: {
+                if(stl_lookup(node, lhs->as.symbol)->kind != SYMBOL_VARIABLE) {
+                    eprintfln("Cannot assign to non-variable `%s`", lhs->as.symbol->data);
+                    return false;
+                }
+            } break;
+            case AST_UNARY: {
+                if(lhs->as.unary.op != '*') {
+                    eprintfln("Can only assign to variables or dereferences. found unary: %c", lhs->as.unary.op);
+                    return false;
+                }
+            } break;
+            default:
+                // TODO: Better error messages
+                eprintfln("Can only assign to variables or dereferences. found: %d", lhs->kind);
+                return false;
+            }
+        }
         break;
     case AST_UNARY:
         if(!syn_analyse_ast(node, ast->as.unary.rhs)) return false;
