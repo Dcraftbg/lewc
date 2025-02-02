@@ -261,6 +261,20 @@ Token lexer_next(Lexer* lexer) {
     case '%':
         lexer_next_c(lexer);
         return MAKE_TOKEN(c);
+    case '<':
+        lexer_next_c(lexer);
+        if(lexer_peak_c(lexer) == '<') {
+            lexer_next_c(lexer);
+            return MAKE_TOKEN(TOKEN_SHL);
+        }
+        return MAKE_TOKEN(c);
+    case '>':
+        lexer_next_c(lexer);
+        if(lexer_peak_c(lexer) == '>') {
+            lexer_next_c(lexer);
+            return MAKE_TOKEN(TOKEN_SHR);
+        }
+        return MAKE_TOKEN(c);
     case '!':
         lexer_next_c(lexer);
         if(lexer_peak_c(lexer) == '=') {

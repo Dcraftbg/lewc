@@ -47,7 +47,10 @@ bool typecheck_ast(ProgramState* state, SymTabNode* node, AST* ast) {
         case '^':
         case '*':
         case '/':
+        // TODO: Ensure some of these are on integers and not on floats
         case '%':
+        case TOKEN_SHL:
+        case TOKEN_SHR:
             ast->type = ast->as.binop.lhs->type;
             if(!type_eq(ast->as.binop.lhs->type, ast->as.binop.rhs->type)) {
                 // Allow offseting with +

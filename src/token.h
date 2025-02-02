@@ -13,6 +13,8 @@ enum {
     TOKEN_INT,
     TOKEN_EQEQ,
     TOKEN_NEQ,
+    TOKEN_SHR,
+    TOKEN_SHL,
     TOKEN_WHILE,
     TOKEN_LOOP,
     // Tokens to stop 

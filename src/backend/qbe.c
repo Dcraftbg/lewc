@@ -88,6 +88,18 @@ size_t build_qbe_ast(Qbe* qbe, AST* ast) {
             if(!v1) return 0;
             nprintf("    store"); dump_type_to_qbe(qbe, ast->type); nprintfln(" %%.s%zu, %%%s", v1, ast->as.binop.lhs->as.symbol->data);
         } break;
+        case TOKEN_SHL: {
+            size_t v0 = build_qbe_ast(qbe, ast->as.binop.lhs);
+            size_t v1 = build_qbe_ast(qbe, ast->as.binop.rhs);
+            if(!v0 || !v1) return 0;
+            nprintf("    %%.s%zu =", n=qbe->inst++);dump_type_to_qbe(qbe, ast->as.binop.lhs->type);nprintfln(" shl %%.s%zu, %%.s%zu", v0, v1);
+        } break;
+        case TOKEN_SHR: {
+            size_t v0 = build_qbe_ast(qbe, ast->as.binop.lhs);
+            size_t v1 = build_qbe_ast(qbe, ast->as.binop.rhs);
+            if(!v0 || !v1) return 0;
+            nprintf("    %%.s%zu =", n=qbe->inst++);dump_type_to_qbe(qbe, ast->as.binop.lhs->type);nprintfln(" shr %%.s%zu, %%.s%zu", v0, v1);
+        } break;
         case '%': {
             size_t v0 = build_qbe_ast(qbe, ast->as.binop.lhs);
             size_t v1 = build_qbe_ast(qbe, ast->as.binop.rhs);
