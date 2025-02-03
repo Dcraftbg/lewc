@@ -22,9 +22,11 @@ AST* const_eval_ast(ProgramState* state, AST* ast) {
             eprintfln("ERROR: Cannot have non-constant symbols in constant expressions");
             return NULL;
         }
-        Constant* c = sym->as.constant;
-        if(!const_eval_const(state, c)) return NULL;
-        return c->ast;
+        if(sym->as.init.evaluated) return sym->as.init.ast;
+        AST* ast = const_eval_ast(state, sym->as.init.ast);
+        if(!ast) return NULL;
+        sym->as.init.evaluated = true;
+        return sym->as.init.ast = ast;
     } break;
     case AST_INT:
         return ast;
@@ -50,24 +52,20 @@ AST* const_eval_ast(ProgramState* state, AST* ast) {
     }
     unreachable("const_eval_ast non exhaustive");
 }
-bool const_eval_const(ProgramState* state, Constant* c) {
-    if(c->evaluated) return true;
-    AST* ast = const_eval_ast(state, c->ast);
-    if(!ast) return false;
-    c->ast = ast;
-    c->evaluated = true;
-    return true;
-}
 bool const_eval(ProgramState* state) {
-    for(size_t i = 0; i < state->consts.buckets.len; ++i) {
+    for(size_t i = 0; i < state->symtab_root.symtab.buckets.len; ++i) {
         for(
-            Pair_ConstTab* cpair = state->consts.buckets.items[i].first;
-            cpair;
-            cpair = cpair->next
+            Pair_SymTab* spair = state->symtab_root.symtab.buckets.items[i].first;
+            spair;
+            spair = spair->next
         ) {
-            Constant* c = cpair->value;
-            if(c->evaluated) continue;
-            if(!const_eval_const(state, c)) return false;
+            Symbol* s = spair->value;
+            if(s->kind != SYMBOL_CONSTANT) continue;
+            if(s->as.init.evaluated) continue;
+            AST* ast = const_eval_ast(state, s->as.init.ast);
+            if(!ast) return false;
+            s->as.init.evaluated = true;
+            s->as.init.ast = ast;
         }
     }
     return true;

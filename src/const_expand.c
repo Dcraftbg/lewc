@@ -9,11 +9,12 @@ AST* const_expand_ast(ProgramState* state, AST* ast) {
         ast->as.binop.rhs = const_expand_ast(state, ast->as.binop.rhs);
         if(!ast->as.binop.lhs || !ast->as.binop.rhs) return NULL;
         return ast;
+    // TODO: In the future this probably won't be necessary
+    // Meaning this entire step might actually be obsolete
     case AST_SYMBOL: {
         Symbol* s = ast->as.symbol.sym;
         if(s->kind == SYMBOL_CONSTANT) {
-            Constant* c = s->as.constant;
-            return c->ast;
+            return s->as.init.ast;
         }
         return ast;
     };

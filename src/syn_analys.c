@@ -24,23 +24,24 @@ static Symbol* symbol_new(Arena* arena, Type* type) {
     symbol->type = type;
     return symbol;
 }
-static Symbol* symbol_new_func(Arena* arena, Type* type) {
+Symbol* symbol_new_func(Arena* arena, Type* type, Function* func) {
     Symbol* me = symbol_new(arena, type);
     if(!me) return NULL;
     me->kind = SYMBOL_FUNCTION;
+    me->as.func = func;
     return me;
 }
-static Symbol* symbol_new_var(Arena* arena, Type* type) {
+Symbol* symbol_new_var(Arena* arena, Type* type) {
     Symbol* me = symbol_new(arena, type);
     if(!me) return NULL;
     me->kind = SYMBOL_VARIABLE;
     return me;
 }
-static Symbol* symbol_new_constant(Arena* arena, Constant* constant) {
-    Symbol* me = symbol_new(arena, constant->type);
+Symbol* symbol_new_constant(Arena* arena, Type* type, AST* init) {
+    Symbol* me = symbol_new(arena, type);
     if(!me) return NULL;
     me->kind = SYMBOL_CONSTANT;
-    me->as.constant = constant;
+    me->as.init.ast = init;
     return me;
 }
 SymTabNode* symtab_node_new(SymTabNode* parent, Arena* arena) {
@@ -144,47 +145,49 @@ bool syn_analyse_scope(ProgramState* state, SymTabNode* node, Statements* scope)
 }
 bool syn_analyse(ProgramState* state) {
     SymTabNode* node = &state->symtab_root;
-    for(size_t i = 0; i < state->consts.buckets.len; ++i) {
-        Pair_ConstTab* cpair = state->consts.buckets.items[i].first;
-        while(cpair) {
-            sym_tab_insert(&node->symtab, cpair->key, symbol_new_constant(state->arena, cpair->value));
-            cpair = cpair->next; 
-        }
-    }
+    // TODO: Collecting this should be done at the level of parsing
     for(size_t i = 0; i < state->funcs.buckets.len; ++i) {
         Pair_FuncMap* fpair = state->funcs.buckets.items[i].first;
         while(fpair) {
-            sym_tab_insert(&node->symtab, fpair->key, symbol_new_func(state->arena, fpair->value.type));
+            sym_tab_insert(&node->symtab, fpair->key, symbol_new_func(state->arena, fpair->value.type, &fpair->value));
             fpair = fpair->next; 
         }
     }
-    for(size_t i = 0; i < state->consts.buckets.len; ++i) {
-        Pair_ConstTab* cpair = state->consts.buckets.items[i].first;
-        while(cpair) {
-            if(!syn_analyse_ast(node, cpair->value->ast)) return false;
-            cpair = cpair->next; 
-        }
-    }
-    for(size_t i = 0; i < state->funcs.buckets.len; ++i) {
-        Pair_FuncMap* fpair = state->funcs.buckets.items[i].first;
-        while(fpair) {
-            Function* func = &fpair->value;
-            Type* type = func->type;
-            assert(type->core == CORE_FUNC);
-            if(!(type->attribs & TYPE_ATTRIB_EXTERN)) {
-                func->symtab_node = node = symtab_node_new(node, state->arena);
-                for(size_t j=0; j < type->signature.input.len; ++j) {
-                    if(type->signature.input.items[j].name) {
-                        sym_tab_insert(&node->symtab, type->signature.input.items[j].name, symbol_new_var(state->arena, type->signature.input.items[j].type));
+    for(size_t i = 0; i < state->symtab_root.symtab.buckets.len; ++i) {
+        for(
+            Pair_SymTab* spair = state->symtab_root.symtab.buckets.items[i].first;
+            spair;
+            spair = spair->next
+        ) {
+            Symbol* s = spair->value;
+            static_assert(SYMBOL_COUNT == 3, "Update syn_analyse");
+            switch(s->kind) {
+            case SYMBOL_FUNCTION: {
+                Function* func = s->as.func;
+                Type* type = func->type;
+                assert(type->core == CORE_FUNC);
+                if(!(type->attribs & TYPE_ATTRIB_EXTERN)) {
+                    func->symtab_node = node = symtab_node_new(node, state->arena);
+                    for(size_t j=0; j < type->signature.input.len; ++j) {
+                        if(type->signature.input.items[j].name) {
+                            sym_tab_insert(&node->symtab, type->signature.input.items[j].name, symbol_new_var(state->arena, type->signature.input.items[j].type));
+                        }
                     }
+                    if(!syn_analyse_scope(state, node, func->scope)) return false;
+                    if(!type->signature.output && (func->scope->len <= 0 || func->scope->items[func->scope->len-1]->kind != STATEMENT_RETURN)) {
+                        da_push(func->scope, statement_return(state->arena, NULL));
+                    }
+                    node = node->parent;
                 }
-                if(!syn_analyse_scope(state, node, func->scope)) return false;
-                if(!type->signature.output && (func->scope->len <= 0 || func->scope->items[func->scope->len-1]->kind != STATEMENT_RETURN)) {
-                    da_push(func->scope, statement_return(state->arena, NULL));
-                }
-                node = node->parent;
+            } break;
+            case SYMBOL_VARIABLE:
+            case SYMBOL_CONSTANT:
+                if(!syn_analyse_ast(node, s->as.init.ast)) return false;
+                break;
+            case SYMBOL_COUNT:
+            default:
+                unreachable("s->kind = %d", s->kind);
             }
-            fpair = fpair->next; 
         }
     }
     return true;

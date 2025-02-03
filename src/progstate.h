@@ -47,10 +47,13 @@ Statement* statement_local_def(Arena* arena, Atom* name, Type* type, AST* init);
 #include "syn_analys.h"
 #include "constants.h"
 typedef struct ProgramState ProgramState;
+// TODO: For optimising iteration of functions, constants etc.
+// Maybe we can just keep track of them in a list (i.e. array of Symbol*)
+// That way the main way to lookup a symbol is through the symbol table
+// but for actually iterating we can just go through a list hopefully
 struct ProgramState {
     TypeTable type_table;
     FuncMap funcs;
-    ConstTab consts;
     SymTabNode symtab_root;
     Arena* arena;
 };

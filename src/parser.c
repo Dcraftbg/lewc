@@ -495,7 +495,7 @@ void parse(Parser* parser, Arena* arena) {
                     exit(1);
                 }
                 AST* ast = parse_ast(parser, INIT_PRECEDENCE);
-                const_tab_insert(&parser->state->consts, name, const_new(arena, ast, type));
+                sym_tab_insert(&parser->state->symtab_root.symtab, name, symbol_new_constant(arena, type, ast));
             } else {
                 eprintfln("ERROR:%s: Unexpected Atom: %s",tloc(t), t.atom->data);
                 exit(1);

@@ -182,29 +182,34 @@ bool typecheck_scope(ProgramState* state, Type* return_type, Statements* scope) 
     return true;
 }
 bool typecheck(ProgramState* state) {
-    for(size_t i = 0; i < state->consts.buckets.len; ++i) {
-        Pair_ConstTab* cpair = state->consts.buckets.items[i].first;
-        while(cpair) {
-            Constant* c = cpair->value;
-            if(!typecheck_ast(state, c->ast)) return false;
-            if(!type_eq(c->type, c->ast->type)) {
-                eprintfln("ERROR: Mismatch in definition of constant `%s`", cpair->key->data);
-                eprintf(" Constant type: "); type_dump(stderr, c->type); eprintf(NEWLINE);
-                eprintf(" Value: "); type_dump(stderr, c->ast->type); eprintf(NEWLINE);
-                return false;
-            }
-            cpair = cpair->next; 
-        }
-    }
-    for(size_t i = 0; i < state->funcs.buckets.len; ++i) {
+    for(size_t i = 0; i < state->symtab_root.symtab.buckets.len; ++i) {
         for(
-            Pair_FuncMap* fpair = state->funcs.buckets.items[i].first;
-            fpair;
-            fpair = fpair->next
+            Pair_SymTab* spair = state->symtab_root.symtab.buckets.items[i].first;
+            spair;
+            spair = spair->next
         ) {
-            Function* func = &fpair->value;
-            if(func->type->attribs & TYPE_ATTRIB_EXTERN) continue;
-            if(!typecheck_scope(state, func->type->signature.output, func->scope)) return false;
+            Symbol* s = spair->value;
+            static_assert(SYMBOL_COUNT == 3, "Update typecheck");
+            switch(s->kind) {
+            case SYMBOL_FUNCTION: {
+                Function* func = s->as.func;
+                if(func->type->attribs & TYPE_ATTRIB_EXTERN) continue;
+                if(!typecheck_scope(state, func->type->signature.output, func->scope)) return false;
+            } break;
+            case SYMBOL_CONSTANT:
+            case SYMBOL_VARIABLE:
+                if(!typecheck_ast(state, s->as.init.ast)) return false;
+                if(!type_eq(s->type, s->as.init.ast->type)) {
+                    eprintfln("ERROR: Mismatch in definition of %s `%s`", s->kind == SYMBOL_CONSTANT ? "constant" : "variable", spair->key->data);
+                    eprintf(" Defined type: "); type_dump(stderr, s->type); eprintf(NEWLINE);
+                    eprintf(" Value: "); type_dump(stderr, s->as.init.ast->type); eprintf(NEWLINE);
+                    return false;
+                }
+                break;
+            case SYMBOL_COUNT:
+            default:
+                unreachable("s->kind=%d", s->kind);
+            }
         }
     }
     return true;
