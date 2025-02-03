@@ -42,5 +42,4 @@ struct SymTabNode {
 };
 typedef struct ProgramState ProgramState;
 
-Symbol* stl_lookup(SymTabNode* node, Atom* a);
 bool syn_analyse(ProgramState* state);

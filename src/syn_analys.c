@@ -9,7 +9,7 @@ typedef struct {
     SymTab *items;
     size_t len, cap;
 } SymTabList;
-Symbol* stl_lookup(SymTabNode* node, Atom* a) {
+static Symbol* stl_lookup(SymTabNode* node, Atom* a) {
     while(node) {
         Symbol** s;
         if ((s=sym_tab_get(&node->symtab, a))) return *s;
