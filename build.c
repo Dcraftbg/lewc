@@ -10,7 +10,7 @@
 #include "nob.h"
 #include <stdint.h>
 #define CC "gcc"
-#define CFLAGS "-Werror", "-Wno-unused-function", "-Wall", "-MMD", "-MP"
+#define CFLAGS "-Werror", "-Wno-unused-function", "-Wall", "-Wextra", "-MMD", "-MP"
 #define CFLAGS_DEBUG "-g"
 #define CFLAGS_DIST  "-O3"
 
