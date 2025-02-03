@@ -38,6 +38,7 @@ bool const_expand_statement(ProgramState* state, SymTabNode* node, Statement* st
     switch(statement->kind) {
     case STATEMENT_RETURN:
         if(!statement->as.ast) return true;
+        // fallthrough
     case STATEMENT_EVAL:
         return (statement->as.ast = const_expand_ast(state, node, statement->as.ast)) != NULL;
     case STATEMENT_LOOP:
