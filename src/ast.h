@@ -20,6 +20,7 @@ typedef struct {
 typedef struct Type Type;
 typedef struct Symbol Symbol;
 struct AST {
+    AST* parent;
     int kind;
     Type* type;
     union {

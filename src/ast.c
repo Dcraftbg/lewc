@@ -12,6 +12,8 @@ static AST* ast_new(Arena* arena) {
 }
 AST* ast_new_binop(Arena* arena, int op, AST* lhs, AST* rhs) {
     AST* ast = ast_new(arena);
+    lhs->parent = ast;
+    rhs->parent = ast;
     ast->kind = AST_BINOP;
     ast->as.binop.op = op;
     ast->as.binop.lhs = lhs;
@@ -20,6 +22,9 @@ AST* ast_new_binop(Arena* arena, int op, AST* lhs, AST* rhs) {
 }
 AST* ast_new_call(Arena* arena, AST* what, CallArgs args) {
     AST* ast = ast_new(arena);
+    for(size_t i = 0; i < args.len; ++i) {
+        args.items[i]->parent = ast;
+    }
     ast->kind = AST_CALL;
     ast->as.call.what = what;
     ast->as.call.args = args;
@@ -52,6 +57,7 @@ AST* ast_new_symbol(Arena* arena, Atom* symbol) {
 
 AST* ast_new_unary(Arena* arena, int op, AST* rhs) {
     AST* ast = ast_new(arena);
+    rhs->parent = ast;
     ast->kind = AST_UNARY;
     ast->as.unary.op  = op;
     ast->as.unary.rhs = rhs;
