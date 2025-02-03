@@ -8,7 +8,7 @@ Statements* funcs_find(FuncMap* funcs, Atom* name) {
     return NULL;
 }
 void funcs_insert(FuncMap* funcs, Atom* name, Type* id, Statements* scope) {
-    assert(func_map_insert(funcs, name, (Function){id, scope}));
+    assert(func_map_insert(funcs, name, (Function){id, scope, NULL}));
 }
 void parser_create(Parser* this, Lexer* lexer, Arena* arena, ProgramState* state) {
     memset(this, 0, sizeof(*this));
@@ -441,7 +441,7 @@ void parse_func_body(Parser* parser, Statements* s) {
         exit(1);
     }
 }
-void parse(Parser* parser, Lexer* lexer, Arena* arena) {
+void parse(Parser* parser, Arena* arena) {
     Token t;
     while((t=lexer_peak_next(parser->lexer)).kind != TOKEN_EOF) {
         if(t.kind >= TOKEN_END) {

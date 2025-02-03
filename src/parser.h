@@ -29,4 +29,4 @@ typedef struct {
     ProgramState* state;
 } Parser;
 void parser_create(Parser* this, Lexer* lexer, Arena* arena, ProgramState* state);
-void parse(Parser* parser, Lexer* lexer, Arena* arena);
+void parse(Parser* parser, Arena* arena);

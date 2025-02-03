@@ -141,7 +141,7 @@ int main(int argc, const char** argv) {
     type_table_init(&state.type_table);
     Parser parser = {0};
     parser_create(&parser, &lexer, &arena, &state);
-    parse(&parser, &lexer, &arena);
+    parse(&parser, &arena);
 
     if(!syn_analyse(&state))  exit(1);
     if(!typecheck(&state))    exit(1);
