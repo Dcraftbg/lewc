@@ -1,10 +1,10 @@
 #define TYPE_TABLE_DEFINE
 #include "type.h"
-Type type_bool = { .core=CORE_BOOL, .ptr_count=0, .unsign=true  }; 
-Type type_u8   = { .core=CORE_I8  , .ptr_count=0, .unsign=true  };
-Type type_u16  = { .core=CORE_I16 , .ptr_count=0, .unsign=true  };
-Type type_i32  = { .core=CORE_I32 , .ptr_count=0, .unsign=false };
-
+Type type_bool   = { .core=CORE_BOOL, .ptr_count=0, .unsign=true  }; 
+Type type_u8     = { .core=CORE_I8  , .ptr_count=0, .unsign=true  };
+Type type_u16    = { .core=CORE_I16 , .ptr_count=0, .unsign=true  };
+Type type_i32    = { .core=CORE_I32 , .ptr_count=0, .unsign=false };
+Type type_u8_ptr = { .core=CORE_PTR , .ptr_count=1, .inner_type=&type_u8};
 Type* type_new(Arena* arena) {
     Type* type = arena_alloc(arena, sizeof(*type));
     assert(type && "Ran out of memory");

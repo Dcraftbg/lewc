@@ -11,6 +11,10 @@ typedef struct SymTabNode SymTabNode;
 // i.e. Function, variable etc.
 // And checks for trying to assign to a function and so on
 typedef struct Symbol Symbol;
+typedef struct {
+    AST **items;
+    size_t len, cap;
+} ASTs;
 struct Symbol {
     Type* type;
     enum {
@@ -27,6 +31,7 @@ struct Symbol {
             bool evaluated;
         } init;
     } as;
+    ASTs infer_asts;
 };
 
 Symbol* symbol_new_func(Arena* arena, Type* type, Function* func);
