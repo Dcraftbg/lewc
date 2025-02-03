@@ -20,6 +20,7 @@
 #include "strutils.h"
 #include "progstate.h"
 #include "syn_analys.h"
+#include "typeinfer.h"
 #include "typecheck.h"
 #include "const_eval.h"
 #include "const_expand.h"
@@ -144,6 +145,7 @@ int main(int argc, const char** argv) {
     parse(&parser, &arena);
 
     if(!syn_analyse(&state))  exit(1);
+    if(!typeinfer(&state))    exit(1);
     if(!typecheck(&state))    exit(1);
     if(!const_eval(&state))   exit(1);
     if(!const_expand(&state)) exit(1);
