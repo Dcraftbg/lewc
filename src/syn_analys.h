@@ -10,7 +10,8 @@ typedef struct SymTabNode SymTabNode;
 // TODO: Keep track of the type of symbol.
 // i.e. Function, variable etc.
 // And checks for trying to assign to a function and so on
-typedef struct {
+typedef struct Symbol Symbol;
+struct Symbol {
     Type* type;
     enum {
         SYMBOL_FUNCTION,
@@ -21,7 +22,7 @@ typedef struct {
     union {
         Constant* constant;
     } as;
-} Symbol;
+};
 #ifdef SYMTAB_DEFINE
 #define HASHMAP_DEFINE
 #endif

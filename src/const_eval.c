@@ -16,7 +16,7 @@ AST* const_eval_ast(ProgramState* state, SymTabNode* node, AST* ast) {
         eprintfln("ERROR: C strings in constant expressions are currently forbidden. Sorry.");
         return NULL;
     case AST_SYMBOL: {
-        Symbol* sym = stl_lookup(node, ast->as.symbol);
+        Symbol* sym = ast->as.symbol.sym;
         if(sym->kind != SYMBOL_CONSTANT) {
             // FIXME: String representation in here
             eprintfln("ERROR: Cannot have non-constant symbols in constant expressions");

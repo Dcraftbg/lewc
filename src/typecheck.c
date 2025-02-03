@@ -106,7 +106,7 @@ bool typecheck_ast(ProgramState* state, SymTabNode* node, AST* ast) {
         }
     } break;
     case AST_SYMBOL: 
-        ast->type = stl_lookup(node, ast->as.symbol)->type;
+        ast->type = ast->as.symbol.sym->type;
         break;
     case AST_INT:
         // eprintf("AST_INT. type="); type_dump(stderr, ast->as.integer.type); eprintf("\n");

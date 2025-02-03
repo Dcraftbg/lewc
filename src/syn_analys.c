@@ -1,3 +1,4 @@
+// FIXME: FIX THE SYMTAB THINGY!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #include "constants.h"
 #define SYMTAB_DEFINE
 #include "progstate.h"
@@ -69,8 +70,8 @@ bool syn_analyse_ast(SymTabNode* node, AST* ast) {
             AST* lhs = ast->as.binop.lhs;
             switch(lhs->kind) {
             case AST_SYMBOL: {
-                if(stl_lookup(node, lhs->as.symbol)->kind != SYMBOL_VARIABLE) {
-                    eprintfln("Cannot assign to non-variable `%s`", lhs->as.symbol->data);
+                if(lhs->as.symbol.sym->kind != SYMBOL_VARIABLE) {
+                    eprintfln("Cannot assign to non-variable `%s`", lhs->as.symbol.name->data);
                     return false;
                 }
             } break;
@@ -91,8 +92,8 @@ bool syn_analyse_ast(SymTabNode* node, AST* ast) {
         if(!syn_analyse_ast(node, ast->as.unary.rhs)) return false;
         break;
     case AST_SYMBOL:
-        if(!stl_lookup(node, ast->as.symbol)) {
-            eprintfln("Unknown variable or function `%s`", ast->as.symbol->data);
+        if(!(ast->as.symbol.sym = stl_lookup(node, ast->as.symbol.name))) {
+            eprintfln("Unknown variable or function `%s`", ast->as.symbol.name->data);
             return false;
         }
         break;

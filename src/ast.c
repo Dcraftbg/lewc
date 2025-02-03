@@ -45,7 +45,8 @@ AST* ast_new_cstr(Arena* arena, const char* str, size_t len) {
 AST* ast_new_symbol(Arena* arena, Atom* symbol) {
     AST* ast = ast_new(arena);
     ast->kind = AST_SYMBOL;
-    ast->as.symbol = symbol;
+    ast->as.symbol.name = symbol;
+    ast->as.symbol.sym = NULL; // <- Defined in syntactical analysis
     return ast;
 }
 

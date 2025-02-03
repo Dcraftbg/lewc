@@ -86,7 +86,7 @@ size_t build_ptr_to(Qbe* qbe, AST* ast) {
     size_t n = 0;
     switch(ast->kind) {
     case AST_SYMBOL:
-        nprintfln("    %%.s%zu =l copy %%%s", n=qbe->inst++, ast->as.symbol->data);
+        nprintfln("    %%.s%zu =l copy %%%s", n=qbe->inst++, ast->as.symbol.name->data);
         return n;
     case AST_UNARY: 
         if(ast->as.unary.op == '*') return build_qbe_ast(qbe, ast->as.unary.rhs);
@@ -255,7 +255,7 @@ size_t build_qbe_ast(Qbe* qbe, AST* ast) {
         } else {
             nprintf("    ");
         }
-        nprintf("call $%s(", ast->as.call.what->as.symbol->data);
+        nprintf("call $%s(", ast->as.call.what->as.symbol.name->data);
         for(size_t i = 0; i < args->len; ++i) {
             if(i > 0) nprintf(", ");
             dump_type_to_qbe(qbe, args->items[i]->type);nprintf(" %%.s%zu", result_args.items[i]);
@@ -288,7 +288,7 @@ size_t build_qbe_ast(Qbe* qbe, AST* ast) {
         nprintf("    %%.s%zu =", n=qbe->inst++);dump_type_to_qbe(qbe, ast->type);nprintfln(" copy %lu", ast->as.integer.value);
         break;
     case AST_SYMBOL:
-        nprintf("    %%.s%zu =", n=qbe->inst++);dump_type_to_qbe(qbe, ast->type);nprintf(" load");dump_type_to_qbe_full(qbe, ast->type);nprintfln(" %%%s", ast->as.symbol->data);
+        nprintf("    %%.s%zu =", n=qbe->inst++);dump_type_to_qbe(qbe, ast->type);nprintf(" load");dump_type_to_qbe_full(qbe, ast->type);nprintfln(" %%%s", ast->as.symbol.name->data);
         break;
     default:
         eprintfln("ERROR: Unsupported. I guess :( %d (build_qbe_ast)", ast->kind);

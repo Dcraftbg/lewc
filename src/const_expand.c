@@ -10,7 +10,7 @@ AST* const_expand_ast(ProgramState* state, SymTabNode* node, AST* ast) {
         if(!ast->as.binop.lhs || !ast->as.binop.rhs) return NULL;
         return ast;
     case AST_SYMBOL: {
-        Symbol* s = stl_lookup(node, ast->as.symbol);
+        Symbol* s = ast->as.symbol.sym;
         if(s->kind == SYMBOL_CONSTANT) {
             Constant* c = s->as.constant;
             return c->ast;

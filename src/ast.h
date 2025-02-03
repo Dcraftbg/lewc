@@ -18,6 +18,7 @@ typedef struct {
     size_t cap;
 } CallArgs;
 typedef struct Type Type;
+typedef struct Symbol Symbol;
 struct AST {
     int kind;
     Type* type;
@@ -27,7 +28,7 @@ struct AST {
         struct { AST *what; CallArgs args; } call;
         struct { Type* type; uint64_t value; } integer;
         struct { const char* str; size_t len; } str;
-        Atom* symbol;
+        struct { Atom* name; Symbol* sym; } symbol;
     } as;
 };
 
