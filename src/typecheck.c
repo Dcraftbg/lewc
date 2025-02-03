@@ -1,11 +1,11 @@
 #include "typecheck.h"
 #include "token.h"
 // TODO: Actually decent error reporting
-bool typecheck_ast(ProgramState* state, SymTabNode* node, AST* ast) {
+bool typecheck_ast(ProgramState* state, AST* ast) {
     static_assert(AST_KIND_COUNT == 6, "Update typecheck_ast");
     switch(ast->kind) {
     case AST_CALL: {
-        if(!typecheck_ast(state, node, ast->as.call.what)) return false;
+        if(!typecheck_ast(state, ast->as.call.what)) return false;
         Type *t = ast->as.call.what->type;
         if(t->core != CORE_FUNC) {
             eprintf("ERROR: Tried to call something that is not a function ("); type_dump(stderr, t); eprintfln(")");
@@ -22,7 +22,7 @@ bool typecheck_ast(ProgramState* state, SymTabNode* node, AST* ast) {
         ast->type = t->signature.output;
         FuncSignature* signature = &t->signature;
         for(size_t i = 0; i < ast->as.call.args.len; ++i) {
-            if(!typecheck_ast(state, node, ast->as.call.args.items[i])) return false;
+            if(!typecheck_ast(state, ast->as.call.args.items[i])) return false;
             if(!type_eq(ast->as.call.args.items[i]->type, signature->input.items[i].type)) {
                 eprintfln("Argument %zu did not match type!", i);
                 eprintf("Expected "); type_dump(stderr, signature->input.items[i].type); eprintf("\n");
@@ -36,8 +36,8 @@ bool typecheck_ast(ProgramState* state, SymTabNode* node, AST* ast) {
         return false;
     }
     case AST_BINOP:
-        if(!typecheck_ast(state, node, ast->as.binop.lhs)) return false;
-        if(!typecheck_ast(state, node, ast->as.binop.rhs)) return false;
+        if(!typecheck_ast(state, ast->as.binop.lhs)) return false;
+        if(!typecheck_ast(state, ast->as.binop.rhs)) return false;
         switch(ast->as.binop.op) {
         case '=':
         case '&':
@@ -91,7 +91,7 @@ bool typecheck_ast(ProgramState* state, SymTabNode* node, AST* ast) {
         }
         break;
     case AST_UNARY: {
-        if(!typecheck_ast(state, node, ast->as.unary.rhs)) return false;
+        if(!typecheck_ast(state, ast->as.unary.rhs)) return false;
         AST* rhs = ast->as.unary.rhs;
         switch(ast->as.unary.op) {
         case '*':
@@ -122,8 +122,8 @@ bool typecheck_ast(ProgramState* state, SymTabNode* node, AST* ast) {
     }
     return true;
 }
-bool typecheck_scope(ProgramState* state, SymTabNode* node, Type* return_type, Statements* scope);
-bool typecheck_statement(ProgramState* state, SymTabNode* node, Type* return_type, Statement* statement) {
+bool typecheck_scope(ProgramState* state, Type* return_type, Statements* scope);
+bool typecheck_statement(ProgramState* state, Type* return_type, Statement* statement) {
     static_assert(STATEMENT_COUNT == 6, "Update syn_analyse");
     switch(statement->kind) {
     case STATEMENT_RETURN:
@@ -132,7 +132,7 @@ bool typecheck_statement(ProgramState* state, SymTabNode* node, Type* return_typ
             eprintf("Expected return value as function returns "); type_dump(stderr, return_type); eprintfln(" but got empty return");
             return false;
         }
-        if(!typecheck_ast(state, node, statement->as.ast)) return false;
+        if(!typecheck_ast(state, statement->as.ast)) return false;
         if(statement->as.ast && !return_type) {
             eprintf("Expected empty return as the function doesn't have a return type but got "); type_dump(stderr, statement->as.ast->type); eprintf(NEWLINE);
             return false;
@@ -144,7 +144,7 @@ bool typecheck_statement(ProgramState* state, SymTabNode* node, Type* return_typ
         break;
     case STATEMENT_LOCAL_DEF:
         if(statement->as.local_def.init) {
-            if(!typecheck_ast(state, node, statement->as.local_def.init)) return false;
+            if(!typecheck_ast(state, statement->as.local_def.init)) return false;
             if(!type_eq(statement->as.local_def.type, statement->as.local_def.init->type)) {
                 eprintfln("Type mismatch in variable definition %s.", statement->as.local_def.name->data);
                 eprintf("Variable defined as "); type_dump(stderr, statement->as.local_def.type); eprintf(" but got "); type_dump(stderr, statement->as.local_def.init->type); eprintf(NEWLINE);
@@ -153,41 +153,40 @@ bool typecheck_statement(ProgramState* state, SymTabNode* node, Type* return_typ
         }
         break;
     case STATEMENT_EVAL:
-        if(!typecheck_ast(state, node, statement->as.ast)) return false;
+        if(!typecheck_ast(state, statement->as.ast)) return false;
         break;
     case STATEMENT_LOOP:
-        if(!typecheck_statement(state, node, return_type, statement->as.loop.body)) return false;
+        if(!typecheck_statement(state, return_type, statement->as.loop.body)) return false;
         break;
     case STATEMENT_SCOPE:
-        if(!typecheck_scope(state, node, return_type, statement->as.scope)) return false;
+        if(!typecheck_scope(state, return_type, statement->as.scope)) return false;
         break;
     case STATEMENT_WHILE: {
-        if(!typecheck_ast(state, node, statement->as.whil.cond)) return false;
+        if(!typecheck_ast(state, statement->as.whil.cond)) return false;
         AST* cond = statement->as.whil.cond;
         if(!type_eq(cond->type, &type_bool)) {
             eprintf("While loop condition has type "); type_dump(stderr, cond->type); eprintfln(" Expected type bool");
             return false;
         }
-        if(!typecheck_statement(state, node, return_type, statement->as.whil.body)) return false;
+        if(!typecheck_statement(state, return_type, statement->as.whil.body)) return false;
     } break;
     default:
         unreachable("statement->kind=%d", statement->kind);
     }
     return true;
 }
-bool typecheck_scope(ProgramState* state, SymTabNode* node, Type* return_type, Statements* scope) {
+bool typecheck_scope(ProgramState* state, Type* return_type, Statements* scope) {
     for(size_t j = 0; j < scope->len; ++j) {
-        if(!typecheck_statement(state, node, return_type, scope->items[j])) return false;
+        if(!typecheck_statement(state, return_type, scope->items[j])) return false;
     }
     return true;
 }
 bool typecheck(ProgramState* state) {
-    SymTabNode* node = &state->symtab_root;
     for(size_t i = 0; i < state->consts.buckets.len; ++i) {
         Pair_ConstTab* cpair = state->consts.buckets.items[i].first;
         while(cpair) {
             Constant* c = cpair->value;
-            if(!typecheck_ast(state, node, c->ast)) return false;
+            if(!typecheck_ast(state, c->ast)) return false;
             if(!type_eq(c->type, c->ast->type)) {
                 eprintfln("ERROR: Mismatch in definition of constant `%s`", cpair->key->data);
                 eprintf(" Constant type: "); type_dump(stderr, c->type); eprintf(NEWLINE);
@@ -203,12 +202,9 @@ bool typecheck(ProgramState* state) {
             fpair;
             fpair = fpair->next
         ) {
-            SymTabNode* old = node;
             Function* func = &fpair->value;
             if(func->type->attribs & TYPE_ATTRIB_EXTERN) continue;
-            node = func->symtab_node;
-            if(!typecheck_scope(state, node, func->type->signature.output, func->scope)) return false;
-            node = old;
+            if(!typecheck_scope(state, func->type->signature.output, func->scope)) return false;
         }
     }
     return true;
