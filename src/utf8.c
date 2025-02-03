@@ -1,6 +1,6 @@
 #include "utf8.h"
 const char* utf8_end(const char* str) {
-	char c = *str;
+	unsigned char c = *((const unsigned char*)str);
 	if (c < 0x80) return str + 1;
 	if ((c & 0xE0) == 0xC0) return str + 2;
 	if ((c & 0xF0) == 0xE0) return str + 3;
