@@ -145,14 +145,6 @@ bool syn_analyse_scope(ProgramState* state, SymTabNode* node, Statements* scope)
 }
 bool syn_analyse(ProgramState* state) {
     SymTabNode* node = &state->symtab_root;
-    // TODO: Collecting this should be done at the level of parsing
-    for(size_t i = 0; i < state->funcs.buckets.len; ++i) {
-        Pair_FuncMap* fpair = state->funcs.buckets.items[i].first;
-        while(fpair) {
-            sym_tab_insert(&node->symtab, fpair->key, symbol_new_func(state->arena, fpair->value.type, &fpair->value));
-            fpair = fpair->next; 
-        }
-    }
     for(size_t i = 0; i < state->symtab_root.symtab.buckets.len; ++i) {
         for(
             Pair_SymTab* spair = state->symtab_root.symtab.buckets.items[i].first;

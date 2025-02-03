@@ -53,7 +53,6 @@ typedef struct ProgramState ProgramState;
 // but for actually iterating we can just go through a list hopefully
 struct ProgramState {
     TypeTable type_table;
-    FuncMap funcs;
     SymTabNode symtab_root;
     Arena* arena;
 };

@@ -16,18 +16,9 @@ typedef struct {
 typedef struct SymTabNode SymTabNode;
 typedef struct Statements Statements;
 typedef struct {
+    // TODO: type is kind of unnecessary
     Type* type;
     Statements* scope;
     SymTabNode* symtab_node;
 } Function;
-
-#ifdef FUNC_MAP_DEFINE
-#define HASHMAP_DEFINE
-#endif
-#include "hashmap.h"
-#define FUNC_MAP_ALLOC(n) malloc(n)
-#define FUNC_MAP_DEALLOC(ptr, size) free(ptr)
-MAKE_HASHMAP_EX(FuncMap, func_map, Function, Atom*, atom_hash, atom_eq, FUNC_MAP_ALLOC, FUNC_MAP_DEALLOC)
-#ifdef FUNC_MAP_DEFINE
-#undef HASHMAP_DEFINE
-#endif
+Function* func_new(Arena* arena, Type* type, Statements* scope);

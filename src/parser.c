@@ -2,14 +2,6 @@
 #include "parser.h"
 #include "darray.h"
 
-Statements* funcs_find(FuncMap* funcs, Atom* name) {
-    Function* func;
-    if((func=func_map_get(funcs, name))) return func->scope;
-    return NULL;
-}
-void funcs_insert(FuncMap* funcs, Atom* name, Type* id, Statements* scope) {
-    assert(func_map_insert(funcs, name, (Function){id, scope, NULL}));
-}
 void parser_create(Parser* this, Lexer* lexer, Arena* arena, ProgramState* state) {
     memset(this, 0, sizeof(*this));
     this->arena = arena;
@@ -459,7 +451,7 @@ void parse(Parser* parser, Arena* arena) {
                 fid->core    = CORE_FUNC;
                 fid->attribs = TYPE_ATTRIB_EXTERN;
                 parse_func_signature(parser, &fid->signature);
-                funcs_insert(&parser->state->funcs, name, fid, NULL);
+                sym_tab_insert(&parser->state->symtab_root.symtab, name, symbol_new_func(parser->arena, fid, func_new(parser->arena, fid, NULL)));
             } else {
                 eprintfln("ERROR:%s: Expected signature of external function to follow the syntax:", tloc(t));
                 eprintfln("  extern <func name> :: <(<Arguments>)> (-> <Output Type>)");
@@ -480,7 +472,8 @@ void parse(Parser* parser, Arena* arena) {
                 }
                 Statements* s = scope_new(parser->arena);
                 parse_func_body(parser, s);
-                funcs_insert(&parser->state->funcs, name, fid, s);
+                Function* f = func_new(parser->arena, fid, s);
+                sym_tab_insert(&parser->state->symtab_root.symtab, name, symbol_new_func(parser->arena, fid, f));
             } else if (lexer_peak(parser->lexer, 1).kind == ':') {
                 Atom* name = t.atom;
                 lexer_eat(parser->lexer, 2);

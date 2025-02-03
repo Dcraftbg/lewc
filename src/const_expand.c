@@ -66,13 +66,15 @@ bool const_expand_scope(ProgramState* state, Statements* scope) {
     return true;
 }
 bool const_expand(ProgramState* state) {
-    for(size_t i = 0; i < state->funcs.buckets.len; ++i) {
+    for(size_t i = 0; i < state->symtab_root.symtab.buckets.len; ++i) {
         for(
-            Pair_FuncMap* fpair = state->funcs.buckets.items[i].first;
-            fpair;
-            fpair = fpair->next
+            Pair_SymTab* spair = state->symtab_root.symtab.buckets.items[i].first;
+            spair;
+            spair = spair->next
         ) {
-            Function* func = &fpair->value;
+            Symbol* s = spair->value;
+            if(s->kind != SYMBOL_FUNCTION) continue;
+            Function* func = s->as.func;
             if(func->type->attribs & TYPE_ATTRIB_EXTERN) continue;
             if(!const_expand_scope(state, func->scope)) return false;
         }
