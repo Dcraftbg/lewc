@@ -2,6 +2,7 @@
 #include "token.h"
 // TODO: Actually decent error reporting
 bool typecheck_ast(ProgramState* state, AST* ast) {
+    if(!ast) return false;
     static_assert(AST_KIND_COUNT == 6, "Update typecheck_ast");
     switch(ast->kind) {
     case AST_CALL: {
@@ -19,7 +20,6 @@ bool typecheck_ast(ProgramState* state, AST* ast) {
             eprintfln("ERROR: Too many argument in function call.");
             goto arg_size_mismatch;
         }
-        ast->type = t->signature.output;
         FuncSignature* signature = &t->signature;
         for(size_t i = 0; i < ast->as.call.args.len; ++i) {
             if(!typecheck_ast(state, ast->as.call.args.items[i])) return false;
@@ -51,7 +51,6 @@ bool typecheck_ast(ProgramState* state, AST* ast) {
         case '%':
         case TOKEN_SHL:
         case TOKEN_SHR:
-            ast->type = ast->as.binop.lhs->type;
             if(!type_eq(ast->as.binop.lhs->type, ast->as.binop.rhs->type)) {
                 // Allow offseting with +
                 // TODO: Maybe insert a cast to isize in here 
@@ -74,7 +73,6 @@ bool typecheck_ast(ProgramState* state, AST* ast) {
         case TOKEN_GTEQ:
         case '<':
         case '>':
-            ast->type = &type_bool;
             if(!type_eq(ast->as.binop.lhs->type, ast->as.binop.rhs->type)) {
                 eprintfln("Trying to add two different types together with '=='");
                 type_dump(stderr, ast->as.binop.lhs->type); eprintf(" == "); type_dump(stderr, ast->as.binop.rhs->type); eprintf("\n");
@@ -99,23 +97,16 @@ bool typecheck_ast(ProgramState* state, AST* ast) {
                 eprintf("Trying to dereference an expression of type "); type_dump(stderr, rhs->type); eprintf("\n");
                 return false;
             }
-            ast->type = rhs->type->ptr_count == 1 ? rhs->type->inner_type : type_ptr(state->arena, rhs->type->inner_type, rhs->type->ptr_count-1);
             break;
         default:
             unreachable("unary.op=%c", ast->as.unary.op);
         }
     } break;
     case AST_SYMBOL: 
-        ast->type = ast->as.symbol.sym->type;
         break;
     case AST_INT:
-        // eprintf("AST_INT. type="); type_dump(stderr, ast->as.integer.type); eprintf("\n");
-        ast->type = ast->as.integer.type ?
-                            ast->as.integer.type :
-                            &type_i32;
         break;
     case AST_C_STR:
-        ast->type = type_ptr(state->arena, &type_u8, 1);
         break;
     default:
         unreachable("ast->kind=%d", ast->kind);
@@ -124,7 +115,7 @@ bool typecheck_ast(ProgramState* state, AST* ast) {
 }
 bool typecheck_scope(ProgramState* state, Type* return_type, Statements* scope);
 bool typecheck_statement(ProgramState* state, Type* return_type, Statement* statement) {
-    static_assert(STATEMENT_COUNT == 6, "Update syn_analyse");
+    static_assert(STATEMENT_COUNT == 6, "Update typecheck_statement");
     switch(statement->kind) {
     case STATEMENT_RETURN:
         if(!statement->as.ast && !return_type) return true;

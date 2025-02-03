@@ -2,6 +2,7 @@
 #include "token.h"
 
 bool const_eval_const(ProgramState* state, Constant* c); 
+// TODO: is evaluating flag for circular definition errors
 // TODO: Actual decent error reporting
 AST* const_eval_ast(ProgramState* state, AST* ast) {
     static_assert(AST_KIND_COUNT == 6, "Update const_eval_ast");

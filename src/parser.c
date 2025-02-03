@@ -371,12 +371,11 @@ Statement* parse_statement(Parser* parser, Token t) {
             Atom* name = t.atom;
             if(lexer_peak(parser->lexer, 1).kind == ':') {
                 lexer_eat(parser->lexer, 2);
-                if(lexer_peak_next(parser->lexer).kind == '=') {
-                    eprintfln("ERROR:%s: Type inference isn't yet supported. Sorry", tloc(t));
-                    exit(1);
+                Type* type = NULL;
+                if(lexer_peak_next(parser->lexer).kind != '=') {
+                    type = parse_type(parser);
+                    if(!type) exit(1);
                 }
-                Type* type = parse_type(parser);
-                if(!type) exit(1);
                 AST* init = NULL;
                 if(lexer_peak_next(parser->lexer).kind == '=') {
                     lexer_eat(parser->lexer, 1);
@@ -477,11 +476,11 @@ void parse(Parser* parser, Arena* arena) {
             } else if (lexer_peak(parser->lexer, 1).kind == ':') {
                 Atom* name = t.atom;
                 lexer_eat(parser->lexer, 2);
-                if(lexer_peak_next(parser->lexer).kind == ':') {
-                    eprintfln("ERROR:%s: Type inference in constant defintion isn't allowed yet", tloc(t));
-                    exit(1);
+                Type* type = NULL;
+                if(lexer_peak_next(parser->lexer).kind != ':') {
+                    type = parse_type(parser);
+                    if(!type) exit(1);
                 }
-                Type* type = parse_type(parser);
                 if((t=lexer_next(parser->lexer)).kind != ':') {
                     eprintfln("ERROR:%s: Expected constant to follow the syntax: ", tloc(t));
                     eprintfln("  <const name> : (type) : <expression>");
