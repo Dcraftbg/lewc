@@ -18,6 +18,8 @@ enum {
 };
 typedef struct Type Type;
 #include "func.h"
+
+// TODO: const char* name into Atom*
 struct Type {
     const char* name;
     int core;
