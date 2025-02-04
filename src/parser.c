@@ -450,7 +450,10 @@ void parse(Parser* parser, Arena* arena) {
                 fid->core    = CORE_FUNC;
                 fid->attribs = TYPE_ATTRIB_EXTERN;
                 parse_func_signature(parser, &fid->signature);
-                sym_tab_insert(&parser->state->symtab_root.symtab, name, symbol_new_func(parser->arena, fid, func_new(parser->arena, fid, NULL)));
+
+                // TODO: This step is kinda unnecessary now
+                Function* f = func_new(parser->arena, fid, NULL);
+                sym_tab_insert(&parser->state->symtab_root.symtab, name, symbol_new_func(parser->arena, fid, ast_new_func(parser->arena, f)));
             } else {
                 eprintfln("ERROR:%s: Expected signature of external function to follow the syntax:", tloc(t));
                 eprintfln("  extern <func name> :: <(<Arguments>)> (-> <Output Type>)");
@@ -471,8 +474,9 @@ void parse(Parser* parser, Arena* arena) {
                 }
                 Statements* s = scope_new(parser->arena);
                 parse_func_body(parser, s);
+                // TODO: This step is kinda unnecessary now
                 Function* f = func_new(parser->arena, fid, s);
-                sym_tab_insert(&parser->state->symtab_root.symtab, name, symbol_new_func(parser->arena, fid, f));
+                sym_tab_insert(&parser->state->symtab_root.symtab, name, symbol_new_func(parser->arena, fid, ast_new_func(parser->arena, f)));
             } else if (lexer_peak(parser->lexer, 1).kind == ':') {
                 Atom* name = t.atom;
                 lexer_eat(parser->lexer, 2);

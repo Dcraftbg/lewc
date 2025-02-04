@@ -403,7 +403,8 @@ bool build_qbe_qbe(Qbe* qbe) {
             Symbol* s = spair->value;
             if(s->kind != SYMBOL_FUNCTION) continue;
             Atom* name     = spair->key;
-            Function* func = s->as.func;
+            assert(s->as.init.ast->kind == AST_FUNC);
+            Function* func = s->as.init.ast->as.func;
             assert(func->type->core == CORE_FUNC);
             // I think QBE automatically assumes external function
             if(func->type->attribs & TYPE_ATTRIB_EXTERN) {

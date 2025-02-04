@@ -4,6 +4,7 @@
 // TODO: Lots and lots of recursion in here.
 // We can simplify this by collecting the ASTS we need to go down first instead of this
 void infer_down_ast(ProgramState* state, AST* ast, Type* type);
+void typeinfer_func(ProgramState* state, Function* f);
 void infer_up_ast(ProgramState* state, AST* ast, Type* type) {
     while(ast) {
         if(ast->type) break;
@@ -174,6 +175,10 @@ void typeinfer_scope(ProgramState* state, Type* return_type, Statements* scope) 
         typeinfer_statement(state, return_type, scope->items[j]);
     }
 }
+void typeinfer_func(ProgramState* state, Function* func) {
+    if(func->type->attribs & TYPE_ATTRIB_EXTERN) return;
+    typeinfer_scope(state, func->type->signature.output, func->scope);
+}
 bool typeinfer(ProgramState* state) {
     for(size_t i = 0; i < state->symtab_root.symtab.buckets.len; ++i) {
         for(
@@ -184,11 +189,10 @@ bool typeinfer(ProgramState* state) {
             Symbol* s = spair->value;
             static_assert(SYMBOL_COUNT == 3, "Update typeinfer");
             switch(s->kind) {
-            case SYMBOL_FUNCTION: {
-                Function* func = s->as.func;
-                if(func->type->attribs & TYPE_ATTRIB_EXTERN) continue;
-                typeinfer_scope(state, func->type->signature.output, func->scope);
-            } break;
+            case SYMBOL_FUNCTION:
+                assert(s->as.init.ast->kind == AST_FUNC);
+                typeinfer_func(state, s->as.init.ast->as.func);
+                break;
             case SYMBOL_CONSTANT:
             case SYMBOL_VARIABLE:
                 if(s->as.init.ast) {

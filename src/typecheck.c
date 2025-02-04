@@ -195,13 +195,11 @@ bool typecheck(ProgramState* state) {
             static_assert(SYMBOL_COUNT == 3, "Update typecheck");
             switch(s->kind) {
             case SYMBOL_FUNCTION:
-                if(!typecheck_func(state, s->as.func)) return false;
-                break;
             case SYMBOL_CONSTANT:
             case SYMBOL_VARIABLE:
                 if(!typecheck_ast(state, s->as.init.ast)) return false;
                 if(!type_eq(s->type, s->as.init.ast->type)) {
-                    eprintfln("ERROR: Mismatch in definition of %s `%s`", s->kind == SYMBOL_CONSTANT ? "constant" : "variable", spair->key->data);
+                    eprintfln("ERROR: Mismatch in definition of `%s`", spair->key->data);
                     eprintf(" Defined type: "); type_dump(stderr, s->type); eprintf(NEWLINE);
                     eprintf(" Value: "); type_dump(stderr, s->as.init.ast->type); eprintf(NEWLINE);
                     return false;

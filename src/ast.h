@@ -42,4 +42,5 @@ AST* ast_new_cstr(Arena* arena, const char* str, size_t len);
 AST* ast_new_int(Arena* arena, Type* type, uint64_t value);
 AST* ast_new_unary(Arena* arena, int op, AST* rhs);
 AST* ast_new_call(Arena* arena, AST* what, CallArgs args);
+AST* ast_new_func(Arena* arena, Function* func);
 void call_args_dealloc(CallArgs* args);

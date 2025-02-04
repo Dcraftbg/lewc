@@ -24,11 +24,11 @@ static Symbol* symbol_new(Arena* arena, Type* type) {
     symbol->type = type;
     return symbol;
 }
-Symbol* symbol_new_func(Arena* arena, Type* type, Function* func) {
+Symbol* symbol_new_func(Arena* arena, Type* type, AST* func) {
     Symbol* me = symbol_new(arena, type);
     if(!me) return NULL;
     me->kind = SYMBOL_FUNCTION;
-    me->as.func = func;
+    me->as.init.ast = func;
     return me;
 }
 Symbol* symbol_new_var(Arena* arena, Type* type, AST* init) {
@@ -181,8 +181,6 @@ bool syn_analyse(ProgramState* state) {
             static_assert(SYMBOL_COUNT == 3, "Update syn_analyse");
             switch(s->kind) {
             case SYMBOL_FUNCTION:
-                if(!syn_analyse_func(state, s->as.func)) return false;
-                break;
             case SYMBOL_VARIABLE:
             case SYMBOL_CONSTANT:
                 if(!syn_analyse_ast(state, node, s->as.init.ast)) return false;

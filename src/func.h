@@ -1,6 +1,7 @@
 #pragma once
 #include "atom.h"
 typedef struct Type Type;
+// TODO: Symbol instead of this maybe
 typedef struct {
     Atom* name; // NULL if no name is specified
     Type* type;
@@ -15,6 +16,7 @@ typedef struct {
 } FuncSignature;
 typedef struct SymTabNode SymTabNode;
 typedef struct Statements Statements;
+// TODO: Maybe even remove this entirely and just have this inside the ast
 typedef struct {
     // TODO: type is kind of unnecessary
     Type* type;

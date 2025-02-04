@@ -66,6 +66,13 @@ AST* ast_new_unary(Arena* arena, int op, AST* rhs) {
     return ast;
 }
 
+AST* ast_new_func(Arena* arena, Function* func) {
+    AST* ast = ast_new(arena);
+    ast->kind = AST_FUNC;
+    ast->type = func->type;
+    ast->as.func = func;
+    return ast;
+}
 void call_args_dealloc(CallArgs* this) {
     if(this->items) free(this->items);
     this->items = NULL;

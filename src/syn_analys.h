@@ -25,7 +25,6 @@ struct Symbol {
     } kind;
     // TODO: Make function defintions an AST
     union {
-        Function* func;
         struct {
             AST* ast;
             bool evaluated;
@@ -34,7 +33,7 @@ struct Symbol {
     ASTs infer_asts;
 };
 
-Symbol* symbol_new_func(Arena* arena, Type* type, Function* func);
+Symbol* symbol_new_func(Arena* arena, Type* type, AST* func);
 Symbol* symbol_new_var(Arena* arena, Type* type, AST* init);
 Symbol* symbol_new_constant(Arena* arena, Type* type, AST* init);
 #ifdef SYMTAB_DEFINE
