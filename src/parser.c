@@ -151,8 +151,67 @@ int unaryop_prec(int op) {
 }
 
 AST* parse_ast(Parser* parser, int expr_precedence);
+bool peak_is_func(Lexer* lexer) {
+#define defer_return(x) do { result=(x); goto defer; } while(0)
+    bool result = true;
+    Snapshot snap = lexer_snap_take(lexer);
+    if(lexer_next(lexer).kind != '(') defer_return(false);
+    if(lexer_peak_next(lexer).kind == TOKEN_ATOM) {
+        lexer_eat(lexer, 1);
+        if(lexer_next(lexer).kind == ':') defer_return(true);
+    }
+    if(lexer_next(lexer).kind != ')') defer_return(false);
+    if(lexer_peak_next(lexer).kind == TOKEN_ARROW) {
+        lexer_eat(lexer, 1);
+        defer_return(true);
+    }
+    if(lexer_next(lexer).kind != '{') defer_return(false);
+defer:
+    lexer_snap_restore(lexer, snap);
+    return result;
+}
+Statement* parse_statement(Parser* parser, Token t);
+void parse_func_body(Parser* parser, Statements* s) {
+    Token t;
+    while((t=lexer_peak_next(parser->lexer)).kind != '}') {
+        if(t.kind >= TOKEN_END) {
+            if(t.kind >= TOKEN_ERR) {
+                eprintfln("ERROR:%s: Lexer error %s", tloc(t), tdisplay(t));
+                exit(1);
+            } else {
+                eprintfln("ERROR:%s: Unexpected token in function body: %s", tloc(t), tdisplay(t));
+                exit(1);
+            }
+        }
+        if(t.kind == ';') {
+            lexer_eat(parser->lexer, 1);
+            continue;
+        }
+        da_push(s, parse_statement(parser, t));
+    }
+    t = lexer_next(parser->lexer);
+    if(t.kind != '}') {
+        eprintfln("ERROR:%s: Expected '}' at the end of function body, but found: %s", tloc(t), tdisplay(t));
+        exit(1);
+    }
+}
 AST* parse_basic(Parser* parser) {
-    Token t = lexer_next(parser->lexer);
+    Token t;
+    if(peak_is_func(parser->lexer)) {
+        Type* fid = type_new(parser->arena);
+        fid->core    = CORE_FUNC;
+        parse_func_signature(parser, &fid->signature);
+        if((t=lexer_next(parser->lexer)).kind != '{') {
+            eprintfln("ERROR:%s: Missing '{' at the start of function. Got: %s", tloc(t), tdisplay(t));
+            exit(1);
+        }
+        Statements* s = scope_new(parser->arena);
+        parse_func_body(parser, s);
+        // TODO: This step is kinda unnecessary now
+        Function* f = func_new(parser->arena, fid, s);
+        return ast_new_func(parser->arena, f);
+    }
+    t = lexer_next(parser->lexer);
     switch(t.kind) {
     #define X(c) case c:
     UNARYOPS
@@ -312,7 +371,6 @@ AST* parse_ast(Parser* parser, int expr_precedence) {
     return v;
 }
 
-Statement* parse_statement(Parser* parser, Token t);
 Statement* parse_scope(Parser* parser) {
     Token t;
     assert((t=lexer_next(parser->lexer)).kind == '{');
@@ -408,30 +466,6 @@ Statement* parse_statement(Parser* parser, Token t) {
     }
     return statement_eval(parser->arena, ast);
 }
-void parse_func_body(Parser* parser, Statements* s) {
-    Token t;
-    while((t=lexer_peak_next(parser->lexer)).kind != '}') {
-        if(t.kind >= TOKEN_END) {
-            if(t.kind >= TOKEN_ERR) {
-                eprintfln("ERROR:%s: Lexer error %s", tloc(t), tdisplay(t));
-                exit(1);
-            } else {
-                eprintfln("ERROR:%s: Unexpected token in function body: %s", tloc(t), tdisplay(t));
-                exit(1);
-            }
-        }
-        if(t.kind == ';') {
-            lexer_eat(parser->lexer, 1);
-            continue;
-        }
-        da_push(s, parse_statement(parser, t));
-    }
-    t = lexer_next(parser->lexer);
-    if(t.kind != '}') {
-        eprintfln("ERROR:%s: Expected '}' at the end of function body, but found: %s", tloc(t), tdisplay(t));
-        exit(1);
-    }
-}
 void parse(Parser* parser, Arena* arena) {
     Token t;
     while((t=lexer_peak_next(parser->lexer)).kind != TOKEN_EOF) {
@@ -450,7 +484,6 @@ void parse(Parser* parser, Arena* arena) {
                 fid->core    = CORE_FUNC;
                 fid->attribs = TYPE_ATTRIB_EXTERN;
                 parse_func_signature(parser, &fid->signature);
-
                 // TODO: This step is kinda unnecessary now
                 Function* f = func_new(parser->arena, fid, NULL);
                 sym_tab_insert(&parser->state->symtab_root.symtab, name, symbol_new_func(parser->arena, fid, ast_new_func(parser->arena, f)));
@@ -461,23 +494,7 @@ void parse(Parser* parser, Arena* arena) {
             }
         } break;
         case TOKEN_ATOM: {
-            if(lexer_peak(parser->lexer, 1).kind == ':' && lexer_peak(parser->lexer, 2).kind == ':' && lexer_peak(parser->lexer, 3).kind == '(') {
-                Atom* name = t.atom;
-                lexer_eat(parser->lexer, 3);
-                Type* fid = type_new(parser->arena);
-                fid->core = CORE_FUNC;
-
-                parse_func_signature(parser, &fid->signature);
-                if((t=lexer_next(parser->lexer)).kind != '{') {
-                    eprintfln("ERROR:%s: Missing '{' at the start of function. Got: %s", tloc(t), tdisplay(t));
-                    exit(1);
-                }
-                Statements* s = scope_new(parser->arena);
-                parse_func_body(parser, s);
-                // TODO: This step is kinda unnecessary now
-                Function* f = func_new(parser->arena, fid, s);
-                sym_tab_insert(&parser->state->symtab_root.symtab, name, symbol_new_func(parser->arena, fid, ast_new_func(parser->arena, f)));
-            } else if (lexer_peak(parser->lexer, 1).kind == ':') {
+            if (lexer_peak(parser->lexer, 1).kind == ':') {
                 Atom* name = t.atom;
                 lexer_eat(parser->lexer, 2);
                 Type* type = NULL;
@@ -491,7 +508,10 @@ void parse(Parser* parser, Arena* arena) {
                     exit(1);
                 }
                 AST* ast = parse_ast(parser, INIT_PRECEDENCE);
-                sym_tab_insert(&parser->state->symtab_root.symtab, name, symbol_new_constant(arena, type, ast));
+                // TODO: very unnecessary now
+                // constants == functions
+                Symbol* s = ast->kind == AST_FUNC ? symbol_new_func(arena, type, ast) : symbol_new_constant(arena, type, ast);
+                sym_tab_insert(&parser->state->symtab_root.symtab, name, s);
             } else {
                 eprintfln("ERROR:%s: Unexpected Atom: %s",tloc(t), t.atom->data);
                 exit(1);

@@ -26,6 +26,14 @@ void lexer_create(Lexer* lexer, const char* ipath, AtomTable* table, Arena* aren
 void lexer_cleanup(Lexer* lexer);
 Token lexer_next(Lexer* lexer);
 
+
+typedef struct {
+    const char* cursor;
+    size_t l0, c0;
+} Snapshot;
+Snapshot lexer_snap_take(Lexer* lexer);
+void lexer_snap_restore(Lexer* lexer, Snapshot snap);
+
 Token lexer_peak(Lexer* lexer, size_t ahead);
 void lexer_eat(Lexer* lexer, size_t count);
 static Token lexer_peak_next(Lexer* lexer) {

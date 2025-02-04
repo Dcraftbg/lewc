@@ -15,7 +15,6 @@ void infer_up_ast(ProgramState* state, AST* ast, Type* type) {
 }
 void infer_symbol(ProgramState* state, Symbol* s, Type* type) {
     assert(s->type == NULL);
-    assert(s->kind != SYMBOL_FUNCTION);
     s->type = type;
     for(size_t i = 0; i < s->infer_asts.len; ++i) {
         s->infer_asts.items[i]->type = type;
@@ -70,7 +69,6 @@ bool try_infer_ast(ProgramState* state, AST* ast) {
             ast->type = s->type;
             return true;
         }
-        assert(s->kind != SYMBOL_FUNCTION);
         da_push(&s->infer_asts, ast);
     } break;
     case AST_CALL: {
@@ -192,7 +190,7 @@ bool typeinfer(ProgramState* state) {
             case SYMBOL_FUNCTION:
                 assert(s->as.init.ast->kind == AST_FUNC);
                 typeinfer_func(state, s->as.init.ast->as.func);
-                break;
+                // fallthrough
             case SYMBOL_CONSTANT:
             case SYMBOL_VARIABLE:
                 if(s->as.init.ast) {

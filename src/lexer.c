@@ -1,9 +1,5 @@
 #include "lexer.h"
 
-typedef struct {
-    const char* cursor;
-    size_t l0, c0;
-} Snapshot;
 void lexer_create(Lexer* lexer, const char* ipath, AtomTable* table, Arena* arena) {
     size_t size = 0;
     lexer->src = read_entire_file(ipath, &size);
@@ -353,16 +349,14 @@ Token lexer_next(Lexer* lexer) {
     }
     return MAKE_TOKEN(TOKEN_UNPARSABLE, .codepoint = c);
 }
-static Snapshot lexer_snap_take(Lexer* lexer) {
-    static_assert(sizeof(Snapshot) == 24, "Update lexer_snap_take");
+Snapshot lexer_snap_take(Lexer* lexer) {
     return (Snapshot) {
         .cursor = lexer->cursor,
         .l0 = lexer->l0,
         .c0 = lexer->c0
     };
 }
-static void lexer_snap_restore(Lexer* lexer, Snapshot snap) {
-    static_assert(sizeof(Snapshot) == 24, "Update lexer_snap_restore");
+void lexer_snap_restore(Lexer* lexer, Snapshot snap) {
     lexer->cursor = snap.cursor;
     lexer->l0 = snap.l0;
     lexer->c0 = snap.c0;
