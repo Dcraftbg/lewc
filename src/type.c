@@ -39,6 +39,10 @@ void type_dump(FILE* f, Type* t) {
         fprintf(f, "void");
         return;
     }
+    if(t->name) {
+        fputs(t->name, f);
+        return;
+    }
     for(size_t i = 0; i < t->ptr_count; ++i) {
         fputc('*', f);
     }
@@ -62,18 +66,6 @@ void type_dump(FILE* f, Type* t) {
             type_dump(f, t->signature.output);
         }
     } break;
-    default:
-        fputs(t->name ? t->name : "<anonymous>", f);
-    }
-}
-size_t type_get_size(Type* type) {
-    switch(type->core) {
-    case CORE_I32:
-        return 4;
-    case CORE_I8:
-        return 1;
-    default:
-        return 0;
     }
 }
 bool type_isbinary(Type* t) {

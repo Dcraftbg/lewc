@@ -58,7 +58,6 @@ extern Type type_i32;
 Type* type_ptr(Arena* arena, Type* to, size_t ptr_count);
 void type_table_move(TypeTable* into, TypeTable* from);
 void type_table_init(TypeTable* t);
-size_t type_get_size(Type* type);
 #include "arena.h"
 Type* type_new(Arena* arena);
 bool type_isbinary(Type* t);
