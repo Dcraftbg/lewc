@@ -493,7 +493,20 @@ void parse(Parser* parser, Arena* arena) {
             }
         } break;
         case TOKEN_ATOM: {
-            if (lexer_peak(parser->lexer, 1).kind == ':') {
+            if (lexer_peak(parser->lexer, 1).kind == ':' && lexer_peak(parser->lexer, 2).kind == ':' && lexer_peak(parser->lexer, 3).kind == TOKEN_TYPEDEF) {
+                Atom* name = t.atom;
+                lexer_eat(parser->lexer, 4);
+                Type* base_type = parse_type(parser);
+                if(!base_type) exit(1);
+                Type* type = type_new(parser->arena);
+                memcpy(type, base_type, sizeof(*type));
+                type->name = name->data;
+                // TODO: Redefining a type is kinda bad
+                // Definitely need to check the type.
+                // TODO: maybe collect the symbols first like with the syntactical analysis instead of 
+                // Directly inserting and checking from a table in the future
+                type_table_insert(&parser->state->type_table, name->data, type);
+            } else if (lexer_peak(parser->lexer, 1).kind == ':') {
                 Atom* name = t.atom;
                 lexer_eat(parser->lexer, 2);
                 Type* type = NULL;
