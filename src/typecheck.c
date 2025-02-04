@@ -192,9 +192,8 @@ bool typecheck(ProgramState* state) {
             spair = spair->next
         ) {
             Symbol* s = spair->value;
-            static_assert(SYMBOL_COUNT == 3, "Update typecheck");
+            static_assert(SYMBOL_COUNT == 2, "Update typecheck");
             switch(s->kind) {
-            case SYMBOL_FUNCTION:
             case SYMBOL_CONSTANT:
             case SYMBOL_VARIABLE:
                 if(!typecheck_ast(state, s->as.init.ast)) return false;

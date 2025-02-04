@@ -31,7 +31,6 @@ void infer_down_ast(ProgramState* state, AST* ast, Type* type) {
     ast->type = type;
     switch(ast->kind) {
     case AST_SYMBOL: {
-        assert(ast->as.symbol.sym->kind != SYMBOL_FUNCTION);
         if(ast->as.symbol.sym->type) {
             ast->type = ast->as.symbol.sym->type;
             return;
@@ -185,14 +184,14 @@ bool typeinfer(ProgramState* state) {
             spair = spair->next
         ) {
             Symbol* s = spair->value;
-            static_assert(SYMBOL_COUNT == 3, "Update typeinfer");
+            static_assert(SYMBOL_COUNT == 2, "Update typeinfer");
             switch(s->kind) {
-            case SYMBOL_FUNCTION:
-                assert(s->as.init.ast->kind == AST_FUNC);
-                typeinfer_func(state, s->as.init.ast->as.func);
-                // fallthrough
             case SYMBOL_CONSTANT:
             case SYMBOL_VARIABLE:
+                if(s->as.init.ast->kind == AST_FUNC) {
+                    typeinfer_func(state, s->as.init.ast->as.func);
+                }
+                // fallthrough
                 if(s->as.init.ast) {
                     if(s->type) {
                         infer_down_ast(state, s->as.init.ast, s->type);
