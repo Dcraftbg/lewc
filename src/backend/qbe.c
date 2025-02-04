@@ -317,7 +317,35 @@ size_t build_qbe_ast(Qbe* qbe, AST* ast) {
     }
     return n;
 }
-
+// TODO: Maybe have a more fine control over size for smaller types in bits
+static size_t type_size(Qbe* qbe, Type* type) {
+    // Same function should be usable for different targets
+    (void)qbe;
+    switch(type->core) {
+    case CORE_BOOL:
+    case CORE_I8:
+        return 1;
+    case CORE_I16:
+        return 2;
+    case CORE_I32:
+        return 4;
+    case CORE_PTR:
+        return 8;
+    }
+    unreachable("type->core=%d", type->core);
+}
+static void alloca_params(size_t type_sz, size_t *sz, size_t *count) {
+    if(type_sz <= 4) {
+        *sz = 4;
+        *count = (type_sz + 3) / 4;
+    } else if (type_sz <= 8) {
+        *sz = 8;
+        *count = (type_sz + 7) / 8;
+    } else {
+        *sz = 16;
+        *count = (type_sz + 15) / 16;
+    }
+}
 bool build_qbe_scope(Qbe* qbe, Statements* scope);
 bool build_qbe_statement(Qbe* qbe, Statement* statement) {
     size_t n = 0;
@@ -339,20 +367,8 @@ bool build_qbe_statement(Qbe* qbe, Statement* statement) {
         Type* type = s->type;
         Atom* name = statement->as.local_def.name;
         AST * init = s->ast;
-        // TODO: Unduplicate this code with the building arg thingy
-        size_t sz = 0, count=1;
-        switch(type->core){
-        case CORE_PTR:
-            sz = 8;
-            break;
-        case CORE_BOOL:
-        case CORE_I8:
-        case CORE_I32:
-            sz = 4;
-            break;
-        default:
-            unreachable("type->core=%d", type->core);
-        }
+        size_t sz, count;
+        alloca_params(type_size(qbe, type), &sz, &count);
         nprintfln("    %%%s =l alloc%zu %zu", name->data, sz, count);
         if(init) {
             size_t n = build_qbe_ast(qbe, init);
@@ -428,19 +444,8 @@ bool build_qbe_qbe(Qbe* qbe) {
             nprintfln("@start");
             for(size_t i = 0; i < func->type->signature.input.len; ++i) {
                 Arg* arg = &func->type->signature.input.items[i];
-                size_t sz = 0, count=1;
-                switch(arg->type->core){
-                case CORE_PTR:
-                    sz = 8;
-                    break;
-                case CORE_BOOL:
-                case CORE_I8:
-                case CORE_I32:
-                    sz = 4;
-                    break;
-                default:
-                    unreachable("arg->type->core=%d", arg->type->core);
-                }
+                size_t sz, count;
+                alloca_params(type_size(qbe, arg->type), &sz, &count);
                 if(arg->name) {
                     nprintfln("    %%%s =l alloc%zu %zu", arg->name->data, sz, count);
                     nprintf("    store");dump_type_to_qbe(qbe, arg->type);nprintfln(" %%.a%zu, %%%s", i, arg->name->data);
