@@ -1,0 +1,4 @@
+./bin/lewc examples/infer.lew -o ./int/tests/infer.s
+as ./int/tests/infer.s -o ./int/tests/infer.o
+gcc -static ./int/tests/infer.o -o ./bin/tests/infer
+./bin/tests/infer

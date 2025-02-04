@@ -1,0 +1,7 @@
+FOO :: 34;
+BAR :: FOO + 35;
+
+main :: () -> i32 {
+    a := BAR;
+    return a;
+}
