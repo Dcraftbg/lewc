@@ -2,6 +2,7 @@
 #include "arena.h"
 #include <stdint.h>
 #include "atom.h"
+#include "func.h"
 enum {
     AST_CALL,
     AST_C_STR,
@@ -9,6 +10,7 @@ enum {
     AST_SYMBOL,
     AST_UNARY,
     AST_BINOP,
+    AST_FUNC,
     AST_KIND_COUNT
 };
 typedef struct AST AST;
@@ -30,6 +32,7 @@ struct AST {
         struct { Type* type; uint64_t value; } integer;
         struct { const char* str; size_t len; } str;
         struct { Atom* name; Symbol* sym; } symbol;
+        Function* func;
     } as;
 };
 

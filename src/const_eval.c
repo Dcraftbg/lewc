@@ -5,7 +5,7 @@ bool const_eval_const(ProgramState* state, Constant* c);
 // TODO: is evaluating flag for circular definition errors
 // TODO: Actual decent error reporting
 AST* const_eval_ast(ProgramState* state, AST* ast) {
-    static_assert(AST_KIND_COUNT == 6, "Update const_eval_ast");
+    static_assert(AST_KIND_COUNT == 7, "Update const_eval_ast");
     switch(ast->kind) {
     case AST_CALL:
         eprintfln("ERROR: Cannot call inside constant expression");
@@ -29,6 +29,7 @@ AST* const_eval_ast(ProgramState* state, AST* ast) {
         sym->as.init.evaluated = true;
         return sym->as.init.ast = ast;
     } break;
+    case AST_FUNC:
     case AST_INT:
         return ast;
     case AST_BINOP: {

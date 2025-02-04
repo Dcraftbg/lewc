@@ -1,10 +1,14 @@
 #include "typecheck.h"
 #include "token.h"
+
+bool typecheck_func(ProgramState* state, Function* func);
 // TODO: Actually decent error reporting
 bool typecheck_ast(ProgramState* state, AST* ast) {
     if(!ast) return false;
-    static_assert(AST_KIND_COUNT == 6, "Update typecheck_ast");
+    static_assert(AST_KIND_COUNT == 7, "Update typecheck_ast");
     switch(ast->kind) {
+    case AST_FUNC:
+        return typecheck_func(state, ast->as.func);
     case AST_CALL: {
         if(!typecheck_ast(state, ast->as.call.what)) return false;
         Type *t = ast->as.call.what->type;
@@ -176,6 +180,10 @@ bool typecheck_scope(ProgramState* state, Type* return_type, Statements* scope) 
     }
     return true;
 }
+bool typecheck_func(ProgramState* state, Function* func) {
+    if(func->type->attribs & TYPE_ATTRIB_EXTERN) return true; 
+    return typecheck_scope(state, func->type->signature.output, func->scope);
+}
 bool typecheck(ProgramState* state) {
     for(size_t i = 0; i < state->symtab_root.symtab.buckets.len; ++i) {
         for(
@@ -186,11 +194,9 @@ bool typecheck(ProgramState* state) {
             Symbol* s = spair->value;
             static_assert(SYMBOL_COUNT == 3, "Update typecheck");
             switch(s->kind) {
-            case SYMBOL_FUNCTION: {
-                Function* func = s->as.func;
-                if(func->type->attribs & TYPE_ATTRIB_EXTERN) continue;
-                if(!typecheck_scope(state, func->type->signature.output, func->scope)) return false;
-            } break;
+            case SYMBOL_FUNCTION:
+                if(!typecheck_func(state, s->as.func)) return false;
+                break;
             case SYMBOL_CONSTANT:
             case SYMBOL_VARIABLE:
                 if(!typecheck_ast(state, s->as.init.ast)) return false;

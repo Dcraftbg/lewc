@@ -53,21 +53,25 @@ SymTabNode* symtab_node_new(SymTabNode* parent, Arena* arena) {
     da_push(parent, node);
     return node;
 }
+
+bool syn_analyse_func(ProgramState* state, Function* func);
 // TODO: Better error messages as AST should probably store location too
-bool syn_analyse_ast(SymTabNode* node, AST* ast) {
-    static_assert(AST_KIND_COUNT == 6, "Update syn_analyse_ast");
+bool syn_analyse_ast(ProgramState* state, SymTabNode* node, AST* ast) {
+    static_assert(AST_KIND_COUNT == 7, "Update syn_analyse_ast");
     switch(ast->kind) {
+    case AST_FUNC:
+        return syn_analyse_func(state, ast->as.func);
     case AST_CALL:
-        if(!syn_analyse_ast(node, ast->as.call.what)) return false;
+        if(!syn_analyse_ast(state, node, ast->as.call.what)) return false;
         for(size_t i = 0; i < ast->as.call.args.len; ++i) {
-            if(!syn_analyse_ast(node, ast->as.call.args.items[i])) return false;
+            if(!syn_analyse_ast(state, node, ast->as.call.args.items[i])) return false;
         }
         break;
     // TODO: For = force the lhs to be either SYMBOL (non constant/function!!) or *
     case AST_BINOP:
         // ------ For any other binop
-        if(!syn_analyse_ast(node, ast->as.binop.lhs)) return false;
-        if(!syn_analyse_ast(node, ast->as.binop.rhs)) return false;
+        if(!syn_analyse_ast(state, node, ast->as.binop.lhs)) return false;
+        if(!syn_analyse_ast(state, node, ast->as.binop.rhs)) return false;
         if(ast->as.binop.op == '=') {
             AST* lhs = ast->as.binop.lhs;
             switch(lhs->kind) {
@@ -91,7 +95,7 @@ bool syn_analyse_ast(SymTabNode* node, AST* ast) {
         }
         break;
     case AST_UNARY:
-        if(!syn_analyse_ast(node, ast->as.unary.rhs)) return false;
+        if(!syn_analyse_ast(state, node, ast->as.unary.rhs)) return false;
         break;
     case AST_SYMBOL:
         if(!(ast->as.symbol.sym = stl_lookup(node, ast->as.symbol.name))) {
@@ -114,10 +118,10 @@ bool syn_analyse_statement(ProgramState* state, SymTabNode* node, Statement* sta
     switch(statement->kind) {
     case STATEMENT_RETURN:
         if(!statement->as.ast) return true;
-        if(!syn_analyse_ast(node, statement->as.ast)) return false;
+        if(!syn_analyse_ast(state, node, statement->as.ast)) return false;
         break;
     case STATEMENT_EVAL:
-        if(!syn_analyse_ast(node, statement->as.ast)) return false;
+        if(!syn_analyse_ast(state, node, statement->as.ast)) return false;
         break;
     case STATEMENT_SCOPE:
         if(!syn_analyse_scope(state, node, statement->as.scope)) return false;
@@ -126,12 +130,12 @@ bool syn_analyse_statement(ProgramState* state, SymTabNode* node, Statement* sta
         if(!syn_analyse_statement(state, node, statement->as.loop.body)) return false;
         break;
     case STATEMENT_WHILE:
-        if(!syn_analyse_ast(node, statement->as.whil.cond)) return false;
+        if(!syn_analyse_ast(state, node, statement->as.whil.cond)) return false;
         if(!syn_analyse_statement(state, node, statement->as.whil.body)) return false;
         break;
     case STATEMENT_LOCAL_DEF:
         sym_tab_insert(&node->symtab, statement->as.local_def.name, statement->as.local_def.symbol);
-        if(statement->as.local_def.symbol->as.init.ast && !syn_analyse_ast(node, statement->as.local_def.symbol->as.init.ast)) return false;
+        if(statement->as.local_def.symbol->as.init.ast && !syn_analyse_ast(state, node, statement->as.local_def.symbol->as.init.ast)) return false;
         break;
     default:
         unreachable("statement->kind=%d", statement->kind);
@@ -141,6 +145,27 @@ bool syn_analyse_statement(ProgramState* state, SymTabNode* node, Statement* sta
 bool syn_analyse_scope(ProgramState* state, SymTabNode* node, Statements* scope) {
     for(size_t j=0; j < scope->len; ++j) {
         if(!syn_analyse_statement(state, node, scope->items[j])) return false;
+    }
+    return true;
+}
+// TODO: syntactically analyse the SymTabNode instead of body maybe? 
+// Maybe we shouldn't even be creating the node here but at the level of parsing
+// But I'm not too sure since at least local variables have to be collected here (even tho you can
+// technically just collect everything else and leave the symbol collection for local vars
+// when you get to them
+bool syn_analyse_func(ProgramState* state, Function* func) {
+    Type* type = func->type;
+    assert(type->core == CORE_FUNC);
+    if(type->attribs & TYPE_ATTRIB_EXTERN) return true;
+    func->symtab_node = symtab_node_new(&state->symtab_root, state->arena);
+    for(size_t j=0; j < type->signature.input.len; ++j) {
+        if(type->signature.input.items[j].name) {
+            sym_tab_insert(&func->symtab_node->symtab, type->signature.input.items[j].name, symbol_new_var(state->arena, type->signature.input.items[j].type, NULL));
+        }
+    }
+    if(!syn_analyse_scope(state, func->symtab_node, func->scope)) return false;
+    if(!type->signature.output && (func->scope->len <= 0 || func->scope->items[func->scope->len-1]->kind != STATEMENT_RETURN)) {
+        da_push(func->scope, statement_return(state->arena, NULL));
     }
     return true;
 }
@@ -155,27 +180,12 @@ bool syn_analyse(ProgramState* state) {
             Symbol* s = spair->value;
             static_assert(SYMBOL_COUNT == 3, "Update syn_analyse");
             switch(s->kind) {
-            case SYMBOL_FUNCTION: {
-                Function* func = s->as.func;
-                Type* type = func->type;
-                assert(type->core == CORE_FUNC);
-                if(!(type->attribs & TYPE_ATTRIB_EXTERN)) {
-                    func->symtab_node = node = symtab_node_new(node, state->arena);
-                    for(size_t j=0; j < type->signature.input.len; ++j) {
-                        if(type->signature.input.items[j].name) {
-                            sym_tab_insert(&node->symtab, type->signature.input.items[j].name, symbol_new_var(state->arena, type->signature.input.items[j].type, NULL));
-                        }
-                    }
-                    if(!syn_analyse_scope(state, node, func->scope)) return false;
-                    if(!type->signature.output && (func->scope->len <= 0 || func->scope->items[func->scope->len-1]->kind != STATEMENT_RETURN)) {
-                        da_push(func->scope, statement_return(state->arena, NULL));
-                    }
-                    node = node->parent;
-                }
-            } break;
+            case SYMBOL_FUNCTION:
+                if(!syn_analyse_func(state, s->as.func)) return false;
+                break;
             case SYMBOL_VARIABLE:
             case SYMBOL_CONSTANT:
-                if(!syn_analyse_ast(node, s->as.init.ast)) return false;
+                if(!syn_analyse_ast(state, node, s->as.init.ast)) return false;
                 break;
             case SYMBOL_COUNT:
             default:

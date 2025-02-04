@@ -97,8 +97,11 @@ size_t build_ptr_to(Qbe* qbe, AST* ast) {
 }
 size_t build_qbe_ast(Qbe* qbe, AST* ast) {
     size_t n=0;
-    static_assert(AST_KIND_COUNT == 6, "Update build_qbe_ast");
+    static_assert(AST_KIND_COUNT == 7, "Update build_qbe_ast");
     switch(ast->kind) {
+    case AST_FUNC:
+        eprintfln("ERROR: TBD build function ast?");
+        return 0;
     case AST_BINOP:
         switch(ast->as.binop.op) {
         case '=': {
