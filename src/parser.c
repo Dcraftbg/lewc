@@ -18,18 +18,50 @@ Type* parse_type(Parser* parser) {
         ptr_count++;
         t = lexer_next(parser->lexer);
     }
-    if(t.kind != TOKEN_ATOM) {
+    switch(t.kind) {
+    case TOKEN_ATOM: {
+        Type** idp = type_table_get(&parser->state->type_table, t.atom->data);
+        if(!idp) {
+            eprintfln("ERROR:%s: Unknown type name: %s", tloc(t), t.atom->data);
+            exit(1);
+        }
+        Type* id = *idp;
+        if(ptr_count) return type_ptr(parser->arena, id, ptr_count);
+        return id;
+    } break;
+    case TOKEN_STRUCT: {
+        if((t=lexer_next(parser->lexer)).kind != '{') {
+            eprintfln("ERROR:%s: Unexpected `%s` at the start of structure definition. Expected '{'", tloc(t), tdisplay(t));
+            exit(1);
+        }
+        Struct struc = { 0 };
+        while((t=lexer_peak_next(parser->lexer)).kind != '}') {
+            if(t.kind != TOKEN_ATOM) {
+                eprintfln("ERROR:%s Unexpected token in structure definition %s (expected field name)", tloc(t), tdisplay(t));
+                exit(1);
+            }
+            Atom* name = t.atom;
+            lexer_eat(parser->lexer, 1);
+            if((t=lexer_next(parser->lexer)).kind != ':') {
+                eprintfln("ERROR:%s Expected : after field name. Found %s", tloc(t), tdisplay(t));
+                exit(1);
+            }
+            Type* type = parse_type(parser);
+            if(!type) exit(1);
+            struct_add_field(&struc, name, type);
+            if((t=lexer_peak_next(parser->lexer)).kind != ',') break;
+            lexer_eat(parser->lexer, 1);
+        }
+        if((t=lexer_next(parser->lexer)).kind != '}') {
+            eprintfln("ERROR: Expected '}' at the end of a structure definition");
+            exit(1);
+        }
+        return type_new_struct(parser->arena, struc);
+    } break;
+    default:
         eprintfln("ERROR:%s: Expected name of type but got: %s", tloc(t), tdisplay(t));
         exit(1);
     }
-    Type** idp = type_table_get(&parser->state->type_table, t.atom->data);
-    if(!idp) {
-        eprintfln("ERROR:%s: Unknown type name: %s", tloc(t), t.atom->data);
-        exit(1);
-    }
-    Type* id = *idp;
-    if(ptr_count) return type_ptr(parser->arena, id, ptr_count);
-    return id;
 }
 void parse_func_signature(Parser* parser, FuncSignature* sig) {
     Token t = {0};

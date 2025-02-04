@@ -18,10 +18,6 @@ enum {
     TYPE_ATTRIB_EXTERN=BIT(1),
 };
 typedef struct Type Type;
-#include "func.h"
-#ifdef MEMBERS_DEFINE
-#    define HASHMAP_DEFINE
-#endif
 typedef struct {
     enum {
         MEMBER_FIELD,
@@ -30,6 +26,10 @@ typedef struct {
     Type* type;
     size_t offset;
 } Member;
+#include "func.h"
+#ifdef MEMBERS_DEFINE
+#    define HASHMAP_DEFINE
+#endif
 #include "hashmap.h"
 #define MEMBERS_ALLOC(n) malloc(n)
 #define MEMBERS_DEALLOC(ptr, size) free(ptr)
@@ -40,6 +40,10 @@ MAKE_HASHMAP_EX(Members, members, Member, Atom*, atom_hash, atom_eq, MEMBERS_ALL
 // TODO: packed flag for packed structures
 typedef struct {
     Members members;
+    struct {
+        Atom **items;
+        size_t len, cap;
+    } fields;
     size_t offset, alignment;
 } Struct;
 void struct_add_field(Struct* struc, Atom* name, Type* type);
@@ -61,6 +65,7 @@ struct Type {
 
 size_t type_size(Type* type);
 size_t type_alignment(Type* type);
+// TODO: type_eq for structs fields and whatnot
 static bool type_eq(Type* a, Type* b) {
     if(a == NULL && b == NULL) return true;
     if(a == NULL || b == NULL) return false;
@@ -89,5 +94,6 @@ void type_table_move(TypeTable* into, TypeTable* from);
 void type_table_init(TypeTable* t);
 #include "arena.h"
 Type* type_new(Arena* arena);
+Type* type_new_struct(Arena* arena, const Struct struc);
 bool type_isbinary(Type* t);
 void type_dump(FILE* f, Type* t);

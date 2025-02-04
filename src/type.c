@@ -49,6 +49,7 @@ size_t type_alignment(Type* type) {
     }
     unreachable("type->core=%d", type->core);
 }
+#include "darray.h"
 void struct_add_field(Struct* me, Atom* name, Type* type) {
     size_t align = type_alignment(type);
     if(align > me->alignment) me->alignment = align;
@@ -58,13 +59,21 @@ void struct_add_field(Struct* me, Atom* name, Type* type) {
         type,
         me->offset
     };
+    me->offset += type_size(type);
     members_insert(&me->members, name, member);
+    da_push(&me->fields, name);
 }
 Type* type_new(Arena* arena) {
     Type* type = arena_alloc(arena, sizeof(*type));
     assert(type && "Ran out of memory");
     memset(type, 0, sizeof(*type));
     return type;
+}
+Type* type_new_struct(Arena* arena, const Struct struc) {
+    Type* me = type_new(arena);
+    me->core = CORE_STRUCT;
+    me->struc = struc;
+    return me;
 }
 Type* type_ptr(Arena* arena, Type* to, size_t ptr_count) {
     Type* res = type_new(arena);
@@ -114,6 +123,15 @@ void type_dump(FILE* f, Type* t) {
             fprintf(f, " -> ");
             type_dump(f, t->signature.output);
         }
+    } break;
+    case CORE_STRUCT: {
+        fputs("struct {", f);
+        Struct* s = &t->struc;
+        for(size_t i = 0; i < s->fields.len; ++i) {
+            if(i > 0) fputs(", ", f);
+            fprintf(f, "%s : ", s->fields.items[i]->data); type_dump(f, members_get(&s->members, s->fields.items[i])->type); 
+        }
+        fputs("}", f);
     } break;
     }
 }
