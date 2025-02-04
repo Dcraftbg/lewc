@@ -58,6 +58,9 @@ struct Type {
        Struct struc;
     };
 };
+
+size_t type_size(Type* type);
+size_t type_alignment(Type* type);
 static bool type_eq(Type* a, Type* b) {
     if(a == NULL && b == NULL) return true;
     if(a == NULL || b == NULL) return false;

@@ -12,6 +12,26 @@ Type* core_types[] = {
     &type_u16,
     &type_i32,
 };
+// TODO: Maybe have a more fine control over size for smaller types in bits
+// FIXME: Stuff like pointer size / function size depend on architecture.
+// Future me problem I guess xD
+size_t type_size(Type* type) {
+    switch(type->core) {
+    case CORE_BOOL:
+    case CORE_I8:
+        return 1;
+    case CORE_I16:
+        return 2;
+    case CORE_I32:
+        return 4;
+    case CORE_PTR:
+    case CORE_FUNC:
+        return 8;
+    case CORE_STRUCT:
+        return type->struc.offset + type->struc.offset % type->struc.alignment;
+    }
+    unreachable("type->core=%d", type->core);
+}
 size_t type_alignment(Type* type) {
     switch(type->core) {
     case CORE_I8:
@@ -26,9 +46,8 @@ size_t type_alignment(Type* type) {
         return 8;
     case CORE_STRUCT:
         return type->struc.alignment;
-    default:
-        unreachable("type->core=%d", type->core);
     }
+    unreachable("type->core=%d", type->core);
 }
 void struct_add_field(Struct* me, Atom* name, Type* type) {
     size_t align = type_alignment(type);
