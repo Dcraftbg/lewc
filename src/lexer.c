@@ -121,7 +121,7 @@ static void lex_str(Lexer* lexer, const char **str, size_t *len) {
     scratchbuf_reset(&lexer->buf);
     return;
 }
-#define MAKE_TOKEN(...) (Token) { lexer->path, l0, c0, lexer->l0, lexer->c0, .kind=__VA_ARGS__ }
+#define MAKE_TOKEN(...) (Token) { lexer->path, l0, c0, lexer->l0, lexer->c0, src_start, lexer->cursor-src_start, .kind=__VA_ARGS__ }
 static size_t lex_prefix_to_radix(Lexer* lexer) {
     int c = lexer_peak_c(lexer);
     switch(c) {
@@ -133,7 +133,7 @@ static size_t lex_prefix_to_radix(Lexer* lexer) {
     return 10;
 }
 #define is_base16 isxdigit
-static Token lex_num_base16(size_t l0, size_t c0, Lexer* lexer) {
+static Token lex_num_base16(size_t l0, size_t c0, const char* src_start, Lexer* lexer) {
     uint32_t c;
     uint64_t result=0;
     while(lexer->cursor < lexer->end && (is_base16((c=lexer_peak_c(lexer))) || c == '_')) {
@@ -155,7 +155,7 @@ static Token lex_num_base16(size_t l0, size_t c0, Lexer* lexer) {
 static bool is_base2(uint32_t c) {
     return c >= '0' && c <= '1';
 }
-static Token lex_num_base2(size_t l0, size_t c0, Lexer* lexer) {
+static Token lex_num_base2(size_t l0, size_t c0, const char* src_start, Lexer* lexer) {
     uint32_t c;
     uint64_t result=0;
     while(lexer->cursor < lexer->end && (is_base2((c=lexer_peak_c(lexer))) || c == '_')) {
@@ -171,7 +171,7 @@ static Token lex_num_base2(size_t l0, size_t c0, Lexer* lexer) {
     return MAKE_TOKEN(TOKEN_INT, .integer={ .value = result });
 }
 #define is_base10 isdigit
-static Token lex_num_base10(size_t l0, size_t c0, Lexer* lexer) {
+static Token lex_num_base10(size_t l0, size_t c0, const char* src_start, Lexer* lexer) {
     uint32_t c;
     uint64_t result=0;
     while(lexer->cursor < lexer->end && (is_base10((c=lexer_peak_c(lexer))) || c == '_')) {
@@ -189,7 +189,7 @@ static Token lex_num_base10(size_t l0, size_t c0, Lexer* lexer) {
 static bool is_base8(uint32_t c) {
     return c >= '0' && c <= '7';
 }
-static Token lex_num_base8(size_t l0, size_t c0, Lexer* lexer) {
+static Token lex_num_base8(size_t l0, size_t c0, const char* src_start, Lexer* lexer) {
     uint32_t c;
     uint64_t result=0;
     while(lexer->cursor < lexer->end && (is_base8((c=lexer_peak_c(lexer))) || c == '_')) {
@@ -204,12 +204,12 @@ static Token lex_num_base8(size_t l0, size_t c0, Lexer* lexer) {
     }
     return MAKE_TOKEN(TOKEN_INT, .integer={ .value = result });
 }
-static Token lex_num_by_radix(size_t l0, size_t c0, Lexer* lexer, size_t radix) {
+static Token lex_num_by_radix(size_t l0, size_t c0, const char* src_start, Lexer* lexer, size_t radix) {
     switch(radix) {
-    case 10: return lex_num_base10(l0, c0, lexer);
-    case 16: return lex_num_base16(l0, c0, lexer);
-    case 2 : return lex_num_base2 (l0, c0, lexer);
-    case 8 : return lex_num_base8(l0, c0, lexer);
+    case 10: return lex_num_base10(l0, c0, src_start, lexer);
+    case 16: return lex_num_base16(l0, c0, src_start, lexer);
+    case 2 : return lex_num_base2 (l0, c0, src_start, lexer);
+    case 8 : return lex_num_base8 (l0, c0, src_start, lexer);
     default:
         eprintfln("ERROR:%s:%zu:%zu: Unsupported integer with radix=%zu", lexer->path, l0, c0, radix);
         return MAKE_TOKEN(TOKEN_INVALID_INT_LITERAL);
@@ -239,6 +239,7 @@ Token lexer_next(Lexer* lexer) {
     lexer_trim(lexer);
     size_t l0 = lexer->l0;
     size_t c0 = lexer->c0;
+    const char* src_start = lexer->cursor;
     if (lexer->cursor >= lexer->end) return MAKE_TOKEN(TOKEN_EOF);
     uint32_t c = lexer_peak_c(lexer);
     switch (c) {
@@ -316,7 +317,7 @@ Token lexer_next(Lexer* lexer) {
             eprintfln("ERROR:%s:%zu:%zu Cannot have an integer with multiple 0's (i.e. 000000)", lexer->path, lexer->l0, lexer->c0);
             return MAKE_TOKEN(TOKEN_INVALID_INT_LITERAL);
         }
-        Token t = lex_num_by_radix(l0, c0, lexer, radix);
+        Token t = lex_num_by_radix(l0, c0, src_start, lexer, radix);
         if(!lex_num_suffix(lexer, &t)) {
             eprintfln("ERROR:%s:%zu:%zu Invalid type suffix for integer", lexer->path, lexer->l0, lexer->c0);
             return MAKE_TOKEN(TOKEN_INVALID_INT_LITERAL);
@@ -325,7 +326,7 @@ Token lexer_next(Lexer* lexer) {
     }
     default:
         if (c >= '0' && c <= '9') {
-            Token t = lex_num_by_radix(l0, c0, lexer, 10);
+            Token t = lex_num_by_radix(l0, c0, src_start, lexer, 10);
             if(!lex_num_suffix(lexer, &t)) {
                 eprintfln("ERROR:%s:%zu:%zu Invalid type suffix for integer", lexer->path, lexer->l0, lexer->c0);
                 return MAKE_TOKEN(TOKEN_INVALID_INT_LITERAL);
