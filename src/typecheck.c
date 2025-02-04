@@ -8,7 +8,9 @@ bool typecheck_ast(ProgramState* state, AST* ast) {
     case AST_CALL: {
         if(!typecheck_ast(state, ast->as.call.what)) return false;
         Type *t = ast->as.call.what->type;
-        if(t->core != CORE_FUNC) {
+        if(!t || t->core != CORE_FUNC) {
+            eprintfln("ast->as.call.what.kind = %d", ast->as.call.what->kind);
+            eprintfln("ast->as.call.what = %s", ast->as.call.what->as.symbol.name->data);
             eprintf("ERROR: Tried to call something that is not a function ("); type_dump(stderr, t); eprintfln(")");
             return false;
         }
@@ -95,6 +97,7 @@ bool typecheck_ast(ProgramState* state, AST* ast) {
         case '*':
             if(!rhs->type || rhs->type->core != CORE_PTR) {
                 eprintf("Trying to dereference an expression of type "); type_dump(stderr, rhs->type); eprintf("\n");
+                abort();
                 return false;
             }
             break;
@@ -133,16 +136,17 @@ bool typecheck_statement(ProgramState* state, Type* return_type, Statement* stat
             return false;
         }
         break;
-    case STATEMENT_LOCAL_DEF:
-        if(statement->as.local_def.init) {
-            if(!typecheck_ast(state, statement->as.local_def.init)) return false;
-            if(!type_eq(statement->as.local_def.type, statement->as.local_def.init->type)) {
+    case STATEMENT_LOCAL_DEF: {
+        Symbol* s = statement->as.local_def.symbol;
+        if(s->as.init.ast) {
+            if(!typecheck_ast(state, s->as.init.ast)) return false;
+            if(!type_eq(s->type, s->as.init.ast->type)) {
                 eprintfln("Type mismatch in variable definition %s.", statement->as.local_def.name->data);
-                eprintf("Variable defined as "); type_dump(stderr, statement->as.local_def.type); eprintf(" but got "); type_dump(stderr, statement->as.local_def.init->type); eprintf(NEWLINE);
+                eprintf("Variable defined as "); type_dump(stderr, s->type); eprintf(" but got "); type_dump(stderr, s->as.init.ast->type); eprintf(NEWLINE);
                 return false;
             }
         }
-        break;
+    } break;
     case STATEMENT_EVAL:
         if(!typecheck_ast(state, statement->as.ast)) return false;
         break;

@@ -29,10 +29,9 @@ struct Statement {
         struct {
             Statement* body;
         } loop;
-        struct { 
+        struct {
             Atom* name;
-            Type* type;
-            AST * init;
+            Symbol* symbol;
         } local_def;
     } as;
     /*metadata*/;
@@ -42,7 +41,7 @@ Statement* statement_eval(Arena* arena, AST* ast);
 Statement* statement_scope(Arena* arena);
 Statement* statement_while(Arena* arena, AST* cond, Statement* body);
 Statement* statement_loop(Arena* arena, Statement* body);
-Statement* statement_local_def(Arena* arena, Atom* name, Type* type, AST* init);
+Statement* statement_local_def(Arena* arena, Atom* name, Symbol* symbol);
 #include "func.h"
 #include "syn_analys.h"
 #include "constants.h"

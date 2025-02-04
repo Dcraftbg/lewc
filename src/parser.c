@@ -383,7 +383,7 @@ Statement* parse_statement(Parser* parser, Token t) {
                     if(!(init = parse_ast(parser, INIT_PRECEDENCE))) 
                         exit(1);
                 }
-                return statement_local_def(parser->arena, name, type, init);
+                return statement_local_def(parser->arena, name, symbol_new_var(parser->arena, type, init));
             }
         } break;
         case '{':

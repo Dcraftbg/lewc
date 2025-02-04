@@ -315,9 +315,10 @@ bool build_qbe_statement(Qbe* qbe, Statement* statement) {
         }
         break;
     case STATEMENT_LOCAL_DEF: {
-        Type* type = statement->as.local_def.type;
+        Symbol* s = statement->as.local_def.symbol;
+        Type* type = s->type;
         Atom* name = statement->as.local_def.name;
-        AST * init = statement->as.local_def.init;
+        AST * init = s->as.init.ast;
         // TODO: Unduplicate this code with the building arg thingy
         size_t sz = 0, count=1;
         switch(type->core){

@@ -35,7 +35,7 @@ struct Symbol {
 };
 
 Symbol* symbol_new_func(Arena* arena, Type* type, Function* func);
-Symbol* symbol_new_var(Arena* arena, Type* type);
+Symbol* symbol_new_var(Arena* arena, Type* type, AST* init);
 Symbol* symbol_new_constant(Arena* arena, Type* type, AST* init);
 #ifdef SYMTAB_DEFINE
 #define HASHMAP_DEFINE

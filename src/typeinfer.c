@@ -3,43 +3,59 @@
 #include "darray.h"
 // TODO: Lots and lots of recursion in here.
 // We can simplify this by collecting the ASTS we need to go down first instead of this
-void infer_down_ast(AST* ast, Type* type);
-void infer_up_ast(AST* ast, Type* type) {
+void infer_down_ast(ProgramState* state, AST* ast, Type* type);
+void infer_up_ast(ProgramState* state, AST* ast, Type* type) {
     while(ast) {
         if(ast->type) break;
-        infer_down_ast(ast, type);
+        infer_down_ast(state, ast, type);
         ast->type = type;
         ast = ast->parent;
     }
 }
-void infer_symbol(Symbol* s, Type* type) {
+void infer_symbol(ProgramState* state, Symbol* s, Type* type) {
     assert(s->type == NULL);
+    assert(s->kind != SYMBOL_FUNCTION);
     s->type = type;
     for(size_t i = 0; i < s->infer_asts.len; ++i) {
         s->infer_asts.items[i]->type = type;
-        infer_up_ast(s->infer_asts.items[i]->parent, type);
+        infer_up_ast(state, s->infer_asts.items[i]->parent, type);
     }
-    infer_up_ast(s->as.init.ast, type);
+    infer_up_ast(state, s->as.init.ast, type);
     free(s->infer_asts.items);
     memset(&s->infer_asts, 0, sizeof(s->infer_asts));
 }
-void infer_down_ast(AST* ast, Type* type) {
+
+bool try_infer_ast(ProgramState* state, AST* ast);
+void infer_down_ast(ProgramState* state, AST* ast, Type* type) {
+    try_infer_ast(state, ast);
     if(ast->type) return;
     ast->type = type;
     switch(ast->kind) {
-    case AST_SYMBOL: 
+    case AST_SYMBOL: {
+        assert(ast->as.symbol.sym->kind != SYMBOL_FUNCTION);
         if(ast->as.symbol.sym->type) {
             ast->type = ast->as.symbol.sym->type;
             return;
         }
-        infer_symbol(ast->as.symbol.sym, type);
-        break;
+        infer_symbol(state, ast->as.symbol.sym, type);
+    } break;
     case AST_BINOP: {
-        infer_down_ast(ast->as.binop.lhs, type);
-        infer_down_ast(ast->as.binop.rhs, type);
+        infer_down_ast(state, ast->as.binop.lhs, type);
+        infer_down_ast(state, ast->as.binop.rhs, type);
     } break;
     case AST_UNARY: {
-        infer_down_ast(ast->as.unary.rhs, type);
+        if(ast->as.unary.op == '*') {
+            infer_down_ast(state, ast->as.unary.rhs, ast->type->core == CORE_PTR 
+                                                        ? type_ptr(state->arena, ast->type->inner_type, ast->type->ptr_count + 1)
+                                                        : type_ptr(state->arena, ast->type, 1));
+            return;
+        }
+    } break;
+    case AST_INT: {
+        // TODO: isize or iptrdiff or whatever
+        if(type->core == CORE_PTR) {
+            ast->type = &type_i32;
+        }
     } break;
     }
 }
@@ -54,6 +70,7 @@ bool try_infer_ast(ProgramState* state, AST* ast) {
             ast->type = s->type;
             return true;
         }
+        assert(s->kind != SYMBOL_FUNCTION);
         da_push(&s->infer_asts, ast);
     } break;
     case AST_CALL: {
@@ -64,7 +81,7 @@ bool try_infer_ast(ProgramState* state, AST* ast) {
             FuncSignature* signature = &signature_type->signature;
             if(signature->input.len != ast->as.call.args.len) return true;
             for(size_t i = 0; i < signature->input.len; ++i) {
-                infer_down_ast(ast->as.call.args.items[i], signature->input.items[i].type);
+                infer_down_ast(state, ast->as.call.args.items[i], signature->input.items[i].type);
             }
             ast->type = signature->output;
             return true;
@@ -72,14 +89,32 @@ bool try_infer_ast(ProgramState* state, AST* ast) {
     } break;
     // TODO: Comparison expressions should automatically set the resulting type to bool (same with || and &&)
     case AST_BINOP: {
-        if(try_infer_ast(state, ast->as.binop.lhs)) {
-            if(!(ast->type = ast->as.binop.lhs->type)) return true;
-            infer_down_ast(ast->as.binop.rhs, ast->type);
+        switch(ast->as.binop.op) {
+        case TOKEN_NEQ:
+        case TOKEN_EQEQ:
+        case TOKEN_LTEQ:
+        case TOKEN_GTEQ:
+        case '<':
+        case '>':
+            ast->type = &type_bool;
+            if(try_infer_ast(state, ast->as.binop.lhs)) {
+                if(!ast->as.binop.lhs->type) return true;
+                infer_down_ast(state, ast->as.binop.rhs, ast->as.binop.lhs->type);
+            } else if(try_infer_ast(state, ast->as.binop.rhs)) {
+                if(!ast->as.binop.rhs->type) return true;
+                infer_down_ast(state, ast->as.binop.lhs, ast->as.binop.rhs->type);
+            } else return false;
             return true;
-        } else if(try_infer_ast(state, ast->as.binop.rhs)) {
-            if(!(ast->type = ast->as.binop.rhs->type)) return true;
-            infer_down_ast(ast->as.binop.lhs, ast->type);
-            return true;
+        default:
+            if(try_infer_ast(state, ast->as.binop.lhs)) {
+                if(!(ast->type = ast->as.binop.lhs->type)) return true;
+                infer_down_ast(state, ast->as.binop.rhs, ast->type);
+                return true;
+            } else if(try_infer_ast(state, ast->as.binop.rhs)) {
+                if(!(ast->type = ast->as.binop.rhs->type)) return true;
+                infer_down_ast(state, ast->as.binop.lhs, ast->type);
+                return true;
+            }
         }
     } break;
     // TODO: ! must set the resulting type to bool 
@@ -105,12 +140,19 @@ void typeinfer_statement(ProgramState* state, Type* return_type, Statement* stat
     static_assert(STATEMENT_COUNT == 6, "Update typeinfer_statement");
     switch(statement->kind) {
     case STATEMENT_RETURN:
-        infer_down_ast(statement->as.ast, return_type);
+        if(statement->as.ast) infer_down_ast(state, statement->as.ast, return_type);
         break;
-    case STATEMENT_LOCAL_DEF:
-        if(statement->as.local_def.init && !statement->as.local_def.type) 
-            todo("I gotta restructure local defintions for type inference in locals. Sorry.");
-        break;
+    case STATEMENT_LOCAL_DEF: {
+        Symbol* s = statement->as.local_def.symbol;
+        if(s->as.init.ast) {
+            if(s->type) {
+                infer_down_ast(state, s->as.init.ast, s->type);
+            } else {
+                try_infer_ast(state, s->as.init.ast);
+                if(s->as.init.ast->type) infer_symbol(state, s, s->as.init.ast->type);
+            }
+        }
+    } break;
     case STATEMENT_EVAL:
         try_infer_ast(state, statement->as.ast);
         break;
@@ -150,10 +192,12 @@ bool typeinfer(ProgramState* state) {
             } break;
             case SYMBOL_CONSTANT:
             case SYMBOL_VARIABLE:
-                if(s->type == NULL && s->as.init.ast) {
-                    try_infer_ast(state, s->as.init.ast);
-                    if(s->as.init.ast->type) {
-                        infer_symbol(s, s->as.init.ast->type);
+                if(s->as.init.ast) {
+                    if(s->type) {
+                        infer_down_ast(state, s->as.init.ast, s->type);
+                    } else {
+                        try_infer_ast(state, s->as.init.ast);
+                        if(s->as.init.ast->type) infer_symbol(state, s, s->as.init.ast->type);
                     }
                 }
                 break;

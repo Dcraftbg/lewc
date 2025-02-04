@@ -51,8 +51,9 @@ bool const_expand_statement(ProgramState* state, Statement* statement) {
         return const_expand_statement(state, statement->as.whil.body);
     } break;
     case STATEMENT_LOCAL_DEF: {
-        if(!statement->as.local_def.init) return true;
-        return (statement->as.local_def.init = const_expand_ast(state, statement->as.local_def.init)) != NULL;
+        Symbol* s = statement->as.local_def.symbol;
+        if(!s->as.init.ast) return true;
+        return (s->as.init.ast = const_expand_ast(state, s->as.init.ast)) != NULL;
     } break;
     default:
         unreachable("statement->kind=%d", statement->kind);

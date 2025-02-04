@@ -31,10 +31,11 @@ Symbol* symbol_new_func(Arena* arena, Type* type, Function* func) {
     me->as.func = func;
     return me;
 }
-Symbol* symbol_new_var(Arena* arena, Type* type) {
+Symbol* symbol_new_var(Arena* arena, Type* type, AST* init) {
     Symbol* me = symbol_new(arena, type);
     if(!me) return NULL;
     me->kind = SYMBOL_VARIABLE;
+    me->as.init.ast = init;
     return me;
 }
 Symbol* symbol_new_constant(Arena* arena, Type* type, AST* init) {
@@ -129,8 +130,8 @@ bool syn_analyse_statement(ProgramState* state, SymTabNode* node, Statement* sta
         if(!syn_analyse_statement(state, node, statement->as.whil.body)) return false;
         break;
     case STATEMENT_LOCAL_DEF:
-        sym_tab_insert(&node->symtab, statement->as.local_def.name, symbol_new_var(state->arena, statement->as.local_def.type));
-        if(statement->as.local_def.init && !syn_analyse_ast(node, statement->as.local_def.init)) return false;
+        sym_tab_insert(&node->symtab, statement->as.local_def.name, statement->as.local_def.symbol);
+        if(statement->as.local_def.symbol->as.init.ast && !syn_analyse_ast(node, statement->as.local_def.symbol->as.init.ast)) return false;
         break;
     default:
         unreachable("statement->kind=%d", statement->kind);
@@ -162,7 +163,7 @@ bool syn_analyse(ProgramState* state) {
                     func->symtab_node = node = symtab_node_new(node, state->arena);
                     for(size_t j=0; j < type->signature.input.len; ++j) {
                         if(type->signature.input.items[j].name) {
-                            sym_tab_insert(&node->symtab, type->signature.input.items[j].name, symbol_new_var(state->arena, type->signature.input.items[j].type));
+                            sym_tab_insert(&node->symtab, type->signature.input.items[j].name, symbol_new_var(state->arena, type->signature.input.items[j].type, NULL));
                         }
                     }
                     if(!syn_analyse_scope(state, node, func->scope)) return false;
