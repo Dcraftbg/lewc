@@ -23,7 +23,6 @@
 #include "typeinfer.h"
 #include "typecheck.h"
 #include "const_eval.h"
-#include "const_expand.h"
 #include "build.h"
 
 const char* shift_args(int *argc, const char ***argv) {
@@ -148,7 +147,6 @@ int main(int argc, const char** argv) {
     if(!typeinfer(&state))    exit(1);
     if(!typecheck(&state))    exit(1);
     if(!const_eval(&state))   exit(1);
-    if(!const_expand(&state)) exit(1);
     Build build = {0};
     build.target  = &target;
     build.options = &build_options;
