@@ -9,6 +9,7 @@ enum {
     TOKEN_ARROW,
     TOKEN_RETURN,
     TOKEN_EXTERN,
+    TOKEN_TYPEDEF,
     TOKEN_C_STR,
     TOKEN_INT,
     TOKEN_EQEQ,

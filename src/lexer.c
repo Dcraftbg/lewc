@@ -340,10 +340,11 @@ Token lexer_next(Lexer* lexer) {
             return MAKE_TOKEN(TOKEN_C_STR, .str = str, .str_len = len);
         } else if(c == '_' || isalpha(c)) {
             Word word = lexer_parse_word(lexer);
-                 if (wordeq(word, "return")) return MAKE_TOKEN(TOKEN_RETURN);
-            else if (wordeq(word, "extern")) return MAKE_TOKEN(TOKEN_EXTERN);
-            else if (wordeq(word, "while" )) return MAKE_TOKEN(TOKEN_WHILE);
-            else if (wordeq(word, "loop"  )) return MAKE_TOKEN(TOKEN_LOOP);
+                 if (wordeq(word, "return" )) return MAKE_TOKEN(TOKEN_RETURN);
+            else if (wordeq(word, "extern" )) return MAKE_TOKEN(TOKEN_EXTERN);
+            else if (wordeq(word, "while"  )) return MAKE_TOKEN(TOKEN_WHILE);
+            else if (wordeq(word, "loop"   )) return MAKE_TOKEN(TOKEN_LOOP);
+            else if (wordeq(word, "typedef")) return MAKE_TOKEN(TOKEN_TYPEDEF);
             return MAKE_TOKEN(TOKEN_ATOM, .atom = atom_alloc(lexer->atom_table,word.start, (size_t)(word.end-word.start)));
         }
     }

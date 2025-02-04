@@ -3,7 +3,7 @@
 #define TPRINTF(...) snprintf(tdisplay_buf, sizeof(tdisplay_buf), __VA_ARGS__)
 const char* tdisplay(Token t) {
     static char tdisplay_buf[1024];
-    static_assert(TOKEN_COUNT == 274, "Update tdisplay");
+    static_assert(TOKEN_COUNT == 275, "Update tdisplay");
     switch(t.kind) {
     case TOKEN_ATOM:
         TPRINTF("Word(%s)",t.atom->data);
@@ -23,6 +23,9 @@ const char* tdisplay(Token t) {
         return tdisplay_buf;
     case TOKEN_INVALID_INT_LITERAL:
         TPRINTF("Invalid integer literal");
+        return tdisplay_buf;
+    case TOKEN_TYPEDEF:
+        TPRINTF("typedef");
         return tdisplay_buf;
     case TOKEN_ARROW:
         TPRINTF("->");
