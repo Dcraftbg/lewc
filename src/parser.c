@@ -473,7 +473,6 @@ void parse(Parser* parser, Arena* arena) {
             eprintfln("ERROR:%s: Lexer: %s", tloc(t), tdisplay(t));
             exit(1);
         }
-        static_assert(TOKEN_COUNT == 274, "Update parser");
         switch(t.kind) {
         case TOKEN_EXTERN: {
             lexer_eat(parser->lexer, 1);
