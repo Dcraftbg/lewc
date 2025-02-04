@@ -19,6 +19,7 @@ enum {
 typedef struct Type Type;
 #include "func.h"
 struct Type {
+    const char* name;
     int core;
     size_t ptr_count;
     // TODO: Move the extern thing to func.h
