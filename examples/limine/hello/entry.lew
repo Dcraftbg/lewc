@@ -1,20 +1,16 @@
 extern outb :: (port: u16, value: u8);
 extern inb :: (port: u16) -> u8;
-// TODO: 
-// - [x] - & op
-// - [x] - = op
-// - [x] - const
 
-COM_PORT   : u16 : 0x3f8u16;
-COM_5      : u16 : COM_PORT + 5u16;
-COM_STATUS : u16 : COM_5;
+COM_PORT   :: 0x3f8;
+COM_5      :: COM_PORT + 5;
+COM_STATUS :: COM_5;
 
 serial_write_char :: (c: u8) {
-    while (inb(COM_STATUS) & 0x20u8) == 0u8 {}
+    while (inb(COM_STATUS) & 0x20) == 0 {}
     outb(COM_PORT, c);
 }
 serial_write_cstr :: (c_str: *u8) {
-    while *c_str != 0u8 {
+    while *c_str != 0 {
         serial_write_char(*c_str);
         c_str = c_str + 1;
     }
