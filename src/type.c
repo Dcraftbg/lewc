@@ -1,4 +1,5 @@
 #define TYPE_TABLE_DEFINE
+#define MEMBERS_DEFINE
 #include "type.h"
 Type type_bool   = { .name="bool", .core=CORE_BOOL, .ptr_count=0, .unsign=true  }; 
 Type type_u8     = { .name="u8"  , .core=CORE_I8  , .ptr_count=0, .unsign=true  };
@@ -11,6 +12,35 @@ Type* core_types[] = {
     &type_u16,
     &type_i32,
 };
+size_t type_alignment(Type* type) {
+    switch(type->core) {
+    case CORE_I8:
+    case CORE_BOOL:
+        return 1;
+    case CORE_I16:
+        return 2;
+    case CORE_I32:
+        return 4;
+    case CORE_FUNC:
+    case CORE_PTR:
+        return 8;
+    case CORE_STRUCT:
+        return type->struc.alignment;
+    default:
+        unreachable("type->core=%d", type->core);
+    }
+}
+void struct_add_field(Struct* me, Atom* name, Type* type) {
+    size_t align = type_alignment(type);
+    if(align > me->alignment) me->alignment = align;
+    me->offset += me->offset % align;
+    Member member = {
+        MEMBER_FIELD,
+        type,
+        me->offset
+    };
+    members_insert(&me->members, name, member);
+}
 Type* type_new(Arena* arena) {
     Type* type = arena_alloc(arena, sizeof(*type));
     assert(type && "Ran out of memory");

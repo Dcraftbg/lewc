@@ -12,14 +12,39 @@ enum {
     CORE_I16,
     CORE_I32,
     CORE_FUNC,
+    CORE_STRUCT,
 };
 enum {
     TYPE_ATTRIB_EXTERN=BIT(1),
 };
 typedef struct Type Type;
 #include "func.h"
-
+#ifdef MEMBERS_DEFINE
+#    define HASHMAP_DEFINE
+#endif
+typedef struct {
+    enum {
+        MEMBER_FIELD,
+        MEMBER_COUNT
+    } kind;
+    Type* type;
+    size_t offset;
+} Member;
+#include "hashmap.h"
+#define MEMBERS_ALLOC(n) malloc(n)
+#define MEMBERS_DEALLOC(ptr, size) free(ptr)
+MAKE_HASHMAP_EX(Members, members, Member, Atom*, atom_hash, atom_eq, MEMBERS_ALLOC, MEMBERS_DEALLOC);
+#ifdef MEMBERS_DEFINE
+#    undef  HASHMAP_DEFINE
+#endif
+// TODO: packed flag for packed structures
+typedef struct {
+    Members members;
+    size_t offset, alignment;
+} Struct;
+void struct_add_field(Struct* struc, Atom* name, Type* type);
 // TODO: const char* name into Atom*
+// FIXME: Memory leak with Struct. Its fine but maybe clean it up if it becomes a problem
 struct Type {
     const char* name;
     int core;
@@ -30,6 +55,7 @@ struct Type {
        bool unsign; // Is it unsigned?
        FuncSignature signature;
        Type* inner_type;
+       Struct struc;
     };
 };
 static bool type_eq(Type* a, Type* b) {
