@@ -1,0 +1,4 @@
+My_int :: typedef i32;
+main :: () -> My_int {
+    return 0 + 16;
+}
