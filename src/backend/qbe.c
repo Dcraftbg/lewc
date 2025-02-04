@@ -297,7 +297,7 @@ size_t build_qbe_ast(Qbe* qbe, AST* ast) {
             nprintf("    %%.s%zu =", n=qbe->inst++);dump_type_to_qbe(qbe, ast->type);nprintf(" load");dump_type_to_qbe_full(qbe, ast->type);nprintfln(" %%%s", ast->as.symbol.name->data);
             break;
         case SYMBOL_CONSTANT: {
-            AST* value = s->as.init.ast;
+            AST* value = s->ast;
             switch(value->kind) {
             case AST_INT:
                 nprintf("    %%.s%zu =", n=qbe->inst++);dump_type_to_qbe(qbe, ast->type);nprintfln(" copy %lu", value->as.integer.value);
@@ -338,7 +338,7 @@ bool build_qbe_statement(Qbe* qbe, Statement* statement) {
         Symbol* s = statement->as.local_def.symbol;
         Type* type = s->type;
         Atom* name = statement->as.local_def.name;
-        AST * init = s->as.init.ast;
+        AST * init = s->ast;
         // TODO: Unduplicate this code with the building arg thingy
         size_t sz = 0, count=1;
         switch(type->core){
@@ -401,9 +401,9 @@ bool build_qbe_qbe(Qbe* qbe) {
         ) {
             qbe->inst = 1;
             Symbol* s = spair->value;
-            if(s->as.init.ast->kind != AST_FUNC) continue;
+            if(s->ast->kind != AST_FUNC) continue;
             Atom* name     = spair->key;
-            Function* func = s->as.init.ast->as.func;
+            Function* func = s->ast->as.func;
             assert(func->type->core == CORE_FUNC);
             // I think QBE automatically assumes external function
             if(func->type->attribs & TYPE_ATTRIB_EXTERN) {

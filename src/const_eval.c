@@ -23,11 +23,11 @@ AST* const_eval_ast(ProgramState* state, AST* ast) {
             eprintfln("ERROR: Cannot have non-constant symbols in constant expressions");
             return NULL;
         }
-        if(sym->as.init.evaluated) return sym->as.init.ast;
-        AST* ast = const_eval_ast(state, sym->as.init.ast);
+        if(sym->evaluated) return sym->ast;
+        AST* ast = const_eval_ast(state, sym->ast);
         if(!ast) return NULL;
-        sym->as.init.evaluated = true;
-        return sym->as.init.ast = ast;
+        sym->evaluated = true;
+        return sym->ast = ast;
     } break;
     case AST_FUNC:
     case AST_INT:
@@ -63,11 +63,11 @@ bool const_eval(ProgramState* state) {
         ) {
             Symbol* s = spair->value;
             if(s->kind != SYMBOL_CONSTANT) continue;
-            if(s->as.init.evaluated) continue;
-            AST* ast = const_eval_ast(state, s->as.init.ast);
+            if(s->evaluated) continue;
+            AST* ast = const_eval_ast(state, s->ast);
             if(!ast) return false;
-            s->as.init.evaluated = true;
-            s->as.init.ast = ast;
+            s->evaluated = true;
+            s->ast = ast;
         }
     }
     return true;

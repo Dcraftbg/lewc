@@ -142,11 +142,11 @@ bool typecheck_statement(ProgramState* state, Type* return_type, Statement* stat
         break;
     case STATEMENT_LOCAL_DEF: {
         Symbol* s = statement->as.local_def.symbol;
-        if(s->as.init.ast) {
-            if(!typecheck_ast(state, s->as.init.ast)) return false;
-            if(!type_eq(s->type, s->as.init.ast->type)) {
+        if(s->ast) {
+            if(!typecheck_ast(state, s->ast)) return false;
+            if(!type_eq(s->type, s->ast->type)) {
                 eprintfln("Type mismatch in variable definition %s.", statement->as.local_def.name->data);
-                eprintf("Variable defined as "); type_dump(stderr, s->type); eprintf(" but got "); type_dump(stderr, s->as.init.ast->type); eprintf(NEWLINE);
+                eprintf("Variable defined as "); type_dump(stderr, s->type); eprintf(" but got "); type_dump(stderr, s->ast->type); eprintf(NEWLINE);
                 return false;
             }
         }
@@ -196,11 +196,11 @@ bool typecheck(ProgramState* state) {
             switch(s->kind) {
             case SYMBOL_CONSTANT:
             case SYMBOL_VARIABLE:
-                if(!typecheck_ast(state, s->as.init.ast)) return false;
-                if(!type_eq(s->type, s->as.init.ast->type)) {
+                if(!typecheck_ast(state, s->ast)) return false;
+                if(!type_eq(s->type, s->ast->type)) {
                     eprintfln("ERROR: Mismatch in definition of `%s`", spair->key->data);
                     eprintf(" Defined type: "); type_dump(stderr, s->type); eprintf(NEWLINE);
-                    eprintf(" Value: "); type_dump(stderr, s->as.init.ast->type); eprintf(NEWLINE);
+                    eprintf(" Value: "); type_dump(stderr, s->ast->type); eprintf(NEWLINE);
                     return false;
                 }
                 break;

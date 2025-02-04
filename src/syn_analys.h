@@ -7,9 +7,6 @@
 #include "constants.h"
 
 typedef struct SymTabNode SymTabNode;
-// TODO: Keep track of the type of symbol.
-// i.e. Function, variable etc.
-// And checks for trying to assign to a function and so on
 typedef struct Symbol Symbol;
 typedef struct {
     AST **items;
@@ -22,13 +19,8 @@ struct Symbol {
         SYMBOL_VARIABLE,
         SYMBOL_COUNT
     } kind;
-    // TODO: Make function defintions an AST
-    union {
-        struct {
-            AST* ast;
-            bool evaluated;
-        } init;
-    } as;
+    AST* ast;
+    bool evaluated;
     ASTs infer_asts;
 };
 

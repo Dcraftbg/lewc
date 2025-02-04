@@ -20,7 +20,7 @@ void infer_symbol(ProgramState* state, Symbol* s, Type* type) {
         s->infer_asts.items[i]->type = type;
         infer_up_ast(state, s->infer_asts.items[i]->parent, type);
     }
-    infer_up_ast(state, s->as.init.ast, type);
+    infer_up_ast(state, s->ast, type);
     free(s->infer_asts.items);
     memset(&s->infer_asts, 0, sizeof(s->infer_asts));
 }
@@ -141,12 +141,12 @@ void typeinfer_statement(ProgramState* state, Type* return_type, Statement* stat
         break;
     case STATEMENT_LOCAL_DEF: {
         Symbol* s = statement->as.local_def.symbol;
-        if(s->as.init.ast) {
+        if(s->ast) {
             if(s->type) {
-                infer_down_ast(state, s->as.init.ast, s->type);
+                infer_down_ast(state, s->ast, s->type);
             } else {
-                try_infer_ast(state, s->as.init.ast);
-                if(s->as.init.ast->type) infer_symbol(state, s, s->as.init.ast->type);
+                try_infer_ast(state, s->ast);
+                if(s->ast->type) infer_symbol(state, s, s->ast->type);
             }
         }
     } break;
@@ -188,16 +188,16 @@ bool typeinfer(ProgramState* state) {
             switch(s->kind) {
             case SYMBOL_CONSTANT:
             case SYMBOL_VARIABLE:
-                if(s->as.init.ast->kind == AST_FUNC) {
-                    typeinfer_func(state, s->as.init.ast->as.func);
+                if(s->ast->kind == AST_FUNC) {
+                    typeinfer_func(state, s->ast->as.func);
                 }
                 // fallthrough
-                if(s->as.init.ast) {
+                if(s->ast) {
                     if(s->type) {
-                        infer_down_ast(state, s->as.init.ast, s->type);
+                        infer_down_ast(state, s->ast, s->type);
                     } else {
-                        try_infer_ast(state, s->as.init.ast);
-                        if(s->as.init.ast->type) infer_symbol(state, s, s->as.init.ast->type);
+                        try_infer_ast(state, s->ast);
+                        if(s->ast->type) infer_symbol(state, s, s->ast->type);
                     }
                 }
                 break;

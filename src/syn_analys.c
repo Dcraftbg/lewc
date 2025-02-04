@@ -28,14 +28,14 @@ Symbol* symbol_new_var(Arena* arena, Type* type, AST* init) {
     Symbol* me = symbol_new(arena, type);
     if(!me) return NULL;
     me->kind = SYMBOL_VARIABLE;
-    me->as.init.ast = init;
+    me->ast = init;
     return me;
 }
 Symbol* symbol_new_constant(Arena* arena, Type* type, AST* init) {
     Symbol* me = symbol_new(arena, type);
     if(!me) return NULL;
     me->kind = SYMBOL_CONSTANT;
-    me->as.init.ast = init;
+    me->ast = init;
     return me;
 }
 SymTabNode* symtab_node_new(SymTabNode* parent, Arena* arena) {
@@ -128,7 +128,7 @@ bool syn_analyse_statement(ProgramState* state, SymTabNode* node, Statement* sta
         break;
     case STATEMENT_LOCAL_DEF:
         sym_tab_insert(&node->symtab, statement->as.local_def.name, statement->as.local_def.symbol);
-        if(statement->as.local_def.symbol->as.init.ast && !syn_analyse_ast(state, node, statement->as.local_def.symbol->as.init.ast)) return false;
+        if(statement->as.local_def.symbol->ast && !syn_analyse_ast(state, node, statement->as.local_def.symbol->ast)) return false;
         break;
     default:
         unreachable("statement->kind=%d", statement->kind);
@@ -175,7 +175,7 @@ bool syn_analyse(ProgramState* state) {
             switch(s->kind) {
             case SYMBOL_VARIABLE:
             case SYMBOL_CONSTANT:
-                if(!syn_analyse_ast(state, node, s->as.init.ast)) return false;
+                if(!syn_analyse_ast(state, node, s->ast)) return false;
                 break;
             case SYMBOL_COUNT:
             default:
