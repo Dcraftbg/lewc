@@ -27,8 +27,7 @@ void infer_symbol(ProgramState* state, Symbol* s, Type* type) {
 
 bool try_infer_ast(ProgramState* state, AST* ast);
 void infer_down_ast(ProgramState* state, AST* ast, Type* type) {
-    try_infer_ast(state, ast);
-    if(ast->type) return;
+    if(ast->kind != AST_SYMBOL && try_infer_ast(state, ast)) return;
     ast->type = type;
     switch(ast->kind) {
     case AST_SYMBOL: {
@@ -74,16 +73,27 @@ bool try_infer_ast(ProgramState* state, AST* ast) {
         da_push(&s->infer_asts, ast);
     } break;
     case AST_CALL: {
+        eprintfln("here %s", ast->as.call.what->as.symbol.name->data);
         if(try_infer_ast(state, ast->as.call.what)) {
+            eprintfln("    Inferred obviously %s", ast->as.call.what->as.symbol.name->data);
             Type* signature_type = ast->as.call.what->type;
             // TODO: I don't know how to report this
-            if(!signature_type || signature_type->core != CORE_FUNC) return true;
+            if(!signature_type || signature_type->core != CORE_FUNC) {
+                eprintfln("    Not a function???");
+                return true;
+            }
             FuncSignature* signature = &signature_type->signature;
-            if(signature->input.len != ast->as.call.args.len) return true;
+            if(signature->input.len != ast->as.call.args.len) {
+                eprintfln("    Input output mismatch???");
+                return true;
+            }
+            eprintfln("    Okay so apparently it was correct?");
             for(size_t i = 0; i < signature->input.len; ++i) {
+                eprintfln("         Inferring arg %zu kind = %d", i, ast->as.call.args.items[i]->kind);
                 infer_down_ast(state, ast->as.call.args.items[i], signature->input.items[i].type);
             }
             ast->type = signature->output;
+            eprintf("    %s type being: ", ast->as.call.what->as.symbol.name->data); type_dump(stderr, ast->type); eprintf(NEWLINE);
             return true;
         }
     } break;
@@ -107,6 +117,10 @@ bool try_infer_ast(ProgramState* state, AST* ast) {
             return true;
         default:
             if(try_infer_ast(state, ast->as.binop.lhs)) {
+                if(ast->as.binop.op == '&') {
+                    eprintfln("lhs->kind = %d. i.e. call %s", ast->as.binop.lhs->kind, ast->as.binop.lhs->as.call.what->as.symbol.name->data);
+                    eprintf("and lhs (%s) = ", ast->as.binop.lhs->as.call.what->as.symbol.name->data); type_dump(stderr, ast->as.binop.lhs->type); eprintf(NEWLINE);
+                }
                 if(!(ast->type = ast->as.binop.lhs->type)) return true;
                 infer_down_ast(state, ast->as.binop.rhs, ast->type);
                 return true;
