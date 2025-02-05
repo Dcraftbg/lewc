@@ -32,6 +32,18 @@ typedef struct {
        nprintf(__VA_ARGS__);\
        fputs(NEWLINE, qbe->f);\
    } while(0)
+static void alloca_params(size_t type_sz, size_t *sz, size_t *count) {
+    if(type_sz <= 4) {
+        *sz = 4;
+        *count = (type_sz + 3) / 4;
+    } else if (type_sz <= 8) {
+        *sz = 8;
+        *count = (type_sz + 7) / 8;
+    } else {
+        *sz = 16;
+        *count = (type_sz + 15) / 16;
+    }
+}
 bool dump_type_to_qbe_full(Qbe* qbe, Type* t) {
     assert(t);
     assert(t->core != CORE_FUNC);
@@ -302,7 +314,14 @@ size_t build_qbe_ast(Qbe* qbe, AST* ast) {
         Symbol* s = ast->as.symbol.sym;
         switch(s->kind) {
         case SYMBOL_VARIABLE:
-            nprintf("    %%.s%zu =", n=qbe->inst++);dump_type_to_qbe(qbe, ast->type);nprintf(" load");dump_type_to_qbe_full(qbe, ast->type);nprintfln(" %%%s", ast->as.symbol.name->data);
+            if(ast->type->core == CORE_STRUCT) {
+                size_t sz, count;
+                alloca_params(type_size(ast->type), &sz, &count);
+                nprintfln("    %%.s%zu =l alloc%zu %zu", n=qbe->inst++, sz, count);
+                nprintfln("    blit %%.s%zu, %%%s, %zu", n, ast->as.symbol.name->data, type_size(ast->type));
+            } else {
+                nprintf("    %%.s%zu =", n=qbe->inst++);dump_type_to_qbe(qbe, ast->type);nprintf(" load");dump_type_to_qbe_full(qbe, ast->type);nprintfln(" %%%s", ast->as.symbol.name->data);
+            }
             break;
         case SYMBOL_CONSTANT: {
             AST* value = s->ast;
@@ -324,18 +343,6 @@ size_t build_qbe_ast(Qbe* qbe, AST* ast) {
         break;
     }
     return n;
-}
-static void alloca_params(size_t type_sz, size_t *sz, size_t *count) {
-    if(type_sz <= 4) {
-        *sz = 4;
-        *count = (type_sz + 3) / 4;
-    } else if (type_sz <= 8) {
-        *sz = 8;
-        *count = (type_sz + 7) / 8;
-    } else {
-        *sz = 16;
-        *count = (type_sz + 15) / 16;
-    }
 }
 bool build_qbe_scope(Qbe* qbe, Statements* scope);
 bool build_qbe_statement(Qbe* qbe, Statement* statement) {
