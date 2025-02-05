@@ -21,6 +21,7 @@ const char* all_tests[] = {
     "void.lew",
     "local_vars.lew",
     "rule110.lew",
+    "structs.lew",
 };
 #define python_interp(cmd) nob_cmd_append(cmd, "python3")
 #define python_rere(cmd) (python_interp(cmd), nob_cmd_append(&cmd, 
@@ -95,6 +96,7 @@ typedef struct {
     size_t failed_tests;
 } Tests;
 bool test_create(Test* test, Nob_Cmd* cmd, const char* path) {
+    test->path = path;
     test->failed = false;  
     if(!nob_pipe_create(&test->std_pipe)) return false;
     Nob_Cmd_Redirect redirect = {
