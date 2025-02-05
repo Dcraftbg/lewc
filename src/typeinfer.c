@@ -106,9 +106,13 @@ bool try_infer_ast(ProgramState* state, AST* ast) {
             // FIXME: You can't infer type for field if you don't know the type for the structure. Seems pretty reasonable
             // but I guess it could be kinda wrong
             if(!try_infer_ast(state, ast->as.binop.lhs)) return true;
-            if(ast->as.binop.lhs->type->core != CORE_STRUCT) return true;
-            assert(ast->as.binop.rhs->kind == AST_SYMBOL);
-            Struct* s = &ast->as.binop.lhs->type->struc;
+            Struct* s;
+            Type* type = ast->as.binop.lhs->type;
+            if(type->core == CORE_PTR && type->inner_type->core == CORE_STRUCT) {
+                s = &type->inner_type->struc;
+            } else if (type->core == CORE_STRUCT) {
+                s = &type->struc;
+            } else return true; 
             Member* m = members_get(&s->members, ast->as.binop.rhs->as.symbol.name);
             if(!m) return true;
             ast->type = m->type;

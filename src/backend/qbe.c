@@ -114,9 +114,13 @@ size_t build_ptr_to(Qbe* qbe, AST* ast) {
     case AST_BINOP: {
         assert(ast->as.binop.op == '.');
         size_t v0 = build_qbe_ast(qbe, ast->as.binop.lhs);
-        Type* t = ast->as.binop.lhs->type;
-        assert(t->core == CORE_STRUCT);
-        Struct* s = &t->struc;
+        Struct* s;
+        Type* type = ast->as.binop.lhs->type;
+        if(type->core == CORE_PTR && type->inner_type->core == CORE_STRUCT) {
+            s = &type->inner_type->struc;
+        } else if (type->core == CORE_STRUCT) {
+            s = &type->struc;
+        } else unreachable("type->core = %d", type->core);
         Member* m = members_get(&s->members, ast->as.binop.rhs->as.symbol.name);
         assert(m);
         nprintfln("    %%.s%zu =l add %%.s%zu, %zu", n=qbe->inst++, v0, m->offset);
