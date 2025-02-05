@@ -1,0 +1,4 @@
+./bin/lewc examples/structs.lew -o ./int/tests/structs.s
+as ./int/tests/structs.s -o ./int/tests/structs.o
+gcc -static ./int/tests/structs.o examples/structs.c -o ./bin/tests/structs
+./bin/tests/structs
