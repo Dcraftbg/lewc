@@ -301,7 +301,16 @@ size_t build_qbe_ast(Qbe* qbe, AST* ast) {
         size_t v0 = build_qbe_ast(qbe, ast->as.unary.rhs);
         switch(ast->as.unary.op) {
         case '*':
-            nprintf("    %%.s%zu =", n=qbe->inst++); dump_type_to_qbe(qbe, ast->type);nprintf(" load");dump_type_to_qbe_full(qbe, ast->type); nprintfln(" %%.s%zu", v0);
+            if(ast->type->core == CORE_STRUCT) {
+                nprintfln("    # Deref on structure. Does nothing");
+                n = v0;
+                // size_t sz, count;
+                // alloca_params(type_size(ast->type), &sz, &count);
+                // nprintfln("    %%.s%zu =l alloc%zu %zu", n=qbe->inst++, sz, count);
+                // nprintfln("    blit %%.s%zu, %%.s%zu, %zu", n, v0, type_size(ast->type));
+            } else {
+                nprintf("    %%.s%zu =", n=qbe->inst++); dump_type_to_qbe(qbe, ast->type);nprintf(" load");dump_type_to_qbe_full(qbe, ast->type); nprintfln(" %%.s%zu", v0);
+            }
             break;
         default:
             unreachable("unary.op=%c", ast->as.unary.op);
