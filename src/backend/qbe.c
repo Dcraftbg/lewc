@@ -315,10 +315,11 @@ size_t build_qbe_ast(Qbe* qbe, AST* ast) {
         switch(s->kind) {
         case SYMBOL_VARIABLE:
             if(ast->type->core == CORE_STRUCT) {
-                size_t sz, count;
-                alloca_params(type_size(ast->type), &sz, &count);
-                nprintfln("    %%.s%zu =l alloc%zu %zu", n=qbe->inst++, sz, count);
-                nprintfln("    blit %%.s%zu, %%%s, %zu", n, ast->as.symbol.name->data, type_size(ast->type));
+                nprintfln("    %%.s%zu =l copy %%%s", n=qbe->inst++, ast->as.symbol.name->data);
+                // size_t sz, count;
+                // alloca_params(type_size(ast->type), &sz, &count);
+                // nprintfln("    %%.s%zu =l alloc%zu %zu", n=qbe->inst++, sz, count);
+                // nprintfln("    blit %%.s%zu, %%%s, %zu", n, ast->as.symbol.name->data, type_size(ast->type));
             } else {
                 nprintf("    %%.s%zu =", n=qbe->inst++);dump_type_to_qbe(qbe, ast->type);nprintf(" load");dump_type_to_qbe_full(qbe, ast->type);nprintfln(" %%%s", ast->as.symbol.name->data);
             }
