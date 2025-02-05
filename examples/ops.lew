@@ -40,3 +40,9 @@ bool_gt_lew :: (a: i32, b: i32) -> bool {
 bool_ge_lew :: (a: i32, b: i32) -> bool {
     return a >= b;
 }
+bool_and_lew :: (a: bool, b: bool) -> bool {
+    return a && b;
+}
+bool_or_lew :: (a: bool, b: bool) -> bool {
+    return a || b;
+}

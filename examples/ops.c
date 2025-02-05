@@ -14,7 +14,9 @@
     X(bool_lt, < ) \
     X(bool_le, <=) \
     X(bool_gt, > ) \
-    X(bool_ge, >=)
+    X(bool_ge, >=) \
+    X(bool_and, &&) \
+    X(bool_or, ||) 
 
 #define X(name, ...) \
     int name##_lew (int a, int b);
