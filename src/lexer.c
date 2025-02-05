@@ -249,15 +249,27 @@ Token lexer_next(Lexer* lexer) {
     case '}':
     case ',':
     case '+':
-    case '|':
     case '^':
     case ';':    
     case ':':
-    case '&':
     case '*':
     case '%':
     case '.':
         lexer_next_c(lexer);
+        return MAKE_TOKEN(c);
+    case '|':
+        lexer_next_c(lexer);
+        if(lexer_peak_c(lexer) == '|') {
+            lexer_next_c(lexer);
+            return MAKE_TOKEN(TOKEN_BOOL_OR);
+        }
+        return MAKE_TOKEN(c);
+    case '&':
+        lexer_next_c(lexer);
+        if(lexer_peak_c(lexer) == '&') {
+            lexer_next_c(lexer);
+            return MAKE_TOKEN(TOKEN_BOOL_AND);
+        }
         return MAKE_TOKEN(c);
     case '<':
         lexer_next_c(lexer);

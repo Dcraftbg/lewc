@@ -102,6 +102,12 @@ bool try_infer_ast(ProgramState* state, AST* ast) {
                 infer_down_ast(state, ast->as.binop.lhs, ast->as.binop.rhs->type);
             } else return false;
             return true;
+        case TOKEN_BOOL_AND:
+        case TOKEN_BOOL_OR:
+            ast->type = &type_bool;
+            infer_down_ast(state, ast->as.binop.lhs, &type_bool);
+            infer_down_ast(state, ast->as.binop.rhs, &type_bool);
+            return true;
         case '.': {
             // FIXME: You can't infer type for field if you don't know the type for the structure. Seems pretty reasonable
             // but I guess it could be kinda wrong

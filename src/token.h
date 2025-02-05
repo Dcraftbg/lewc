@@ -19,6 +19,8 @@ enum {
     TOKEN_SHL,
     TOKEN_LTEQ,
     TOKEN_GTEQ,
+    TOKEN_BOOL_AND,
+    TOKEN_BOOL_OR,
 
     TOKEN_WHILE,
     TOKEN_LOOP,

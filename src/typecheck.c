@@ -90,6 +90,18 @@ bool typecheck_ast(ProgramState* state, AST* ast) {
                 return false;
             }
             break;
+        case TOKEN_BOOL_AND:
+        case TOKEN_BOOL_OR: {
+            const char* op_str = TOKEN_BOOL_OR ? "||" : "&&";
+            if(!type_eq(ast->as.binop.lhs->type, &type_bool)) {
+                eprintf("You can only use booleans with %s. Left hand side was: ", op_str); type_dump(stderr, ast->as.binop.lhs->type); eprintf(NEWLINE);
+                return false;
+            }
+            if(!type_eq(ast->as.binop.rhs->type, &type_bool)) {
+                eprintf("You can only use booleans with %s. Right hand side was: ", op_str); type_dump(stderr, ast->as.binop.rhs->type); eprintf(NEWLINE);
+                return false;
+            }
+        } break;
         case '.': { 
             assert(ast->as.binop.rhs->kind == AST_SYMBOL);
             Type* type = ast->as.binop.lhs->type;

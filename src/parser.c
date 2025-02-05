@@ -132,7 +132,9 @@ void parse_func_signature(Parser* parser, FuncSignature* sig) {
     X(TOKEN_SHL) \
     X(TOKEN_SHR) \
     X(TOKEN_NEQ) \
-    X(TOKEN_EQEQ)
+    X(TOKEN_EQEQ) \
+    X(TOKEN_BOOL_OR) \
+    X(TOKEN_BOOL_AND)
 
 // https://en.cppreference.com/w/cpp/language/operator_precedence
 int binop_prec(int op) {
@@ -163,6 +165,10 @@ int binop_prec(int op) {
         return 12;
     case '|':
         return 13;
+    case TOKEN_BOOL_AND:
+        return 14;
+    case TOKEN_BOOL_OR:
+        return 15;
     case '=':
         return 16;
     default:

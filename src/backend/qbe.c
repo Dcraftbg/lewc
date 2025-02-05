@@ -51,6 +51,7 @@ bool dump_type_to_qbe_full(Qbe* qbe, Type* t) {
     case CORE_PTR:
         nprintf("l");
         break;
+    case CORE_BOOL:
     case CORE_I8:
         if(t->unsign) nprintf("u");
         else nprintf("s");
@@ -139,6 +140,21 @@ size_t build_qbe_ast(Qbe* qbe, AST* ast) {
         return 0;
     case AST_BINOP:
         switch(ast->as.binop.op) {
+        // TODO: In conditions this kind of stuff must be evalated as jumps
+        // so that order of operation is kept
+        case TOKEN_BOOL_AND: {
+            size_t v0 = build_qbe_ast(qbe, ast->as.binop.lhs);
+            size_t v1 = build_qbe_ast(qbe, ast->as.binop.rhs);
+            if(!v0 || !v1) return 0;
+            nprintfln("    %%.s%zu =w and %%.s%zu, %%.s%zu", n=qbe->inst++, v1, v0);
+        } break;
+        case TOKEN_BOOL_OR: {
+            size_t v0 = build_qbe_ast(qbe, ast->as.binop.lhs);
+            size_t v1 = build_qbe_ast(qbe, ast->as.binop.rhs);
+            if(!v0 || !v1) return 0;
+            nprintfln("    %%.s%zu =w or %%.s%zu, %%.s%zu", n=qbe->inst++, v1, v0);
+        } break;
+
         case '=': {
             size_t v0 = build_ptr_to(qbe, ast->as.binop.lhs);
             size_t v1 = build_qbe_ast(qbe, ast->as.binop.rhs);
@@ -214,7 +230,6 @@ size_t build_qbe_ast(Qbe* qbe, AST* ast) {
                 Type* type = ast->as.binop.lhs->type->inner_type;
                 // TODO: factor this out
                 switch(type->core) {
-                case CORE_BOOL:
                 case CORE_I8:
                     byte_size = 1;
                     break;
@@ -489,6 +504,7 @@ bool build_qbe_qbe(Qbe* qbe) {
             for(size_t i = 0; i < func->type->signature.input.len; ++i) {
                 if(i > 0) nprintf(", ");
                 Arg* arg = &func->type->signature.input.items[i];
+                
                 dump_type_to_qbe(qbe, arg->type);
                 if(arg->name && arg->type->core == CORE_STRUCT) {
                     nprintf(" %%%s", arg->name->data);
@@ -503,7 +519,13 @@ bool build_qbe_qbe(Qbe* qbe) {
                 alloca_params(type_size(arg->type), &sz, &count);
                 if(arg->name) {
                     nprintfln("    %%%s =l alloc%zu %zu", arg->name->data, sz, count);
-                    nprintf("    store");dump_type_to_qbe(qbe, arg->type);nprintfln(" %%.a%zu, %%%s", i, arg->name->data);
+                    if(arg->type->core == CORE_BOOL) {
+                        size_t n;
+                        nprintfln("    %%.s%zu =w cnew %%.a%zu, 0", (n=qbe->inst++), i);
+                        nprintf("    store");dump_type_to_qbe(qbe, arg->type);nprintfln(" %%.s%zu, %%%s", n, arg->name->data);
+                    } else {
+                        nprintf("    store");dump_type_to_qbe(qbe, arg->type);nprintfln(" %%.a%zu, %%%s", i, arg->name->data);
+                    }
                 }
             }
             if(!build_qbe_scope(qbe, func->scope)) return false;
