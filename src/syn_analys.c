@@ -64,8 +64,9 @@ bool syn_analyse_ast(ProgramState* state, SymTabNode* node, AST* ast) {
     case AST_BINOP:
         // ------ For any other binop
         if(!syn_analyse_ast(state, node, ast->as.binop.lhs)) return false;
-        if(!syn_analyse_ast(state, node, ast->as.binop.rhs)) return false;
-        if(ast->as.binop.op == '=') {
+        switch(ast->as.binop.op) {
+        case '=': {
+            if(!syn_analyse_ast(state, node, ast->as.binop.rhs)) return false;
             AST* lhs = ast->as.binop.lhs;
             switch(lhs->kind) {
             case AST_SYMBOL: {
@@ -76,16 +77,34 @@ bool syn_analyse_ast(ProgramState* state, SymTabNode* node, AST* ast) {
             } break;
             case AST_UNARY: {
                 if(lhs->as.unary.op != '*') {
-                    eprintfln("Can only assign to variables or dereferences. found unary: %c", lhs->as.unary.op);
+                    eprintfln("Can only assign to variables, dereferences or fields. found unary: %c", lhs->as.unary.op);
+                    return false;
+                }
+            } break;
+            case AST_BINOP: {
+                if(lhs->as.binop.op != '.') {
+                    eprintfln("Can only assign to variables, dereferences or fields. found binop: %c", lhs->as.binop.op);
                     return false;
                 }
             } break;
             default:
                 // TODO: Better error messages
-                eprintfln("Can only assign to variables or dereferences. found: %d", lhs->kind);
+                eprintfln("Can only assign to variables, dereferences or fields. found: %d", lhs->kind);
                 return false;
             }
+        } break;
+        case '.': {
+            AST* rhs = ast->as.binop.rhs;
+            if(rhs->kind != AST_SYMBOL) {
+                // TODO: Better error messages
+                eprintfln("Field access can only be done through symbols!");
+                return false;
+            }
+        } break;
+        default:
+            if(!syn_analyse_ast(state, node, ast->as.binop.rhs)) return false;
         }
+        
         break;
     case AST_UNARY:
         if(!syn_analyse_ast(state, node, ast->as.unary.rhs)) return false;

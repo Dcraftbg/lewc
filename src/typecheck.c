@@ -90,6 +90,14 @@ bool typecheck_ast(ProgramState* state, AST* ast) {
                 return false;
             }
             break;
+        case '.': { 
+            assert(ast->as.binop.rhs->kind == AST_SYMBOL);
+            Type* type = ast->as.binop.lhs->type;
+            if(type->core != CORE_STRUCT) {
+                eprintf("ERROR: Trying to get member of non structure ("); type_dump(stderr, type); eprintfln(") isn't permitted");
+                return false;
+            }
+        } break;
         default:
             unreachable("ast->as.binop.op=%d", ast->as.binop.op);
         }
@@ -101,7 +109,6 @@ bool typecheck_ast(ProgramState* state, AST* ast) {
         case '*':
             if(!rhs->type || rhs->type->core != CORE_PTR) {
                 eprintf("Trying to dereference an expression of type "); type_dump(stderr, rhs->type); eprintf("\n");
-                abort();
                 return false;
             }
             break;

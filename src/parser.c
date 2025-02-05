@@ -115,6 +115,7 @@ void parse_func_signature(Parser* parser, FuncSignature* sig) {
 
 #define INIT_PRECEDENCE (100)
 #define BINOPS \
+    X('.') \
     X('+') \
     X('-') \
     X('/') \
@@ -136,6 +137,8 @@ void parse_func_signature(Parser* parser, FuncSignature* sig) {
 // https://en.cppreference.com/w/cpp/language/operator_precedence
 int binop_prec(int op) {
     switch(op) {
+    case '.':
+        return 2;
     case '*':
     case '/':
     case '%':

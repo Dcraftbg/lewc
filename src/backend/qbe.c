@@ -105,12 +105,23 @@ size_t build_qbe_ast(Qbe* qbe, AST* ast);
 size_t build_ptr_to(Qbe* qbe, AST* ast) {
     size_t n = 0;
     switch(ast->kind) {
-    case AST_SYMBOL: {
+    case AST_SYMBOL:
         nprintfln("    %%.s%zu =l copy %%%s", n=qbe->inst++, ast->as.symbol.name->data);
-    } return n;
+        return n;
     case AST_UNARY: 
         if(ast->as.unary.op == '*') return build_qbe_ast(qbe, ast->as.unary.rhs);
         else unreachable("unary.op = %d", ast->as.unary.op);
+    case AST_BINOP: {
+        assert(ast->as.binop.op == '.');
+        size_t v0 = build_qbe_ast(qbe, ast->as.binop.lhs);
+        Type* t = ast->as.binop.lhs->type;
+        assert(t->core == CORE_STRUCT);
+        Struct* s = &t->struc;
+        Member* m = members_get(&s->members, ast->as.binop.rhs->as.symbol.name);
+        assert(m);
+        nprintfln("    %%.s%zu =l add %%.s%zu, %zu", n=qbe->inst++, v0, m->offset);
+        return n;
+    }
     default:
         unreachable("ast->kind = %d", ast->kind);
     }
@@ -256,6 +267,21 @@ size_t build_qbe_ast(Qbe* qbe, AST* ast) {
             size_t v1 = build_qbe_ast(qbe, ast->as.binop.rhs);
             if(!v0 || !v1) return 0;
             nprintf("    %%.s%zu =", n=qbe->inst++);dump_type_to_qbe(qbe, ast->as.binop.lhs->type);nprintf(" ceq");dump_type_to_qbe(qbe, ast->as.binop.lhs->type);nprintfln(" %%.s%zu, %%.s%zu", v0, v1);
+        } break;
+        case '.': {
+            size_t v0 = build_qbe_ast(qbe, ast->as.binop.lhs);
+            Type* t = ast->as.binop.lhs->type;
+            assert(t->core == CORE_STRUCT);
+            Struct* s = &t->struc;
+            Member* m = members_get(&s->members, ast->as.binop.rhs->as.symbol.name);
+            assert(m);
+            if(m->kind == MEMBER_FIELD) {
+                nprintfln("    %%.s%zu =l add %%.s%zu, %zu", n=qbe->inst++, v0, m->offset);
+                if(m->type->core != CORE_STRUCT) {
+                    size_t ptr = n;
+                    nprintf("    %%.s%zu =", n=qbe->inst++); dump_type_to_qbe(qbe, m->type); nprintf(" load"); dump_type_to_qbe_full(qbe, m->type); nprintfln(" %%.s%zu", ptr);
+                }
+            }
         } break;
         default:
             unreachable("ast->as.binop.op=%d", ast->as.binop.op);

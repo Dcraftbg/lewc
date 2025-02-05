@@ -256,6 +256,7 @@ Token lexer_next(Lexer* lexer) {
     case '&':
     case '*':
     case '%':
+    case '.':
         lexer_next_c(lexer);
         return MAKE_TOKEN(c);
     case '<':
