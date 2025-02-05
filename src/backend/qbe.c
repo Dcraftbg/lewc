@@ -456,7 +456,7 @@ bool build_qbe_qbe(Qbe* qbe) {
                 alloca_params(type_size(arg->type), &sz, &count);
                 if(arg->name) {
                     nprintfln("    %%%s =l alloc%zu %zu", arg->name->data, sz, count);
-                    // nprintf("    store");dump_type_to_qbe(qbe, arg->type);nprintfln(" %%.a%zu, %%%s", i, arg->name->data);
+                    nprintf("    store");dump_type_to_qbe(qbe, arg->type);nprintfln(" %%.a%zu, %%%s", i, arg->name->data);
                 }
             }
             if(!build_qbe_scope(qbe, func->scope)) return false;
