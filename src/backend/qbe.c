@@ -20,6 +20,7 @@ typedef struct {
     ProgramState* state;
     FILE* f;
     QbeGlobals globals;
+    Arena* arena;
     size_t inst;
 } Qbe;
 #define nprintf(...) do { \
@@ -399,6 +400,28 @@ size_t build_qbe_ast(Qbe* qbe, AST* ast) {
     }
     return n;
 }
+bool build_qbe_cond(Qbe* qbe, AST* ast, const char* yes, const char* no) {
+    if(ast->kind == AST_BINOP) {
+        switch(ast->as.binop.op) {
+        case TOKEN_BOOL_AND: {
+            const char* and_rhs = aprintf(qbe->arena, "@and_rhs_%zu", qbe->inst++);
+            build_qbe_cond(qbe, ast->as.binop.lhs, and_rhs, no);
+            nprintfln("%s", and_rhs);
+            build_qbe_cond(qbe, ast->as.binop.rhs, yes, no);
+            return true;
+        }
+        case TOKEN_BOOL_OR:
+            const char* or_rhs = aprintf(qbe->arena, "@or_rhs_%zu", qbe->inst++);
+            build_qbe_cond(qbe, ast->as.binop.lhs, yes, or_rhs);
+            nprintfln("%s", or_rhs);
+            build_qbe_cond(qbe, ast->as.binop.rhs, yes, no);
+            return true;
+        }
+    }
+    size_t cond = build_qbe_ast(qbe, ast);
+    nprintfln("    jnz %%.s%zu, %s, %s", cond, yes, no);
+    return true;
+}
 bool build_qbe_scope(Qbe* qbe, Statements* scope);
 bool build_qbe_statement(Qbe* qbe, Statement* statement) {
     size_t n = 0;
@@ -439,14 +462,16 @@ bool build_qbe_statement(Qbe* qbe, Statement* statement) {
         nprintfln("@loop_end_%zu", n);
     } break;
     case STATEMENT_WHILE: {
-        n = qbe->inst;
-        nprintfln("@while_cond_%zu", n);
-        size_t cond = build_qbe_ast(qbe, statement->as.whil.cond);
-        nprintfln("    jnz %%.s%zu, @while_body_%zu, @while_end_%zu", cond, n, n);
-        nprintfln("@while_body_%zu", n);
+        n = qbe->inst++;
+        const char* cond = aprintf(qbe->arena, "@while_cond_%zu", n);
+        const char* body = aprintf(qbe->arena, "@while_body_%zu", n);
+        const char* end  = aprintf(qbe->arena, "@while_end_%zu", n);
+        nprintfln("%s", cond);
+        build_qbe_cond(qbe, statement->as.whil.cond, body, end);
+        nprintfln("%s", body);
         if(!build_qbe_statement(qbe, statement->as.whil.body)) return false;
-        nprintfln("    jmp @while_cond_%zu", n);
-        nprintfln("@while_end_%zu", n);
+        nprintfln("    jmp %s", cond);
+        nprintfln("%s", end);
     } break;
     default:
         unreachable("statement->kind=%d", statement->kind);
@@ -554,7 +579,8 @@ bool build_qbe(Build* build, ProgramState* state) {
     Qbe qbe = {
         .build = build,
         .state = state,
-        .f = NULL
+        .f = NULL,
+        .arena = state->arena,
     };
     char ssa_path[1024];
     size_t opath_len = strlen(build->options->opath);
