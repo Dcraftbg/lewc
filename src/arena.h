@@ -20,10 +20,6 @@ ArenaBlock* new_arena_block(size_t cap);
 void* arena_alloc(Arena* arena, size_t size);
 #include <stdarg.h>
 const char* vaprintf(Arena* arena, const char* fmt, va_list args);
-static const char* aprintf(Arena* arena, const char* fmt, ...) {
-    va_list args;
-    va_start(args, fmt);
-    const char* res = vaprintf(arena, fmt, args);
-    va_end(args);
-    return res;
-}
+
+const char* aprintf(Arena* arena, const char* fmt, ...) __attribute__((format(printf,2,3)));
+

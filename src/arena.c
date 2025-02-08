@@ -32,9 +32,14 @@ void* arena_alloc(Arena* arena, size_t size) {
 }
 
 #include <stdio.h>
-const char* vaprintf(Arena* arena, const char* fmt, va_list args) {
-    size_t count = vsnprintf(NULL, 0, fmt, args) + 1;
-    char* buf = arena_alloc(arena, count);
-    vsnprintf(buf, count, fmt, args);
+const char* aprintf(Arena* arena, const char* fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+        size_t count = vsnprintf(NULL, 0, fmt, args) + 1;
+        char* buf = arena_alloc(arena, count);
+    va_end(args);
+    va_start(args, fmt);
+        vsnprintf(buf, count, fmt, args);
+    va_end(args);
     return buf;
 }
