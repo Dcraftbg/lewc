@@ -13,8 +13,6 @@ bool typecheck_ast(ProgramState* state, AST* ast) {
         if(!typecheck_ast(state, ast->as.call.what)) return false;
         Type *t = ast->as.call.what->type;
         if(!t || t->core != CORE_FUNC) {
-            eprintfln("ast->as.call.what.kind = %d", ast->as.call.what->kind);
-            eprintfln("ast->as.call.what = %s", ast->as.call.what->as.symbol.name->data);
             eprintf("ERROR: Tried to call something that is not a function ("); type_dump(stderr, t); eprintfln(")");
             return false;
         }
