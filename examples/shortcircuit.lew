@@ -1,0 +1,17 @@
+extern printf :: (fmt: *u8);
+extern exit :: (code: i32);
+a :: () -> bool {
+    printf(c"Called a!\n");
+    return 1i32 == 1i32;
+}
+b :: () -> bool {
+    printf(c"Called b!\n");
+    return 1i32 == 1i32;
+}
+main :: () -> i32 {
+    while (a()) || (b()) {
+        exit(0);
+    }
+    return 0;
+}
+

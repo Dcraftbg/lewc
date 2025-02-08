@@ -1,0 +1,4 @@
+./bin/lewc examples/shortcircuit.lew -o ./int/tests/shortcircuit.s
+as ./int/tests/shortcircuit.s -o ./int/tests/shortcircuit.o
+gcc -static ./int/tests/shortcircuit.o -o ./bin/tests/shortcircuit
+./bin/tests/shortcircuit
