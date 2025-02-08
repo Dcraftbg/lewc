@@ -65,27 +65,24 @@ const char* type_to_qbe_full(Arena* arena, Type* t) {
         unreachable("t->core=%d", t->core);
     }
 }
-bool dump_type_to_qbe(Qbe* qbe, Type* t) {
+
+const char* type_to_qbe(Arena* arena, Type* t) {
     assert(t);
     assert(t->core != CORE_FUNC);
     switch(t->core) {
     case CORE_PTR:
-        nprintf("l");
-        break;
+        return "l";
     case CORE_BOOL:
     case CORE_I8:
     case CORE_I16:
     case CORE_I32:
-        nprintf("w");
-        break;
+        return "w";
     case CORE_STRUCT:
         if(!t->name) todo("Sorry. Anonymous structures aren't supported by QBE yet");
-        nprintf(":%s", t->name);
-        break;
+        return aprintf(arena, ":%s", t->name);
     default:
         unreachable("t->core=%d", t->core);
     }
-    return true;
 }
 
 size_t build_qbe_ast(Qbe* qbe, AST* ast);
@@ -148,63 +145,63 @@ size_t build_qbe_ast(Qbe* qbe, AST* ast) {
             size_t v0 = build_ptr_to(qbe, ast->as.binop.lhs);
             size_t v1 = build_qbe_ast(qbe, ast->as.binop.rhs);
             if(!v0 || !v1) return 0;
-            nprintf("    store"); dump_type_to_qbe(qbe, ast->type); nprintfln(" %%.s%zu, %%.s%zu", v1, v0);
+            nprintfln("    store%s %%.s%zu, %%.s%zu", type_to_qbe(qbe->arena, ast->type), v1, v0); 
             n = v1;
         } break;
         case TOKEN_SHL: {
             size_t v0 = build_qbe_ast(qbe, ast->as.binop.lhs);
             size_t v1 = build_qbe_ast(qbe, ast->as.binop.rhs);
             if(!v0 || !v1) return 0;
-            nprintf("    %%.s%zu =", n=qbe->inst++);dump_type_to_qbe(qbe, ast->as.binop.lhs->type);nprintfln(" shl %%.s%zu, %%.s%zu", v0, v1);
+            nprintfln("    %%.s%zu =%s shl %%.s%zu, %%.s%zu", n=qbe->inst++, type_to_qbe(qbe->arena, ast->as.binop.lhs->type), v0, v1);
         } break;
         case TOKEN_SHR: {
             size_t v0 = build_qbe_ast(qbe, ast->as.binop.lhs);
             size_t v1 = build_qbe_ast(qbe, ast->as.binop.rhs);
             if(!v0 || !v1) return 0;
-            nprintf("    %%.s%zu =", n=qbe->inst++);dump_type_to_qbe(qbe, ast->as.binop.lhs->type);nprintfln(" shr %%.s%zu, %%.s%zu", v0, v1);
+            nprintfln("    %%.s%zu =%s shr %%.s%zu, %%.s%zu", n=qbe->inst++, type_to_qbe(qbe->arena, ast->as.binop.lhs->type), v0, v1);
         } break;
         case '%': {
             size_t v0 = build_qbe_ast(qbe, ast->as.binop.lhs);
             size_t v1 = build_qbe_ast(qbe, ast->as.binop.rhs);
             if(!v0 || !v1) return 0;
-            nprintf("    %%.s%zu =", n=qbe->inst++);dump_type_to_qbe(qbe, ast->as.binop.lhs->type);nprintfln(" rem %%.s%zu, %%.s%zu", v0, v1);
+            nprintfln("    %%.s%zu =%s rem %%.s%zu, %%.s%zu", n=qbe->inst++, type_to_qbe(qbe->arena, ast->as.binop.lhs->type), v0, v1);
         } break;
         case '|': {
             size_t v0 = build_qbe_ast(qbe, ast->as.binop.lhs);
             size_t v1 = build_qbe_ast(qbe, ast->as.binop.rhs);
             if(!v0 || !v1) return 0;
-            nprintf("    %%.s%zu =", n=qbe->inst++);dump_type_to_qbe(qbe, ast->as.binop.lhs->type);nprintfln(" or %%.s%zu, %%.s%zu", v0, v1);
+            nprintfln("    %%.s%zu =%s or %%.s%zu, %%.s%zu", n=qbe->inst++, type_to_qbe(qbe->arena, ast->as.binop.lhs->type), v0, v1);
         } break;
         case '^': {
             size_t v0 = build_qbe_ast(qbe, ast->as.binop.lhs);
             size_t v1 = build_qbe_ast(qbe, ast->as.binop.rhs);
             if(!v0 || !v1) return 0;
-            nprintf("    %%.s%zu =", n=qbe->inst++);dump_type_to_qbe(qbe, ast->as.binop.lhs->type);nprintfln(" xor %%.s%zu, %%.s%zu", v0, v1);
+            nprintfln("    %%.s%zu =%s xor %%.s%zu, %%.s%zu", n=qbe->inst++, type_to_qbe(qbe->arena, ast->as.binop.lhs->type), v0, v1);
         } break;
         case '*': {
             size_t v0 = build_qbe_ast(qbe, ast->as.binop.lhs);
             size_t v1 = build_qbe_ast(qbe, ast->as.binop.rhs);
             if(!v0 || !v1) return 0;
-            nprintf("    %%.s%zu =", n=qbe->inst++);dump_type_to_qbe(qbe, ast->as.binop.lhs->type);nprintfln(" mul %%.s%zu, %%.s%zu", v0, v1);
+            nprintfln("    %%.s%zu =%s mul %%.s%zu, %%.s%zu", n=qbe->inst++, type_to_qbe(qbe->arena, ast->as.binop.lhs->type), v0, v1);
         } break;
         // TODO: udiv for unsigned
         case '/': {
             size_t v0 = build_qbe_ast(qbe, ast->as.binop.lhs);
             size_t v1 = build_qbe_ast(qbe, ast->as.binop.rhs);
             if(!v0 || !v1) return 0;
-            nprintf("    %%.s%zu =", n=qbe->inst++);dump_type_to_qbe(qbe, ast->as.binop.lhs->type);nprintfln(" div %%.s%zu, %%.s%zu", v0, v1);
+            nprintfln("    %%.s%zu =%s div %%.s%zu, %%.s%zu", n=qbe->inst++, type_to_qbe(qbe->arena, ast->as.binop.lhs->type), v0, v1);
         } break;
         case '&': {
             size_t v0 = build_qbe_ast(qbe, ast->as.binop.lhs);
             size_t v1 = build_qbe_ast(qbe, ast->as.binop.rhs);
             if(!v0 || !v1) return 0;
-            nprintf("    %%.s%zu =", n=qbe->inst++);dump_type_to_qbe(qbe, ast->as.binop.lhs->type);nprintfln(" and %%.s%zu, %%.s%zu", v0, v1);
+            nprintfln("    %%.s%zu =%s and %%.s%zu, %%.s%zu", n=qbe->inst++, type_to_qbe(qbe->arena, ast->as.binop.lhs->type), v0, v1);
         } break;
         case '-': {
             size_t v0 = build_qbe_ast(qbe, ast->as.binop.lhs);
             size_t v1 = build_qbe_ast(qbe, ast->as.binop.rhs);
             if(!v0 || !v1) return 0;
-            nprintf("    %%.s%zu =", n=qbe->inst++);dump_type_to_qbe(qbe, ast->as.binop.lhs->type);nprintfln(" sub %%.s%zu, %%.s%zu", v0, v1);
+            nprintfln("    %%.s%zu =%s sub %%.s%zu, %%.s%zu", n=qbe->inst++, type_to_qbe(qbe->arena, ast->as.binop.lhs->type), v0, v1);
         } break;
         case '+': {
             size_t v0 = build_qbe_ast(qbe, ast->as.binop.lhs);
@@ -238,43 +235,55 @@ size_t build_qbe_ast(Qbe* qbe, AST* ast) {
                 else offset = index;
                 v1 = offset;
             }
-            nprintf("    %%.s%zu =", n=qbe->inst++);dump_type_to_qbe(qbe, ast->as.binop.lhs->type);nprintfln(" add %%.s%zu, %%.s%zu", v0, v1);
+            nprintfln("    %%.s%zu =%s add %%.s%zu, %%.s%zu", n=qbe->inst++, type_to_qbe(qbe->arena, ast->as.binop.lhs->type), v0, v1);
         } break;
-        case '<': {
+
+        case '<':
+        case TOKEN_LTEQ:
+        case '>':
+        case TOKEN_GTEQ:
+        {
             size_t v0 = build_qbe_ast(qbe, ast->as.binop.lhs);
             size_t v1 = build_qbe_ast(qbe, ast->as.binop.rhs);
             if(!v0 || !v1) return 0;
-            nprintf("    %%.s%zu =", n=qbe->inst++);dump_type_to_qbe(qbe, ast->as.binop.lhs->type);nprintf(" c"); nprintf("%c", ast->as.binop.lhs->type->unsign ? 'u' : 's'); nprintf("lt");dump_type_to_qbe(qbe, ast->as.binop.lhs->type);nprintfln(" %%.s%zu, %%.s%zu", v0, v1);
+            const char* what = NULL;
+            switch(ast->as.binop.op) {
+            case '<':
+                what = "lt";
+                break;
+            case TOKEN_LTEQ:
+                what = "le";
+                break;
+            case '>':
+                what = "gt";
+                break;
+            case TOKEN_GTEQ:
+                what = "ge";
+                break;
+            default:
+                unreachable("binop = %c", ast->as.binop.op);
+            }
+            const char* typestr = type_to_qbe(qbe->arena, ast->as.binop.lhs->type);
+            nprintfln("    %%.s%zu =%s c%c%s%s %%.s%zu, %%.s%zu", n=qbe->inst++, typestr, ast->as.binop.lhs->type->unsign ? 'u' : 's', what, typestr, v0, v1);
         } break;
-        case TOKEN_LTEQ: {
+        case TOKEN_EQEQ:
+        case TOKEN_NEQ:
+        {
             size_t v0 = build_qbe_ast(qbe, ast->as.binop.lhs);
             size_t v1 = build_qbe_ast(qbe, ast->as.binop.rhs);
-            if(!v0 || !v1) return 0;
-            nprintf("    %%.s%zu =", n=qbe->inst++);dump_type_to_qbe(qbe, ast->as.binop.lhs->type);nprintf(" c"); nprintf("%c", ast->as.binop.lhs->type->unsign ? 'u' : 's'); nprintf("le");dump_type_to_qbe(qbe, ast->as.binop.lhs->type);nprintfln(" %%.s%zu, %%.s%zu", v0, v1);
-        } break;
-        case '>': {
-            size_t v0 = build_qbe_ast(qbe, ast->as.binop.lhs);
-            size_t v1 = build_qbe_ast(qbe, ast->as.binop.rhs);
-            if(!v0 || !v1) return 0;
-            nprintf("    %%.s%zu =", n=qbe->inst++);dump_type_to_qbe(qbe, ast->as.binop.lhs->type);nprintf(" c"); nprintf("%c", ast->as.binop.lhs->type->unsign ? 'u' : 's'); nprintf("gt");dump_type_to_qbe(qbe, ast->as.binop.lhs->type);nprintfln(" %%.s%zu, %%.s%zu", v0, v1);
-        } break;
-        case TOKEN_GTEQ: {
-            size_t v0 = build_qbe_ast(qbe, ast->as.binop.lhs);
-            size_t v1 = build_qbe_ast(qbe, ast->as.binop.rhs);
-            if(!v0 || !v1) return 0;
-            nprintf("    %%.s%zu =", n=qbe->inst++);dump_type_to_qbe(qbe, ast->as.binop.lhs->type);nprintf(" c"); nprintf("%c", ast->as.binop.lhs->type->unsign ? 'u' : 's'); nprintf("ge");dump_type_to_qbe(qbe, ast->as.binop.lhs->type);nprintfln(" %%.s%zu, %%.s%zu", v0, v1);
-        } break;
-        case TOKEN_NEQ: {
-            size_t v0 = build_qbe_ast(qbe, ast->as.binop.lhs);
-            size_t v1 = build_qbe_ast(qbe, ast->as.binop.rhs);
-            if(!v0 || !v1) return 0;
-            nprintf("    %%.s%zu =", n=qbe->inst++);dump_type_to_qbe(qbe, ast->as.binop.lhs->type);nprintf(" cne");dump_type_to_qbe(qbe, ast->as.binop.lhs->type);nprintfln(" %%.s%zu, %%.s%zu", v0, v1);
-        } break;
-        case TOKEN_EQEQ: {
-            size_t v0 = build_qbe_ast(qbe, ast->as.binop.lhs);
-            size_t v1 = build_qbe_ast(qbe, ast->as.binop.rhs);
-            if(!v0 || !v1) return 0;
-            nprintf("    %%.s%zu =", n=qbe->inst++);dump_type_to_qbe(qbe, ast->as.binop.lhs->type);nprintf(" ceq");dump_type_to_qbe(qbe, ast->as.binop.lhs->type);nprintfln(" %%.s%zu, %%.s%zu", v0, v1);
+            const char* what = NULL;
+            switch(ast->as.binop.op) {
+            case TOKEN_EQEQ:
+                what = "eq";
+                break;
+            case TOKEN_NEQ:
+                what = "ne";
+                break;
+            default:
+                unreachable("binop = %c", ast->as.binop.op);
+            }
+            const char* typestr = type_to_qbe(qbe->arena, ast->as.binop.lhs->type);
+            nprintfln("    %%.s%zu =%s c%s%s %%.s%zu, %%.s%zu", n=qbe->inst++, typestr, what, typestr, v0, v1);
         } break;
         case '.': {
             size_t v0 = build_qbe_ast(qbe, ast->as.binop.lhs);
@@ -287,7 +296,7 @@ size_t build_qbe_ast(Qbe* qbe, AST* ast) {
                 nprintfln("    %%.s%zu =l add %%.s%zu, %zu", n=qbe->inst++, v0, m->offset);
                 if(m->type->core != CORE_STRUCT) {
                     size_t ptr = n;
-                    nprintf("    %%.s%zu =", n=qbe->inst++); dump_type_to_qbe(qbe, m->type); nprintfln(" load%s %%.s%zu", type_to_qbe_full(qbe->arena, m->type), ptr);
+                    nprintfln("    %%.s%zu =%s load%s %%.s%zu", n=qbe->inst++, type_to_qbe(qbe->arena, m->type), type_to_qbe_full(qbe->arena, m->type), ptr);
                 }
             }
         } break;
@@ -307,15 +316,15 @@ size_t build_qbe_ast(Qbe* qbe, AST* ast) {
             if(!v) return 0;
             da_push(&result_args, v);
         }
+
+        nprintf("    ");
         if(ast->type) {
-            nprintf("    %%.s%zu =", n=qbe->inst++);dump_type_to_qbe(qbe, ast->type); nprintf(" ");
-        } else {
-            nprintf("    ");
+            nprintf("%%.s%zu =%s ", n=qbe->inst++, type_to_qbe(qbe->arena, ast->type));
         }
         nprintf("call $%s(", ast->as.call.what->as.symbol.name->data);
         for(size_t i = 0; i < args->len; ++i) {
             if(i > 0) nprintf(", ");
-            dump_type_to_qbe(qbe, args->items[i]->type);nprintf(" %%.s%zu", result_args.items[i]);
+            nprintf("%s %%.s%zu", type_to_qbe(qbe->arena, args->items[i]->type), result_args.items[i]);
         }
         nprintfln(")");
         free(args->items);
@@ -343,7 +352,7 @@ size_t build_qbe_ast(Qbe* qbe, AST* ast) {
                 // nprintfln("    %%.s%zu =l alloc%zu %zu", n=qbe->inst++, sz, count);
                 // nprintfln("    blit %%.s%zu, %%.s%zu, %zu", n, v0, type_size(ast->type));
             } else {
-                nprintf("    %%.s%zu =", n=qbe->inst++); dump_type_to_qbe(qbe, ast->type);nprintfln(" load%s %%.s%zu", type_to_qbe_full(qbe->arena, ast->type), v0);
+                nprintfln("    %%.s%zu =%s load%s %%.s%zu", n=qbe->inst++, type_to_qbe(qbe->arena, ast->type), type_to_qbe_full(qbe->arena, ast->type), v0);
             }
             break;
         default:
@@ -351,7 +360,7 @@ size_t build_qbe_ast(Qbe* qbe, AST* ast) {
         }
     } break;
     case AST_INT: 
-        nprintf("    %%.s%zu =", n=qbe->inst++);dump_type_to_qbe(qbe, ast->type);nprintfln(" copy %lu", ast->as.integer.value);
+        nprintfln("    %%.s%zu =%s copy %lu", n=qbe->inst++, type_to_qbe(qbe->arena, ast->type), ast->as.integer.value);
         break;
     case AST_SYMBOL: {
         Symbol* s = ast->as.symbol.sym;
@@ -364,14 +373,14 @@ size_t build_qbe_ast(Qbe* qbe, AST* ast) {
                 // nprintfln("    %%.s%zu =l alloc%zu %zu", n=qbe->inst++, sz, count);
                 // nprintfln("    blit %%.s%zu, %%%s, %zu", n, ast->as.symbol.name->data, type_size(ast->type));
             } else {
-                nprintf("    %%.s%zu =", n=qbe->inst++);dump_type_to_qbe(qbe, ast->type);nprintfln(" load%s %%%s", type_to_qbe_full(qbe->arena, ast->type), ast->as.symbol.name->data);
+                nprintfln("    %%.s%zu =%s load%s %%%s", n=qbe->inst++, type_to_qbe(qbe->arena, ast->type), type_to_qbe_full(qbe->arena, ast->type), ast->as.symbol.name->data);
             }
             break;
         case SYMBOL_CONSTANT: {
             AST* value = s->ast;
             switch(value->kind) {
             case AST_INT:
-                nprintf("    %%.s%zu =", n=qbe->inst++);dump_type_to_qbe(qbe, ast->type);nprintfln(" copy %lu", value->as.integer.value);
+                nprintfln("    %%.s%zu =%s copy %lu", n=qbe->inst++, type_to_qbe(qbe->arena, ast->type), value->as.integer.value);
                 break;
             default:
                 unreachable("value->kind = %d", value->kind);
@@ -436,7 +445,7 @@ bool build_qbe_statement(Qbe* qbe, Statement* statement) {
         nprintfln("    %%%s =l alloc%zu %zu", name->data, sz, count);
         if(init) {
             size_t n = build_qbe_ast(qbe, init);
-            nprintf("    store");dump_type_to_qbe(qbe, type);nprintfln(" %%.s%zu, %%%s", n, name->data);
+            nprintfln("    store%s %%.s%zu, %%%s", type_to_qbe(qbe->arena, type), n, name->data);
         }
     } break;
     case STATEMENT_SCOPE:
@@ -511,14 +520,16 @@ bool build_qbe_qbe(Qbe* qbe) {
             nprintf("# %s :: ", name->data);
             type_dump(qbe->f, func->type);
             nprintf("%s", NEWLINE);
-            nprintf("export function ");
-            if(func->type->signature.output) dump_type_to_qbe(qbe, func->type->signature.output);
+            nprintf("export function");
+            if(func->type->signature.output) {
+                nprintf(" %s", type_to_qbe(qbe->arena, func->type->signature.output));
+            }
             nprintf(" $%s (", name->data);
             for(size_t i = 0; i < func->type->signature.input.len; ++i) {
                 if(i > 0) nprintf(", ");
                 Arg* arg = &func->type->signature.input.items[i];
                 
-                dump_type_to_qbe(qbe, arg->type);
+                nprintf("%s", type_to_qbe(qbe->arena, arg->type));
                 if(arg->name && arg->type->core == CORE_STRUCT) {
                     nprintf(" %%%s", arg->name->data);
                 } else nprintf(" %%.a%zu", i);
@@ -535,9 +546,9 @@ bool build_qbe_qbe(Qbe* qbe) {
                     if(arg->type->core == CORE_BOOL) {
                         size_t n;
                         nprintfln("    %%.s%zu =w cnew %%.a%zu, 0", (n=qbe->inst++), i);
-                        nprintf("    store");dump_type_to_qbe(qbe, arg->type);nprintfln(" %%.s%zu, %%%s", n, arg->name->data);
+                        nprintfln("    store%s %%.s%zu, %%%s", type_to_qbe(qbe->arena, arg->type), n, arg->name->data);
                     } else {
-                        nprintf("    store");dump_type_to_qbe(qbe, arg->type);nprintfln(" %%.a%zu, %%%s", i, arg->name->data);
+                        nprintfln("    store%s %%.a%zu, %%%s", type_to_qbe(qbe->arena, arg->type), i, arg->name->data);
                     }
                 }
             }
