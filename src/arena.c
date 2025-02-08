@@ -30,3 +30,11 @@ void* arena_alloc(Arena* arena, size_t size) {
     prev->next->head+=size;
     return at;
 }
+
+#include <stdio.h>
+const char* vaprintf(Arena* arena, const char* fmt, va_list args) {
+    size_t count = vsnprintf(NULL, 0, fmt, args) + 1;
+    char* buf = arena_alloc(arena, count);
+    vsnprintf(buf, count, fmt, args);
+    return buf;
+}
