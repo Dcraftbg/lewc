@@ -45,37 +45,25 @@ static void alloca_params(size_t type_sz, size_t *sz, size_t *count) {
         *count = (type_sz + 15) / 16;
     }
 }
-bool dump_type_to_qbe_full(Qbe* qbe, Type* t) {
+const char* type_to_qbe_full(Arena* arena, Type* t) {
     assert(t);
     assert(t->core != CORE_FUNC);
     switch(t->core) {
     case CORE_PTR:
-        nprintf("l");
-        break;
+        return "l";
     case CORE_BOOL:
     case CORE_I8:
-        if(t->unsign) nprintf("u");
-        else nprintf("s");
-        nprintf("b");
-        break;
+        return aprintf(arena, "%cb", t->unsign ? 'u' : 's');
     case CORE_I16:
-        if(t->unsign) nprintf("u");
-        else nprintf("s");
-        nprintf("h");
-        break;
+        return aprintf(arena, "%ch", t->unsign ? 'u' : 's');
     case CORE_I32:
-        if(t->unsign) nprintf("u");
-        else nprintf("s");
-        nprintf("w");
-        break;
+        return aprintf(arena, "%cw", t->unsign ? 'u' : 's');
     case CORE_STRUCT:
         if(!t->name) todo("Sorry. Anonymous structures aren't supported by QBE yet");
-        nprintf(":%s", t->name);
-        break;
+        return aprintf(arena, ":%s", t->name);
     default:
         unreachable("t->core=%d", t->core);
     }
-    return true;
 }
 bool dump_type_to_qbe(Qbe* qbe, Type* t) {
     assert(t);
@@ -225,7 +213,7 @@ size_t build_qbe_ast(Qbe* qbe, AST* ast) {
             // TODO: Is integer instead
             if(ast->as.binop.lhs->type->core == CORE_PTR && type_isbinary(ast->as.binop.rhs->type)) {
                 size_t index = qbe->inst++;
-                nprintf("    %%.s%zu =l", index);nprintf(" ext");dump_type_to_qbe_full(qbe, ast->as.binop.rhs->type);nprintfln(" %%.s%zu", v1);
+                nprintfln("    %%.s%zu =l ext%s %%.s%zu", index, type_to_qbe_full(qbe->arena, ast->as.binop.rhs->type), v1);
                 size_t offset = qbe->inst++;
                 size_t byte_size = 0;
                 Type* type = ast->as.binop.lhs->type->inner_type;
@@ -299,7 +287,7 @@ size_t build_qbe_ast(Qbe* qbe, AST* ast) {
                 nprintfln("    %%.s%zu =l add %%.s%zu, %zu", n=qbe->inst++, v0, m->offset);
                 if(m->type->core != CORE_STRUCT) {
                     size_t ptr = n;
-                    nprintf("    %%.s%zu =", n=qbe->inst++); dump_type_to_qbe(qbe, m->type); nprintf(" load"); dump_type_to_qbe_full(qbe, m->type); nprintfln(" %%.s%zu", ptr);
+                    nprintf("    %%.s%zu =", n=qbe->inst++); dump_type_to_qbe(qbe, m->type); nprintfln(" load%s %%.s%zu", type_to_qbe_full(qbe->arena, m->type), ptr);
                 }
             }
         } break;
@@ -355,7 +343,7 @@ size_t build_qbe_ast(Qbe* qbe, AST* ast) {
                 // nprintfln("    %%.s%zu =l alloc%zu %zu", n=qbe->inst++, sz, count);
                 // nprintfln("    blit %%.s%zu, %%.s%zu, %zu", n, v0, type_size(ast->type));
             } else {
-                nprintf("    %%.s%zu =", n=qbe->inst++); dump_type_to_qbe(qbe, ast->type);nprintf(" load");dump_type_to_qbe_full(qbe, ast->type); nprintfln(" %%.s%zu", v0);
+                nprintf("    %%.s%zu =", n=qbe->inst++); dump_type_to_qbe(qbe, ast->type);nprintfln(" load%s %%.s%zu", type_to_qbe_full(qbe->arena, ast->type), v0);
             }
             break;
         default:
@@ -376,7 +364,7 @@ size_t build_qbe_ast(Qbe* qbe, AST* ast) {
                 // nprintfln("    %%.s%zu =l alloc%zu %zu", n=qbe->inst++, sz, count);
                 // nprintfln("    blit %%.s%zu, %%%s, %zu", n, ast->as.symbol.name->data, type_size(ast->type));
             } else {
-                nprintf("    %%.s%zu =", n=qbe->inst++);dump_type_to_qbe(qbe, ast->type);nprintf(" load");dump_type_to_qbe_full(qbe, ast->type);nprintfln(" %%%s", ast->as.symbol.name->data);
+                nprintf("    %%.s%zu =", n=qbe->inst++);dump_type_to_qbe(qbe, ast->type);nprintfln(" load%s %%%s", type_to_qbe_full(qbe->arena, ast->type), ast->as.symbol.name->data);
             }
             break;
         case SYMBOL_CONSTANT: {
