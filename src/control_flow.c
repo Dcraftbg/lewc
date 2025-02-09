@@ -53,6 +53,10 @@ bool cf_analyse_func(ProgramState* state, Function* func) {
     assert(type->core == CORE_FUNC);
     if(type->attribs & TYPE_ATTRIB_EXTERN) return true;
     if(!cf_analyse_scope(state, func->scope)) return false;
+    if(!func->scope->terminal) {
+        eprintfln("ERROR: Missing return statement at the end of function");
+        return false;
+    }
     return true;
 }
 bool cf_analyse_ast(ProgramState* state, AST* ast) {
