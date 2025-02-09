@@ -22,6 +22,7 @@ const char* all_tests[] = {
     "local_vars.lew",
     "rule110.lew",
     "structs.lew",
+    "if.lew",
 };
 #define python_interp(cmd) nob_cmd_append(cmd, "python3")
 #define python_rere(cmd) (python_interp(cmd), nob_cmd_append(&cmd, 
