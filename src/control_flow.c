@@ -1,4 +1,5 @@
 #include "control_flow.h"
+#include "darray.h"
 
 bool cf_analyse_ast(ProgramState* state, AST* ast);
 bool cf_analyse_scope(ProgramState* state, Statements* scope);
@@ -54,6 +55,10 @@ bool cf_analyse_func(ProgramState* state, Function* func) {
     if(type->attribs & TYPE_ATTRIB_EXTERN) return true;
     if(!cf_analyse_scope(state, func->scope)) return false;
     if(!func->scope->terminal) {
+        if(!type->signature.output) {
+            da_push(func->scope, statement_return(state->arena, NULL));
+            return true;
+        }
         eprintfln("ERROR: Missing return statement at the end of function");
         return false;
     }

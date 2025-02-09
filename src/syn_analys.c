@@ -176,9 +176,6 @@ bool syn_analyse_func(ProgramState* state, Function* func) {
         }
     }
     if(!syn_analyse_scope(state, func->symtab_node, func->scope)) return false;
-    if(!type->signature.output && (func->scope->len <= 0 || func->scope->items[func->scope->len-1]->kind != STATEMENT_RETURN)) {
-        da_push(func->scope, statement_return(state->arena, NULL));
-    }
     return true;
 }
 bool syn_analyse(ProgramState* state) {
