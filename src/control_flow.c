@@ -5,7 +5,7 @@ bool cf_analyse_ast(ProgramState* state, AST* ast);
 bool cf_analyse_scope(ProgramState* state, Statements* scope);
 bool cf_analyse_statement(ProgramState* state, Statement* statement) {
     (void)state;
-    static_assert(STATEMENT_COUNT == 6, "Update cf_analyse_statement");
+    static_assert(STATEMENT_COUNT == 7, "Update cf_analyse_statement");
     switch(statement->kind) {
     case STATEMENT_EVAL:
         if(!cf_analyse_ast(state, statement->as.ast)) return false;
@@ -20,6 +20,14 @@ bool cf_analyse_statement(ProgramState* state, Statement* statement) {
     case STATEMENT_WHILE:
         if(!cf_analyse_ast(state, statement->as.whil.cond)) return false;
         if(!cf_analyse_statement(state, statement->as.whil.body)) return false;
+        break;
+    case STATEMENT_IF:
+        if(!cf_analyse_ast(state, statement->as.iff.cond)) return false;
+        if(!cf_analyse_statement(state, statement->as.iff.body)) return false;
+        if(statement->as.iff.elze) {
+            if(!cf_analyse_statement(state, statement->as.iff.elze)) return false;
+            statement->terminal = statement->as.iff.body->terminal && statement->as.iff.elze->terminal;
+        }
         break;
     case STATEMENT_SCOPE:
         if(!cf_analyse_scope(state, statement->as.scope)) return false;

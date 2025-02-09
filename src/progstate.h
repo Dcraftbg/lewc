@@ -15,6 +15,7 @@ enum {
     STATEMENT_SCOPE,
     STATEMENT_WHILE,
     STATEMENT_LOOP,
+    STATEMENT_IF,
     STATEMENT_LOCAL_DEF,
     STATEMENT_COUNT
 };
@@ -32,6 +33,11 @@ struct Statement {
             Statement* body;
         } loop;
         struct {
+            AST* cond;
+            Statement* body;
+            Statement* elze;
+        } iff;
+        struct {
             Atom* name;
             Symbol* symbol;
         } local_def;
@@ -41,6 +47,7 @@ struct Statement {
 Statement* statement_return(Arena* arena, AST* ast);
 Statement* statement_eval(Arena* arena, AST* ast);
 Statement* statement_scope(Arena* arena);
+Statement* statement_if(Arena* arena, AST* cond, Statement* body, Statement* elze);
 Statement* statement_while(Arena* arena, AST* cond, Statement* body);
 Statement* statement_loop(Arena* arena, Statement* body);
 Statement* statement_local_def(Arena* arena, Atom* name, Symbol* symbol);

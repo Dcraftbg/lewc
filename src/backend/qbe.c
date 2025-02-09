@@ -422,7 +422,7 @@ bool build_qbe_cond(Qbe* qbe, AST* ast, const char* yes, const char* no) {
 bool build_qbe_scope(Qbe* qbe, Statements* scope);
 bool build_qbe_statement(Qbe* qbe, Statement* statement) {
     size_t n = 0;
-    static_assert(STATEMENT_COUNT == 6, "Update build_qbe_statement");
+    static_assert(STATEMENT_COUNT == 7, "Update build_qbe_statement");
     switch(statement->kind) {
     case STATEMENT_EVAL:
         build_qbe_ast(qbe, statement->as.ast);
@@ -459,6 +459,26 @@ bool build_qbe_statement(Qbe* qbe, Statement* statement) {
             nprintfln("    jmp @loop%zu", n);
         }
         nprintfln("@loop_end_%zu", n);
+    } break;
+    case STATEMENT_IF: {
+        n = qbe->inst++;
+        const char* cond = aprintf(qbe->arena, "@if_cond_%zu", n);
+        const char* body = aprintf(qbe->arena, "@if_body_%zu", n);
+        const char* end  = aprintf(qbe->arena, "@if_end_%zu", n);
+        const char* elze = statement->as.iff.elze ? aprintf(qbe->arena, "@if_elze_%zu", n) : end; 
+        nprintfln("%s", cond);
+        build_qbe_cond(qbe, statement->as.iff.cond, body, elze);
+        nprintfln("%s", body);
+        if(!build_qbe_statement(qbe, statement->as.iff.body)) return false;
+        if(!statement->as.iff.body->terminal) {
+            nprintfln("    jmp %s", end);
+        }
+        if(statement->as.iff.elze) {
+            nprintfln("%s", elze);
+            if(!build_qbe_statement(qbe, statement->as.iff.elze)) return false;
+            // NOTE: Here its not necessary cuz QBE is cool and has automatic fallthrough
+        }
+        nprintfln("%s", end);
     } break;
     case STATEMENT_WHILE: {
         n = qbe->inst++;

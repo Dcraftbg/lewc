@@ -490,6 +490,21 @@ Statement* parse_statement(Parser* parser, Token t) {
         case TOKEN_LOOP:
             lexer_eat(parser->lexer, 1);
             return statement_loop(parser->arena, parse_body(parser));
+        case TOKEN_IF: {
+            lexer_eat(parser->lexer, 1);
+            AST* ast = parse_ast(parser, INIT_PRECEDENCE);
+            if(!ast) {
+                eprintfln("ERROR:%s: Failed to parse condition", tloc(t));
+                exit(1);
+            }
+            Statement* body = parse_body(parser);
+            Statement* elze = NULL;
+            if(lexer_peak_next(parser->lexer).kind == TOKEN_ELSE) {
+                lexer_eat(parser->lexer, 1);
+                elze = parse_statement(parser, lexer_peak_next(parser->lexer));
+            } 
+            return statement_if(parser->arena, ast, body, elze);
+        }
         case TOKEN_WHILE: {
             lexer_eat(parser->lexer, 1);
             AST* ast = parse_ast(parser, INIT_PRECEDENCE);

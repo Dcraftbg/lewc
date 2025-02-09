@@ -126,7 +126,7 @@ bool syn_analyse_ast(ProgramState* state, SymTabNode* node, AST* ast) {
 
 bool syn_analyse_scope(ProgramState* state, SymTabNode* node, Statements* scope);
 bool syn_analyse_statement(ProgramState* state, SymTabNode* node, Statement* statement) {
-    static_assert(STATEMENT_COUNT == 6, "Update syn_analyse");
+    static_assert(STATEMENT_COUNT == 7, "Update syn_analyse");
     switch(statement->kind) {
     case STATEMENT_RETURN:
         if(!statement->as.ast) return true;
@@ -140,6 +140,11 @@ bool syn_analyse_statement(ProgramState* state, SymTabNode* node, Statement* sta
         break;
     case STATEMENT_LOOP:
         if(!syn_analyse_statement(state, node, statement->as.loop.body)) return false;
+        break;
+    case STATEMENT_IF:
+        if(!syn_analyse_ast(state, node, statement->as.iff.cond)) return false;
+        if(!syn_analyse_statement(state, node, statement->as.iff.body)) return false;
+        if(statement->as.iff.elze && !syn_analyse_statement(state, node, statement->as.iff.elze)) return false;
         break;
     case STATEMENT_WHILE:
         if(!syn_analyse_ast(state, node, statement->as.whil.cond)) return false;

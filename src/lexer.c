@@ -356,6 +356,8 @@ Token lexer_next(Lexer* lexer) {
             Word word = lexer_parse_word(lexer);
                  if (wordeq(word, "return" )) return MAKE_TOKEN(TOKEN_RETURN);
             else if (wordeq(word, "extern" )) return MAKE_TOKEN(TOKEN_EXTERN);
+            else if (wordeq(word, "if"     )) return MAKE_TOKEN(TOKEN_IF);
+            else if (wordeq(word, "else"   )) return MAKE_TOKEN(TOKEN_ELSE);
             else if (wordeq(word, "while"  )) return MAKE_TOKEN(TOKEN_WHILE);
             else if (wordeq(word, "loop"   )) return MAKE_TOKEN(TOKEN_LOOP);
             else if (wordeq(word, "typedef")) return MAKE_TOKEN(TOKEN_TYPEDEF);

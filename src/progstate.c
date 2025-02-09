@@ -31,6 +31,14 @@ Statement* statement_eval(Arena* arena, AST* ast) {
     me->as.ast = ast;
     return me;
 }
+Statement* statement_if(Arena* arena, AST* cond, Statement* body, Statement* elze) {
+    Statement* me = statement_new(arena);
+    me->kind = STATEMENT_IF;
+    me->as.iff.cond = cond;
+    me->as.iff.body = body;
+    me->as.iff.elze = elze;
+    return me;
+}
 Statement* statement_while(Arena* arena, AST* cond, Statement* body) {
     Statement* me = statement_new(arena);
     me->kind = STATEMENT_WHILE;

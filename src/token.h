@@ -22,6 +22,9 @@ enum {
     TOKEN_BOOL_AND,
     TOKEN_BOOL_OR,
 
+
+    TOKEN_IF,
+    TOKEN_ELSE,
     TOKEN_WHILE,
     TOKEN_LOOP,
     // Tokens to stop 

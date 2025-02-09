@@ -140,7 +140,7 @@ bool typecheck_ast(ProgramState* state, AST* ast) {
 }
 bool typecheck_scope(ProgramState* state, Type* return_type, Statements* scope);
 bool typecheck_statement(ProgramState* state, Type* return_type, Statement* statement) {
-    static_assert(STATEMENT_COUNT == 6, "Update typecheck_statement");
+    static_assert(STATEMENT_COUNT == 7, "Update typecheck_statement");
     switch(statement->kind) {
     case STATEMENT_RETURN:
         if(!statement->as.ast && !return_type) return true;
@@ -178,6 +178,16 @@ bool typecheck_statement(ProgramState* state, Type* return_type, Statement* stat
     case STATEMENT_SCOPE:
         if(!typecheck_scope(state, return_type, statement->as.scope)) return false;
         break;
+    case STATEMENT_IF: {
+        if(!typecheck_ast(state, statement->as.iff.cond)) return false;
+        AST* cond = statement->as.iff.cond;
+        if(!type_eq(cond->type, &type_bool)) {
+            eprintf("If loop condition has type "); type_dump(stderr, cond->type); eprintfln(" Expected type bool");
+            return false;
+        }
+        if(!typecheck_statement(state, return_type, statement->as.iff.body)) return false;
+        if(statement->as.iff.elze && !typecheck_statement(state, return_type, statement->as.iff.elze)) return false;
+    } break;
     case STATEMENT_WHILE: {
         if(!typecheck_ast(state, statement->as.whil.cond)) return false;
         AST* cond = statement->as.whil.cond;
