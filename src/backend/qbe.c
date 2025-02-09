@@ -455,7 +455,9 @@ bool build_qbe_statement(Qbe* qbe, Statement* statement) {
         n = qbe->inst;
         nprintfln("@loop%zu", n);
         if(!build_qbe_statement(qbe, statement->as.loop.body)) return false;
-        nprintfln("    jmp @loop%zu", n);
+        if(!statement->as.loop.body->terminal) {
+            nprintfln("    jmp @loop%zu", n);
+        }
         nprintfln("@loop_end_%zu", n);
     } break;
     case STATEMENT_WHILE: {
