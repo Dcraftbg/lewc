@@ -467,7 +467,9 @@ bool build_qbe_statement(Qbe* qbe, Statement* statement) {
         build_qbe_cond(qbe, statement->as.whil.cond, body, end);
         nprintfln("%s", body);
         if(!build_qbe_statement(qbe, statement->as.whil.body)) return false;
-        nprintfln("    jmp %s", cond);
+        if(!statement->as.whil.body->terminal) {
+            nprintfln("    jmp %s", cond);
+        }
         nprintfln("%s", end);
     } break;
     default:
