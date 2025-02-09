@@ -31,9 +31,16 @@ bool cf_analyse_statement(ProgramState* state, Statement* statement) {
     return true;
 }
 bool cf_analyse_scope(ProgramState* state, Statements* scope) {
-    for(size_t j=0; j < scope->len; ++j) {
-        if(!cf_analyse_statement(state, scope->items[j])) return false;
+    ssize_t terminal_at = -1;
+    for(size_t i=0; i < scope->len; ++i) {
+        if(!cf_analyse_statement(state, scope->items[i])) return false;
+        if(terminal_at < 0 && scope->items[i]->terminal) {
+            terminal_at = i;
+        } else if (terminal_at >= 0) eprintfln("WARN: Unreachable statement!");
     }
+    // FIXME: This leaks 
+    // Dead code elimitation
+    if(terminal_at >= 0) scope->len = terminal_at + 1;
     return true;
 }
 bool cf_analyse_func(ProgramState* state, Function* func) {
