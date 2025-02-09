@@ -4,6 +4,7 @@
 typedef struct Statement Statement;
 typedef struct Statements Statements;
 struct Statements {
+    bool terminal;
     Statement **items;
     size_t len, cap;
 };

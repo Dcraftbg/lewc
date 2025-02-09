@@ -21,7 +21,9 @@ bool cf_analyse_statement(ProgramState* state, Statement* statement) {
         if(!cf_analyse_statement(state, statement->as.whil.body)) return false;
         break;
     case STATEMENT_SCOPE:
-        return cf_analyse_scope(state, statement->as.scope);
+        if(!cf_analyse_scope(state, statement->as.scope)) return false;
+        statement->terminal = statement->as.scope->terminal;
+        break;
     case STATEMENT_LOCAL_DEF:
         if(statement->as.local_def.symbol->ast) return cf_analyse_ast(state, statement->as.local_def.symbol->ast);
         break;
@@ -40,7 +42,10 @@ bool cf_analyse_scope(ProgramState* state, Statements* scope) {
     }
     // FIXME: This leaks 
     // Dead code elimitation
-    if(terminal_at >= 0) scope->len = terminal_at + 1;
+    if(terminal_at >= 0) {
+        scope->len = terminal_at + 1;
+        scope->terminal = true;
+    }
     return true;
 }
 bool cf_analyse_func(ProgramState* state, Function* func) {
