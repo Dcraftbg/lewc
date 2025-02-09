@@ -18,6 +18,7 @@ enum {
     STATEMENT_COUNT
 };
 struct Statement {
+    bool terminal;
     int kind;
     union {
         AST* ast;
