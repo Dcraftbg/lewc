@@ -1,0 +1,16 @@
+extern printf :: (fmt: *u8);
+foo :: (a: i32) {
+    if a == 69 {
+        printf(c"a> Nice\n");
+    } else if a == 420 {
+        printf(c"a> Even nicer\n");
+    } else {
+        printf(c"a> Not nice :(\n");
+    }
+}
+main :: () -> i32 {
+    foo(69i32);
+    foo(420i32);
+    foo(1i32);
+    return 0;
+}

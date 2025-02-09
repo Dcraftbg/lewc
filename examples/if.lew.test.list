@@ -1,0 +1,4 @@
+./bin/lewc examples/if.lew -o ./int/tests/if.s
+as ./int/tests/if.s -o ./int/tests/if.o
+gcc -static ./int/tests/if.o -o ./bin/tests/if
+./bin/tests/if
