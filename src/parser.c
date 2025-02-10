@@ -19,6 +19,34 @@ Type* parse_type(Parser* parser) {
         t = lexer_next(parser->lexer);
     }
     switch(t.kind) {
+    case '[': {
+        Type* of = parse_type(parser);
+        if(!of) return NULL;
+        t = lexer_next(parser->lexer);
+        switch(t.kind) {
+        case ';': {
+            size_t len = 0;
+            // TODO: Make this an expression instead of constant integer
+            switch((t=lexer_next(parser->lexer)).kind) {
+            case TOKEN_INT:
+                // TODO: Typecheck this sheizung
+                len = t.integer.value;
+                break;
+            default:
+                eprintfln("ERROR:%s: Expected integer N for array length (i.e. [<Type>;N], but got %s)", tloc(t), tdisplay(t));
+                exit(1);
+            }
+            if((t=lexer_next(parser->lexer)).kind != ']') {
+                eprintfln("ERROR:%s Expected `]` after size to end the array (i.e. [<Type>;N] but got %s)", tloc(t), tdisplay(t));
+                exit(1);
+            }
+            return type_new_const_array(parser->arena, of, len);
+        } break;
+        default:
+            eprintfln("ERROR:%s: Expected `;` after type to indicate size (i.e. [<Type>;N]) but got %s", tloc(t), tdisplay(t));
+            exit(1);
+        }
+    } break;
     case TOKEN_ATOM: {
         Type** idp = type_table_get(&parser->state->type_table, t.atom->data);
         if(!idp) {

@@ -13,6 +13,7 @@ enum {
     CORE_I32,
     CORE_FUNC,
     CORE_STRUCT,
+    CORE_CONST_ARRAY,
 };
 enum {
     TYPE_ATTRIB_EXTERN=BIT(1),
@@ -60,6 +61,10 @@ struct Type {
        FuncSignature signature;
        Type* inner_type;
        Struct struc;
+       struct {
+           Type* of;
+           size_t len;
+       } array;
     };
 };
 
@@ -95,5 +100,6 @@ void type_table_init(TypeTable* t);
 #include "arena.h"
 Type* type_new(Arena* arena);
 Type* type_new_struct(Arena* arena, const Struct struc);
+Type* type_new_const_array(Arena* arena, Type* of, size_t len);
 bool type_isbinary(Type* t);
 void type_dump(FILE* f, Type* t);

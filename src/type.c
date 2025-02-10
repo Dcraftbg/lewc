@@ -27,6 +27,8 @@ size_t type_size(Type* type) {
     case CORE_PTR:
     case CORE_FUNC:
         return 8;
+    case CORE_CONST_ARRAY:
+        return type_size(type->array.of) * type->array.len;
     case CORE_STRUCT:
         return type->struc.offset + type->struc.offset % type->struc.alignment;
     }
@@ -73,6 +75,14 @@ Type* type_new_struct(Arena* arena, const Struct struc) {
     Type* me = type_new(arena);
     me->core = CORE_STRUCT;
     me->struc = struc;
+    return me;
+}
+
+Type* type_new_const_array(Arena* arena, Type* of, size_t len) {
+    Type* me = type_new(arena);
+    me->core = CORE_CONST_ARRAY;
+    me->array.len = len;
+    me->array.of = of;
     return me;
 }
 Type* type_ptr(Arena* arena, Type* to, size_t ptr_count) {
@@ -124,6 +134,11 @@ void type_dump(FILE* f, Type* t) {
             type_dump(f, t->signature.output);
         }
     } break;
+    case CORE_CONST_ARRAY:
+        fprintf(f, "[");
+        type_dump(f, t->array.of);
+        fprintf(f, "; %zu]", t->array.len);
+        break;
     case CORE_STRUCT: {
         fputs("struct {", f);
         Struct* s = &t->struc;
