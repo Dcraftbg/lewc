@@ -1,0 +1,26 @@
+is_prime :: (num: i32) -> bool {
+    divisor := 2;
+    while num % divisor != 0 {
+        divisor = divisor + 1;
+    }
+    return divisor == num;
+}
+get_prime_at :: (i: i32) -> i32 {
+    num := 2;
+    count := 0;
+    while count < i {
+        if is_prime(num) {
+            count = count + 1;
+        }
+        if count < i {
+            num = num + 1;
+        }
+    }
+    return num;
+}
+extern printf :: (fmt: *u8, arg1: i32, arg2: i32);
+prime :: 10001i32;
+main :: () -> i32 {    
+    printf(c"%d %d\n", prime, get_prime_at(prime));
+    return 0;
+}
