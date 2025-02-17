@@ -84,6 +84,14 @@ const char* type_to_qbe(Arena* arena, Type* t) {
 }
 
 size_t build_qbe_ast(Qbe* qbe, AST* ast);
+size_t build_qbe_deref(Qbe* qbe, size_t what, Type* type) {
+    size_t n = 0;
+    if(type->core == CORE_STRUCT) {
+        nprintfln("    # Deref on structure. Does nothing");
+        n = what;
+    } else nprintfln("    %%.s%zu =%s load%s %%.s%zu", n=qbe->inst++, type_to_qbe(qbe->arena, type), type_to_qbe_full(qbe->arena, type), what);
+    return n;
+}
 // For assignments. i.e.:
 //    foo = 69
 //    *bar = 420
@@ -111,17 +119,24 @@ size_t build_ptr_to(Qbe* qbe, AST* ast) {
         nprintfln("    %%.s%zu =l add %%.s%zu, %zu", n=qbe->inst++, v0, m->offset);
         return n;
     }
+    case AST_SUBSCRIPT:
+        size_t v0 = build_qbe_ast(qbe, ast->as.subscript.what);
+        size_t v1 = build_qbe_ast(qbe, ast->as.subscript.with);
+        if(!v0 || !v1) return 0;
+        assert(ast->as.subscript.what->type->core == CORE_CONST_ARRAY);
+        Type* t = ast->as.subscript.what->type->array.of;
+        size_t index = qbe->inst++;
+        nprintfln("    %%.s%zu =l ext%s %%.s%zu", index, type_to_qbe_full(qbe->arena, ast->as.subscript.with->type), v1);
+        size_t offset = qbe->inst++;
+        size_t byte_size = type_size(t);
+        if(byte_size > 1) nprintfln("    %%.s%zu =l mul %%.s%zu, %zu", offset, index, byte_size);
+        else offset = index;
+        v1 = offset;
+        nprintfln("    %%.s%zu =l add %%.s%zu, %%.s%zu", n=qbe->inst++, v0, v1);
+        return n;
     default:
         unreachable("ast->kind = %d", ast->kind);
     }
-}
-size_t build_qbe_deref(Qbe* qbe, size_t what, Type* type) {
-    size_t n = 0;
-    if(type->core == CORE_STRUCT) {
-        nprintfln("    # Deref on structure. Does nothing");
-        n = what;
-    } else nprintfln("    %%.s%zu =%s load%s %%.s%zu", n=qbe->inst++, type_to_qbe(qbe->arena, type), type_to_qbe_full(qbe->arena, type), what);
-    return n;
 }
 size_t build_qbe_ast(Qbe* qbe, AST* ast) {
     size_t n=0;

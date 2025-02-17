@@ -84,6 +84,8 @@ bool syn_analyse_ast(ProgramState* state, SymTabNode* node, AST* ast) {
                     return false;
                 }
             } break;
+            case AST_SUBSCRIPT:
+                break;
             case AST_BINOP: {
                 if(lhs->as.binop.op != '.') {
                     eprintfln("Can only assign to variables, dereferences or fields. found binop: %c", lhs->as.binop.op);
@@ -92,7 +94,7 @@ bool syn_analyse_ast(ProgramState* state, SymTabNode* node, AST* ast) {
             } break;
             default:
                 // TODO: Better error messages
-                eprintfln("Can only assign to variables, dereferences or fields. found: %d", lhs->kind);
+                eprintfln("Can only assign to variables, dereferences, fields or subscripts. found: %d", lhs->kind);
                 return false;
             }
         } break;
