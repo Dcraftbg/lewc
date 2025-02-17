@@ -86,9 +86,15 @@ Type* type_new_const_array(Arena* arena, Type* of, size_t len) {
     return me;
 }
 Type* type_ptr(Arena* arena, Type* to, size_t ptr_count) {
+    assert(to);
     Type* res = type_new(arena);
     res->core = CORE_PTR;
     res->ptr_count = ptr_count;
+    if(to->core == CORE_PTR) {
+        res->ptr_count += to->ptr_count;
+        res->inner_type = to->inner_type;
+        return res;
+    }
     res->inner_type = to;
     return res;
 }

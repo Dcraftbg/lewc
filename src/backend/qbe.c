@@ -137,7 +137,7 @@ size_t build_qbe_ast(Qbe* qbe, AST* ast) {
         assert(ast->as.subscript.what->type->core == CORE_CONST_ARRAY);
         Type* t = ast->as.subscript.what->type->array.of;
         size_t index = qbe->inst++;
-        nprintfln("    %%.s%zu =l ext%s %%.s%zu", index, type_to_qbe_full(qbe->arena, ast->as.subscript.what->type), v1);
+        nprintfln("    %%.s%zu =l ext%s %%.s%zu", index, type_to_qbe_full(qbe->arena, ast->as.subscript.with->type), v1);
         size_t offset = qbe->inst++;
         size_t byte_size = type_size(t);
         if(byte_size > 1) nprintfln("    %%.s%zu =l mul %%.s%zu, %zu", offset, index, byte_size);
@@ -310,16 +310,24 @@ size_t build_qbe_ast(Qbe* qbe, AST* ast) {
         case '.': {
             size_t v0 = build_qbe_ast(qbe, ast->as.binop.lhs);
             Type* t = ast->as.binop.lhs->type;
-            assert(t->core == CORE_STRUCT);
-            Struct* s = &t->struc;
-            Member* m = members_get(&s->members, ast->as.binop.rhs->as.symbol.name);
-            assert(m);
-            if(m->kind == MEMBER_FIELD) {
-                nprintfln("    %%.s%zu =l add %%.s%zu, %zu", n=qbe->inst++, v0, m->offset);
-                if(m->type->core != CORE_STRUCT) {
-                    size_t ptr = n;
-                    nprintfln("    %%.s%zu =%s load%s %%.s%zu", n=qbe->inst++, type_to_qbe(qbe->arena, m->type), type_to_qbe_full(qbe->arena, m->type), ptr);
+            assert(t->core == CORE_STRUCT || t->core == CORE_CONST_ARRAY);
+            switch(t->core) {
+            case CORE_STRUCT: {
+                Struct* s = &t->struc;
+                Member* m = members_get(&s->members, ast->as.binop.rhs->as.symbol.name);
+                assert(m);
+                if(m->kind == MEMBER_FIELD) {
+                    nprintfln("    %%.s%zu =l add %%.s%zu, %zu", n=qbe->inst++, v0, m->offset);
+                    if(m->type->core != CORE_STRUCT) {
+                        size_t ptr = n;
+                        nprintfln("    %%.s%zu =%s load%s %%.s%zu", n=qbe->inst++, type_to_qbe(qbe->arena, m->type), type_to_qbe_full(qbe->arena, m->type), ptr);
+                    }
                 }
+            } break;
+            case CORE_CONST_ARRAY: {
+                assert(strcmp(ast->as.binop.rhs->as.symbol.name->data, "data") == 0);
+                return v0;
+            } break;
             }
         } break;
         default:
@@ -379,14 +387,14 @@ size_t build_qbe_ast(Qbe* qbe, AST* ast) {
         Symbol* s = ast->as.symbol.sym;
         switch(s->kind) {
         case SYMBOL_VARIABLE:
-            if(ast->type->core == CORE_STRUCT) {
+            switch(ast->type->core) {
+            case CORE_STRUCT:
+            case CORE_CONST_ARRAY:
                 nprintfln("    %%.s%zu =l copy %%%s", n=qbe->inst++, ast->as.symbol.name->data);
-                // size_t sz, count;
-                // alloca_params(type_size(ast->type), &sz, &count);
-                // nprintfln("    %%.s%zu =l alloc%zu %zu", n=qbe->inst++, sz, count);
-                // nprintfln("    blit %%.s%zu, %%%s, %zu", n, ast->as.symbol.name->data, type_size(ast->type));
-            } else {
+                break;
+            default:
                 nprintfln("    %%.s%zu =%s load%s %%%s", n=qbe->inst++, type_to_qbe(qbe->arena, ast->type), type_to_qbe_full(qbe->arena, ast->type), ast->as.symbol.name->data);
+                break;
             }
             break;
         case SYMBOL_CONSTANT: {

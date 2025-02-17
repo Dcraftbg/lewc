@@ -29,6 +29,7 @@ bool try_infer_ast(ProgramState* state, AST* ast);
 void infer_down_ast(ProgramState* state, AST* ast, Type* type) {
     if(ast->kind != AST_SYMBOL && try_infer_ast(state, ast)) return;
     ast->type = type;
+    static_assert(AST_KIND_COUNT == 8, "Update infer_down_ast");
     switch(ast->kind) {
     case AST_SYMBOL: {
         if(ast->as.symbol.sym->type) {
@@ -61,6 +62,7 @@ void infer_down_ast(ProgramState* state, AST* ast, Type* type) {
 // I'm not sure tho. I think this is fine
 bool try_infer_ast(ProgramState* state, AST* ast) {
     if(ast->type) return true;
+    static_assert(AST_KIND_COUNT == 8, "Update try_infer_ast");
     switch(ast->kind) {
     case AST_SYMBOL: {
         Symbol* s = ast->as.symbol.sym;
@@ -112,16 +114,30 @@ bool try_infer_ast(ProgramState* state, AST* ast) {
             // FIXME: You can't infer type for field if you don't know the type for the structure. Seems pretty reasonable
             // but I guess it could be kinda wrong
             if(!try_infer_ast(state, ast->as.binop.lhs)) return true;
+            if(!ast->as.binop.lhs->type) return true;
             Struct* s;
             Type* type = ast->as.binop.lhs->type;
-            if(type->core == CORE_PTR && type->inner_type->core == CORE_STRUCT) {
-                s = &type->inner_type->struc;
-            } else if (type->core == CORE_STRUCT) {
-                s = &type->struc;
-            } else return true; 
-            Member* m = members_get(&s->members, ast->as.binop.rhs->as.symbol.name);
-            if(!m) return true;
-            ast->type = m->type;
+            switch(type->core) {
+            case CORE_PTR:
+            case CORE_STRUCT:
+                if(type->core == CORE_PTR && type->inner_type->core == CORE_STRUCT) {
+                    s = &type->inner_type->struc;
+                } else if (type->core == CORE_STRUCT) {
+                    s = &type->struc;
+                } else return true; 
+                Member* m = members_get(&s->members, ast->as.binop.rhs->as.symbol.name);
+                if(!m) return true;
+                ast->type = m->type;
+                break;
+            case CORE_CONST_ARRAY:
+                Atom* name = ast->as.binop.rhs->as.symbol.name;
+                if(strcmp(name->data, "data") == 0) {
+                    ast->type = type_ptr(state->arena, type->array.of, 1);
+                }
+                break;
+            default:
+                return true;
+            }
             return true;  
         } 
         default:
@@ -147,6 +163,17 @@ bool try_infer_ast(ProgramState* state, AST* ast) {
                 else ast->type = ast->as.unary.rhs->type->ptr_count == 1 ? ast->as.unary.rhs->type->inner_type : type_ptr(state->arena, ast->as.unary.rhs->type->inner_type, ast->as.unary.rhs->type->ptr_count-1);
                 return true;
             }
+        }
+    } break;
+    case AST_SUBSCRIPT: {
+        if(try_infer_ast(state, ast->as.subscript.what)) {
+            if(!(ast->as.subscript.what)) return true;
+            //                                            NOTE: this will throw an error at the typechecking phase
+            //                                            Cuz I don't really know how else to report this error currently
+            if(ast->as.subscript.what->type->core != CORE_CONST_ARRAY) ast->type = NULL;
+            else ast->type = ast->as.subscript.what->type->array.of;
+            infer_down_ast(state, ast->as.subscript.with, &type_i32);
+            return true;
         }
     } break;
     default:

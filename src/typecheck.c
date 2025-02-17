@@ -103,8 +103,8 @@ bool typecheck_ast(ProgramState* state, AST* ast) {
         case '.': { 
             assert(ast->as.binop.rhs->kind == AST_SYMBOL);
             Type* type = ast->as.binop.lhs->type;
-            if(type->core != CORE_STRUCT) {
-                if(type->core == CORE_PTR && type->inner_type->core == CORE_STRUCT) return true;
+            if(type->core != CORE_STRUCT && type->core != CORE_CONST_ARRAY) {
+                if(type->core == CORE_PTR && (type->inner_type->core == CORE_STRUCT || type->inner_type->core == CORE_CONST_ARRAY)) return true;
                 eprintf("ERROR: Trying to get member of non structure ("); type_dump(stderr, type); eprintfln(") isn't permitted");
                 return false;
             }
