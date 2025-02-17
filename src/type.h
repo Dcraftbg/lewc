@@ -102,4 +102,5 @@ Type* type_new(Arena* arena);
 Type* type_new_struct(Arena* arena, const Struct struc);
 Type* type_new_const_array(Arena* arena, Type* of, size_t len);
 bool type_isbinary(Type* t);
+bool type_isint(Type* t);
 void type_dump(FILE* f, Type* t);
