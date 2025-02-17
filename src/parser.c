@@ -345,6 +345,12 @@ AST* parse_astcall(Parser* parser, AST* what) {
     }
     return ast_new_call(parser->arena, what, args);
 }
+AST* parse_subscript(Parser* parser, AST* what) {
+    (void)parser;
+    (void)what;
+    eprintfln("TBD parse_subscript");
+    exit(1);
+}
 AST* parse_ast(Parser* parser, int expr_precedence) {
     // eprintfln("parse_ast");
     Token t;
@@ -357,7 +363,12 @@ AST* parse_ast(Parser* parser, int expr_precedence) {
         t = lexer_peak_next(parser->lexer);
         switch(t.kind) {
         case '(': {
+            if (2 > expr_precedence) return v;
             v = parse_astcall(parser, v);
+        } break;
+        case '[': {
+            if (2 > expr_precedence) return v;
+            v = parse_subscript(parser, v);
         } break;
         #define X(op) case op:
         BINOPS
@@ -385,6 +396,18 @@ AST* parse_ast(Parser* parser, int expr_precedence) {
                         v2, 
                         parse_ast(parser, next_prec)
                     );
+                }
+                break;
+            case '[':
+                next_prec = 2;
+                if (bin_precedence > next_prec) {
+                    v2 = parse_subscript(parser, v2);
+                }
+                break;
+            case '(':
+                next_prec = 2;
+                if (bin_precedence > next_prec) {
+                    v2 = parse_astcall(parser, v2);
                 }
                 break;
             }

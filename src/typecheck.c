@@ -5,7 +5,7 @@ bool typecheck_func(ProgramState* state, Function* func);
 // TODO: Actually decent error reporting
 bool typecheck_ast(ProgramState* state, AST* ast) {
     if(!ast) return false;
-    static_assert(AST_KIND_COUNT == 7, "Update typecheck_ast");
+    static_assert(AST_KIND_COUNT == 8, "Update typecheck_ast");
     switch(ast->kind) {
     case AST_FUNC:
         return typecheck_func(state, ast->as.func);
@@ -112,6 +112,19 @@ bool typecheck_ast(ProgramState* state, AST* ast) {
         default:
             unreachable("ast->as.binop.op=%d", ast->as.binop.op);
         }
+        break;
+    case AST_SUBSCRIPT:
+        if(!typecheck_ast(state, ast->as.subscript.what)) return false;
+        if(!typecheck_ast(state, ast->as.subscript.with)) return false;
+        if(!ast->as.subscript.what->type || ast->as.subscript.what->type->core != CORE_CONST_ARRAY) {
+            eprintf("Trying to subscript an expression of type "); type_dump(stderr, ast->as.subscript.what->type); eprintfln(" You can only subscript arrays!");
+            return false;
+        }
+        if(!type_isint(ast->as.subscript.with->type)) {
+            eprintf("Expected the index's type to be integer but got "); type_dump(stderr, ast->as.subscript.with->type); eprintf(NEWLINE);
+            return false;
+        }
+        // TODO: If integer type != usize. Cast to usize maybe?
         break;
     case AST_UNARY: {
         if(!typecheck_ast(state, ast->as.unary.rhs)) return false;

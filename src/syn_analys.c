@@ -50,7 +50,7 @@ SymTabNode* symtab_node_new(SymTabNode* parent, Arena* arena) {
 bool syn_analyse_func(ProgramState* state, Function* func);
 // TODO: Better error messages as AST should probably store location too
 bool syn_analyse_ast(ProgramState* state, SymTabNode* node, AST* ast) {
-    static_assert(AST_KIND_COUNT == 7, "Update syn_analyse_ast");
+    static_assert(AST_KIND_COUNT == 8, "Update syn_analyse_ast");
     switch(ast->kind) {
     case AST_FUNC:
         return syn_analyse_func(state, ast->as.func);
@@ -60,7 +60,10 @@ bool syn_analyse_ast(ProgramState* state, SymTabNode* node, AST* ast) {
             if(!syn_analyse_ast(state, node, ast->as.call.args.items[i])) return false;
         }
         break;
-    // TODO: For = force the lhs to be either SYMBOL (non constant/function!!) or *
+    case AST_SUBSCRIPT:
+        if(!syn_analyse_ast(state, node, ast->as.subscript.what)) return false;
+        if(!syn_analyse_ast(state, node, ast->as.subscript.with)) return false;
+        break;
     case AST_BINOP:
         // ------ For any other binop
         if(!syn_analyse_ast(state, node, ast->as.binop.lhs)) return false;

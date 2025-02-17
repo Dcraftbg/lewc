@@ -11,6 +11,7 @@ enum {
     AST_UNARY,
     AST_BINOP,
     AST_FUNC,
+    AST_SUBSCRIPT,
     AST_KIND_COUNT
 };
 typedef struct AST AST;
@@ -32,6 +33,7 @@ struct AST {
         struct { Type* type; uint64_t value; } integer;
         struct { const char* str; size_t len; } str;
         struct { Atom* name; Symbol* sym; } symbol;
+        struct { AST *what, *with; } subscript;
         Function* func;
     } as;
 };
@@ -43,4 +45,5 @@ AST* ast_new_int(Arena* arena, Type* type, uint64_t value);
 AST* ast_new_unary(Arena* arena, int op, AST* rhs);
 AST* ast_new_call(Arena* arena, AST* what, CallArgs args);
 AST* ast_new_func(Arena* arena, Function* func);
+AST* ast_new_subscript(Arena* arena, AST *what, AST* with);
 void call_args_dealloc(CallArgs* args);

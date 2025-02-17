@@ -73,6 +73,13 @@ AST* ast_new_func(Arena* arena, Function* func) {
     ast->as.func = func;
     return ast;
 }
+AST* ast_new_subscript(Arena* arena, AST *what, AST* with) {
+    AST* ast = ast_new(arena);
+    ast->kind = AST_SUBSCRIPT;
+    ast->as.subscript.what = what;
+    ast->as.subscript.with = with;
+    return ast;
+}
 void call_args_dealloc(CallArgs* this) {
     if(this->items) free(this->items);
     this->items = NULL;
