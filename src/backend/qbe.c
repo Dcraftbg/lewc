@@ -34,15 +34,13 @@ typedef struct {
        fputs(NEWLINE, qbe->f);\
    } while(0)
 static void alloca_params(size_t type_sz, size_t *sz, size_t *count) {
+    *count = type_sz; 
     if(type_sz <= 4) {
         *sz = 4;
-        *count = (type_sz + 3) / 4;
     } else if (type_sz <= 8) {
         *sz = 8;
-        *count = (type_sz + 7) / 8;
     } else {
         *sz = 16;
-        *count = (type_sz + 15) / 16;
     }
 }
 const char* type_to_qbe_full(Arena* arena, Type* t) {
