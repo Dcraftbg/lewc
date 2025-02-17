@@ -15,7 +15,7 @@ main :: () -> i32 {
                 j = j + 1;
             }
         }
-        putchar(10u8);
+        putchar(10);
 
         pattern : i32 = (board[0] << 1) | board[1];
         { 
