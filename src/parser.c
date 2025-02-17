@@ -346,10 +346,20 @@ AST* parse_astcall(Parser* parser, AST* what) {
     return ast_new_call(parser->arena, what, args);
 }
 AST* parse_subscript(Parser* parser, AST* what) {
-    (void)parser;
-    (void)what;
-    eprintfln("TBD parse_subscript");
-    exit(1);
+    Token t;
+    if((t=lexer_next(parser->lexer)).kind != '[') {
+        eprintfln("ERROR:%s: Subsript must start with '['. Got %s", tloc(t), tdisplay(t));
+        return NULL;
+    }
+    AST* v = parse_ast(parser, INIT_PRECEDENCE);
+    if(!v) return NULL;
+    t = lexer_peak_next(parser->lexer);
+    if(t.kind != ']') {
+        eprintfln("ERROR:%s: Expected closing ']' paren but got %s", tloc(t), tdisplay(t));
+        return NULL;
+    }
+    lexer_eat(parser->lexer, 1);
+    return ast_new_subscript(parser->arena, what, v);
 }
 AST* parse_ast(Parser* parser, int expr_precedence) {
     // eprintfln("parse_ast");
@@ -360,6 +370,7 @@ AST* parse_ast(Parser* parser, int expr_precedence) {
     v = parse_basic(parser);
     if(!v) return NULL;
     while(true) {
+        // TODO: Return NULL on failure to parse something
         t = lexer_peak_next(parser->lexer);
         switch(t.kind) {
         case '(': {
