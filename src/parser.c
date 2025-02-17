@@ -377,16 +377,16 @@ AST* parse_ast(Parser* parser, int expr_precedence) {
             BINOPS
             #undef X
                 next_prec = binop_prec(next_op = t.kind);
+                if (bin_precedence > next_prec) {
+                    lexer_eat(parser->lexer, 1);
+                    v2 = ast_new_binop(
+                        parser->arena,
+                        next_op,
+                        v2, 
+                        parse_ast(parser, next_prec)
+                    );
+                }
                 break;
-            }
-            if (next_prec > 0 && bin_precedence > next_prec) {
-                lexer_eat(parser->lexer, 1);
-                v2 = ast_new_binop(
-                    parser->arena,
-                    next_op,
-                    v2, 
-                    parse_ast(parser, next_prec)
-                );
             }
             v = ast_new_binop(parser->arena, binop, v, v2);
         } break;
