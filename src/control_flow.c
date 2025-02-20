@@ -74,7 +74,7 @@ bool cf_analyse_func(ProgramState* state, Function* func) {
 }
 bool cf_analyse_ast(ProgramState* state, AST* ast) {
     if(!ast) return true;
-    static_assert(AST_KIND_COUNT == 8, "Update syn_analyse_ast");
+    static_assert(AST_KIND_COUNT == 9, "Update syn_analyse_ast");
     switch(ast->kind) {
     case AST_FUNC:
         return cf_analyse_func(state, ast->as.func);

@@ -50,7 +50,7 @@ SymTabNode* symtab_node_new(SymTabNode* parent, Arena* arena) {
 bool syn_analyse_func(ProgramState* state, Function* func);
 // TODO: Better error messages as AST should probably store location too
 bool syn_analyse_ast(ProgramState* state, SymTabNode* node, AST* ast) {
-    static_assert(AST_KIND_COUNT == 8, "Update syn_analyse_ast");
+    static_assert(AST_KIND_COUNT == 9, "Update syn_analyse_ast");
     switch(ast->kind) {
     case AST_FUNC:
         return syn_analyse_func(state, ast->as.func);
@@ -137,6 +137,7 @@ bool syn_analyse_ast(ProgramState* state, SymTabNode* node, AST* ast) {
         break;
     case AST_INT:
     case AST_C_STR:
+    case AST_NULL:
         break;
     default:
         unreachable("ast->kind=%d", ast->kind);

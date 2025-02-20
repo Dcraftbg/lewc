@@ -51,7 +51,7 @@ bool typecheck_get_member_of(Type* type, Atom* member) {
 // TODO: Actually decent error reporting
 bool typecheck_ast(ProgramState* state, AST* ast) {
     if(!ast) return false;
-    static_assert(AST_KIND_COUNT == 8, "Update typecheck_ast");
+    static_assert(AST_KIND_COUNT == 9, "Update typecheck_ast");
     switch(ast->kind) {
     case AST_FUNC:
         return typecheck_func(state, ast->as.func);
@@ -226,10 +226,9 @@ bool typecheck_ast(ProgramState* state, AST* ast) {
             unreachable("unary.op=%c", ast->as.unary.op);
         }
     } break;
+    case AST_NULL:
     case AST_SYMBOL: 
-        break;
     case AST_INT:
-        break;
     case AST_C_STR:
         break;
     default:

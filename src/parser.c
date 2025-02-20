@@ -303,6 +303,8 @@ AST* parse_basic(Parser* parser) {
         lexer_eat(parser->lexer, 1);
         return v;
     } break;
+    case TOKEN_NULL:
+        return ast_new_null(parser->arena);
     case TOKEN_ATOM:
         return ast_new_symbol(parser->arena, t.atom);
     case TOKEN_C_STR:

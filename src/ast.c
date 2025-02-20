@@ -80,6 +80,11 @@ AST* ast_new_subscript(Arena* arena, AST *what, AST* with) {
     ast->as.subscript.with = with;
     return ast;
 }
+AST* ast_new_null(Arena* arena) {
+    AST* ast = ast_new(arena);
+    ast->kind = AST_NULL;
+    return ast;
+}
 void call_args_dealloc(CallArgs* this) {
     if(this->items) free(this->items);
     this->items = NULL;

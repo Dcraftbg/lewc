@@ -21,6 +21,7 @@ enum {
     TOKEN_GTEQ,
     TOKEN_BOOL_AND,
     TOKEN_BOOL_OR,
+    TOKEN_NULL,
 
 
     TOKEN_IF,

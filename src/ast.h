@@ -12,6 +12,7 @@ enum {
     AST_BINOP,
     AST_FUNC,
     AST_SUBSCRIPT,
+    AST_NULL,
     AST_KIND_COUNT
 };
 typedef struct AST AST;
@@ -46,4 +47,5 @@ AST* ast_new_unary(Arena* arena, int op, AST* rhs);
 AST* ast_new_call(Arena* arena, AST* what, CallArgs args);
 AST* ast_new_func(Arena* arena, Function* func);
 AST* ast_new_subscript(Arena* arena, AST *what, AST* with);
+AST* ast_new_null(Arena* arena);
 void call_args_dealloc(CallArgs* args);

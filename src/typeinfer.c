@@ -29,7 +29,7 @@ bool try_infer_ast(ProgramState* state, AST* ast);
 void infer_down_ast(ProgramState* state, AST* ast, Type* type) {
     if(ast->kind != AST_SYMBOL && try_infer_ast(state, ast)) return;
     ast->type = type;
-    static_assert(AST_KIND_COUNT == 8, "Update infer_down_ast");
+    static_assert(AST_KIND_COUNT == 9, "Update infer_down_ast");
     switch(ast->kind) {
     case AST_SYMBOL: {
         if(ast->as.symbol.sym->type) {
@@ -61,13 +61,18 @@ void infer_down_ast(ProgramState* state, AST* ast, Type* type) {
             ast->type = &type_i32;
         }
     } break;
+    case AST_NULL: {
+        if(type->core == CORE_PTR) {
+            ast->type = type;
+        }
+    } break;
     }
 }
 // TODO: Distinguish between errors, successful type inference and unsuccessful type inference maybe?
 // I'm not sure tho. I think this is fine
 bool try_infer_ast(ProgramState* state, AST* ast) {
     if(ast->type) return true;
-    static_assert(AST_KIND_COUNT == 8, "Update try_infer_ast");
+    static_assert(AST_KIND_COUNT == 9, "Update try_infer_ast");
     switch(ast->kind) {
     case AST_SYMBOL: {
         Symbol* s = ast->as.symbol.sym;
