@@ -49,6 +49,11 @@ void infer_down_ast(ProgramState* state, AST* ast, Type* type) {
                                                         : type_ptr(state->arena, ast->type, 1));
             return;
         }
+        if(ast->as.unary.op == '&') {
+            if(ast->type->core != CORE_PTR) return;
+            infer_down_ast(state, ast->as.unary.rhs, ast->type->ptr_count == 1 ? ast->type : type_ptr(state->arena, ast->type->inner_type, ast->type->ptr_count - 1));
+            return;
+        }
     } break;
     case AST_INT: {
         // TODO: isize or iptrdiff or whatever

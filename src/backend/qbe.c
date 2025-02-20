@@ -386,11 +386,14 @@ size_t build_qbe_ast(Qbe* qbe, AST* ast) {
         nprintf("    %%.s%zu =", n=qbe->inst++);nprintfln("l copy $.g%zu", global.unnamed_i);
     } break;
     case AST_UNARY: {
-        size_t v0 = build_qbe_ast(qbe, ast->as.unary.rhs);
         switch(ast->as.unary.op) {
-        case '*':
+        case '*': {
+            size_t v0 = build_qbe_ast(qbe, ast->as.unary.rhs);
             n = build_qbe_deref(qbe, v0, ast->type);
-            break;
+        } break;
+        case '&': {
+            n = build_ptr_to(qbe, ast->as.unary.rhs);
+        } break;
         default:
             unreachable("unary.op=%c", ast->as.unary.op);
         }

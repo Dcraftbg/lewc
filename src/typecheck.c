@@ -2,6 +2,52 @@
 #include "token.h"
 
 bool typecheck_func(ProgramState* state, Function* func);
+bool typecheck_get_member_of(Type* type, Atom* member) {
+    if(!type) {
+        eprintfln("ERROR: Trying to get member `%s` of void expression!", member->data);
+        return false;
+    }
+    switch(type->core) {
+    case CORE_PTR:
+        if(type->ptr_count > 1) {
+            eprintf("ERROR: Trying to get member `%s` of ", member->data); type_dump(stderr, type); eprintf(NEWLINE);
+            switch(type->inner_type->core) {
+            case CORE_STRUCT:
+            case CORE_CONST_ARRAY:
+                eprintfln("NOTE: Maybe you meant to dereference it?");
+                break;
+            }
+            return false;
+        }
+        switch(type->inner_type->core) {
+        case CORE_STRUCT:
+        case CORE_CONST_ARRAY:
+            return typecheck_get_member_of(type->inner_type, member);
+        }
+        eprintf  ("ERROR: Trying to get member `%s` of ", member->data); type_dump(stderr, type); eprintf(NEWLINE);
+        eprintfln("You can only access members to structures, constant arrays (data, len) or pointers to any of the previous.");
+        return false;
+    case CORE_STRUCT: {
+        Struct *s = &type->struc;
+        Member* m = members_get(&s->members, member);
+        if(!m) {
+            eprintf("ERROR: Unknown member `%s` of ", member->data); type_dump(stderr, type); eprintf(NEWLINE);
+            return false;
+        }
+    } break;
+    case CORE_CONST_ARRAY: {
+        if(strcmp(member->data, "data") != 0 && strcmp(member->data, "len") != 0)  {
+            eprintfln("ERROR: Unknown member `%s` of constant array", member->data);
+            return false;
+        }
+    } break;
+    default:
+        eprintf  ("ERROR: Trying to get member `%s` of ", member->data); type_dump(stderr, type); eprintf(NEWLINE);
+        eprintfln("You can only access members to structures, constant arrays (data, len) or pointers to any of the previous.");
+        return false;
+    }
+    return true;
+}
 // TODO: Actually decent error reporting
 bool typecheck_ast(ProgramState* state, AST* ast) {
     if(!ast) return false;
@@ -149,6 +195,31 @@ bool typecheck_ast(ProgramState* state, AST* ast) {
             if(!rhs->type || rhs->type->core != CORE_PTR) {
                 eprintf("Trying to dereference an expression of type "); type_dump(stderr, rhs->type); eprintf("\n");
                 return false;
+            }
+            break;
+        case '&':
+            if(!ast->type || ast->type->core != CORE_PTR) {
+                eprintfln("Trying to get address, and its non pointer?!?");
+                return false;
+            }
+            switch(ast->as.unary.rhs->kind) {
+            case AST_SYMBOL: {
+                Symbol* s    = ast->as.unary.rhs->as.symbol.sym;
+                Atom* name = ast->as.unary.rhs->as.symbol.name;
+                switch(s->kind) {
+                case SYMBOL_CONSTANT:
+                    if(s->type && s->type->core == CORE_FUNC) {
+                        eprintfln("NOTE: For getting function pointers, just use their name. (&%s -> %s)", name->data, name->data);
+                        return false;
+                    }
+                    eprintf("Cannot get address of constant `%s`", name->data); type_dump(stderr, s->type); eprintfln(NEWLINE);
+                    return false;
+                default:
+                    break;
+                }
+            } break;
+            default:
+                unreachable("rhs.kind=%c", ast->as.unary.rhs->kind);
             }
             break;
         default:

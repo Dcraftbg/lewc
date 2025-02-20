@@ -113,6 +113,21 @@ bool syn_analyse_ast(ProgramState* state, SymTabNode* node, AST* ast) {
         break;
     case AST_UNARY:
         if(!syn_analyse_ast(state, node, ast->as.unary.rhs)) return false;
+        if(ast->as.unary.op == '&') {
+            switch(ast->as.unary.rhs->kind) {
+            case AST_SYMBOL:
+                break;
+            case AST_BINOP:
+                if(ast->as.unary.rhs->as.binop.op == '.') {
+                    eprintfln("TODO: Take address of field");
+                    return false;
+                }
+                // fallthrough
+            default:
+                eprintfln("ERORR: `&` can only be used on variables or fields!");
+                return false;
+            }
+        }
         break;
     case AST_SYMBOL:
         if(!(ast->as.symbol.sym = stl_lookup(node, ast->as.symbol.name))) {

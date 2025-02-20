@@ -206,12 +206,14 @@ int binop_prec(int op) {
 }
 
 #define UNARYOPS \
-    X('*')
+    X('*') \
+    X('&')
 
 // https://en.cppreference.com/w/cpp/language/operator_precedence
 int unaryop_prec(int op) {
     switch(op) {
     case '*':
+    case '&':
         return 3;
     default:
         unreachable("op=%d",op);
