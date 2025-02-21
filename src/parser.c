@@ -607,7 +607,9 @@ void parse(Parser* parser, Arena* arena) {
                 parse_func_signature(parser, &fid->signature);
                 // TODO: This step is kinda unnecessary now
                 Function* f = func_new(parser->arena, fid, NULL);
-                sym_tab_insert(&parser->state->symtab_root.symtab, name, symbol_new_constant(parser->arena, fid, ast_new_func(parser->arena, f)));
+                Symbol* sym = symbol_new_constant(parser->arena, fid, ast_new_func(parser->arena, f));
+                sym_tab_insert(&parser->state->symtab_root.symtab, name, sym);
+                da_push(&parser->state->constants, sym);
             } else {
                 eprintfln("ERROR:%s: Expected signature of external function to follow the syntax:", tloc(t));
                 eprintfln("  extern <func name> :: <(<Arguments>)> (-> <Output Type>)");
@@ -642,7 +644,9 @@ void parse(Parser* parser, Arena* arena) {
                     exit(1);
                 }
                 AST* ast = parse_ast(parser, INIT_PRECEDENCE);
-                sym_tab_insert(&parser->state->symtab_root.symtab, name, symbol_new_constant(arena, type, ast));
+                Symbol* sym = symbol_new_constant(arena, type, ast);
+                sym_tab_insert(&parser->state->symtab_root.symtab, name, sym);
+                da_push(&parser->state->constants, sym);
             } else {
                 eprintfln("ERROR:%s: Unexpected Atom: %s",tloc(t), t.atom->data);
                 exit(1);

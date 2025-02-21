@@ -28,11 +28,15 @@ void infer_symbol(ProgramState* state, Symbol* s, Type* type) {
 bool try_infer_ast(ProgramState* state, AST* ast);
 void infer_down_ast(ProgramState* state, AST* ast, Type* type) {
     if(ast->kind != AST_SYMBOL && try_infer_ast(state, ast)) return;
-    ast->type = type;
+    if(ast->type) return;
     static_assert(AST_KIND_COUNT == 9, "Update infer_down_ast");
     switch(ast->kind) {
     case AST_SYMBOL: {
         if(ast->as.symbol.sym->type) {
+            if(!type_eq(ast->as.symbol.sym->type, type)) {
+                eprintf("ERROR: Mismatch between symbol type "); type_dump(stderr, ast->as.symbol.sym->type); eprintf(" and type expected by expression: "); type_dump(stderr, type); eprintf(NEWLINE);
+                return;
+            }
             ast->type = ast->as.symbol.sym->type;
             return;
         }
@@ -41,8 +45,10 @@ void infer_down_ast(ProgramState* state, AST* ast, Type* type) {
     case AST_BINOP: {
         infer_down_ast(state, ast->as.binop.lhs, type);
         infer_down_ast(state, ast->as.binop.rhs, type);
+        ast->type = type;
     } break;
     case AST_UNARY: {
+        ast->type = type;
         if(ast->as.unary.op == '*') {
             infer_down_ast(state, ast->as.unary.rhs, ast->type->core == CORE_PTR 
                                                         ? type_ptr(state->arena, ast->type->inner_type, ast->type->ptr_count + 1)
@@ -50,12 +56,20 @@ void infer_down_ast(ProgramState* state, AST* ast, Type* type) {
             return;
         }
         if(ast->as.unary.op == '&') {
-            if(ast->type->core != CORE_PTR) return;
+            if(ast->type->core != CORE_PTR) {
+                eprintf("ERROR: not pointer");
+                return;
+            }
             infer_down_ast(state, ast->as.unary.rhs, ast->type->ptr_count == 1 ? ast->type : type_ptr(state->arena, ast->type->inner_type, ast->type->ptr_count - 1));
             return;
         }
     } break;
     case AST_INT: {
+        if(!type_isint(type) && type->core != CORE_PTR) {
+            eprintf("ERROR: Non integer type expected for integer: "); type_dump(stderr, type); eprintf(NEWLINE);
+            return;
+        }
+        ast->type = type;
         // TODO: isize or iptrdiff or whatever
         if(type->core == CORE_PTR) {
             ast->type = &type_i32;
@@ -64,6 +78,8 @@ void infer_down_ast(ProgramState* state, AST* ast, Type* type) {
     case AST_NULL: {
         if(type->core == CORE_PTR) {
             ast->type = type;
+        } else {
+            eprintf("ERROR: Non pointer type expected for null: "); type_dump(stderr, type); eprintf(NEWLINE);
         }
     } break;
     }
@@ -241,47 +257,35 @@ void typeinfer_func(ProgramState* state, Function* func) {
     typeinfer_scope(state, func->type->signature.output, func->scope);
 }
 bool typeinfer(ProgramState* state) {
-    for(size_t i = 0; i < state->symtab_root.symtab.buckets.len; ++i) {
-        for(
-            Pair_SymTab* spair = state->symtab_root.symtab.buckets.items[i].first;
-            spair;
-            spair = spair->next
-        ) {
-            Symbol* s = spair->value;
-            static_assert(SYMBOL_COUNT == 2, "Update typeinfer");
-            switch(s->kind) {
-            case SYMBOL_CONSTANT:
-            case SYMBOL_VARIABLE:
-                if(s->ast->kind == AST_FUNC) {
-                    typeinfer_func(state, s->ast->as.func);
-                }
-                // fallthrough
-                if(s->ast) {
-                    if(s->type) {
-                        infer_down_ast(state, s->ast, s->type);
-                    } else {
-                        try_infer_ast(state, s->ast);
-                        if(s->ast->type) infer_symbol(state, s, s->ast->type);
-                    }
-                }
-                break;
-            case SYMBOL_COUNT:
-            default:
-                unreachable("s->kind = %d", s->kind);
+    for(size_t i = 0; i < state->constants.len; ++i) {
+        Symbol* s = state->constants.items[i];
+        static_assert(SYMBOL_COUNT == 2, "Update typeinfer");
+        switch(s->kind) {
+        case SYMBOL_CONSTANT:
+        case SYMBOL_VARIABLE:
+            if(s->ast->kind == AST_FUNC) {
+                typeinfer_func(state, s->ast->as.func);
             }
+            // fallthrough
+            if(s->ast) {
+                if(s->type) {
+                    infer_down_ast(state, s->ast, s->type);
+                } else {
+                    try_infer_ast(state, s->ast);
+                    if(s->ast->type) infer_symbol(state, s, s->ast->type);
+                }
+            }
+            break;
+        case SYMBOL_COUNT:
+        default:
+            unreachable("s->kind = %d", s->kind);
         }
     }
-    for(size_t i = 0; i < state->symtab_root.symtab.buckets.len; ++i) {
-        for(
-            Pair_SymTab* spair = state->symtab_root.symtab.buckets.items[i].first;
-            spair;
-            spair = spair->next
-        ) {
-            Symbol* s = spair->value;
-            if(s->kind != SYMBOL_CONSTANT) continue;
-            if(!s->type) {
-                return false;
-            }
+    for(size_t i = 0; i < state->constants.len; ++i) {
+        Symbol* s = state->constants.items[i];
+        if(s->kind != SYMBOL_CONSTANT) continue;
+        if(!s->type) {
+            return false;
         }
     }
     return true;

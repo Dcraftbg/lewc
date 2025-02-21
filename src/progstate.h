@@ -62,5 +62,9 @@ typedef struct ProgramState ProgramState;
 struct ProgramState {
     TypeTable type_table;
     SymTabNode symtab_root;
+    struct {
+        Symbol** items;
+        size_t len, cap;
+    } constants;
     Arena* arena;
 };
