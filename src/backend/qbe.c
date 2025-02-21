@@ -248,29 +248,12 @@ size_t build_qbe_ast(Qbe* qbe, AST* ast) {
             size_t v1 = build_qbe_ast(qbe, ast->as.binop.rhs);
             if(!v0 || !v1) return 0;
             // TODO: Is integer instead
-            if(ast->as.binop.lhs->type->core == CORE_PTR && type_isbinary(ast->as.binop.rhs->type)) {
+            if(ast->as.binop.lhs->type->core == CORE_PTR && type_isint(ast->as.binop.rhs->type)) {
                 size_t index = qbe->inst++;
                 nprintfln("    %%.s%zu =l ext%s %%.s%zu", index, type_to_qbe_full(qbe->arena, ast->as.binop.rhs->type), v1);
                 size_t offset = qbe->inst++;
-                size_t byte_size = 0;
-                Type* type = ast->as.binop.lhs->type->inner_type;
-                // TODO: factor this out
-                switch(type->core) {
-                case CORE_I8:
-                    byte_size = 1;
-                    break;
-                case CORE_I16:
-                    byte_size = 2;
-                    break;
-                case CORE_I32:
-                    byte_size = 4;
-                    break;
-                case CORE_PTR:
-                    byte_size = 8;
-                    break;
-                default:
-                    unreachable("type->core=%d", type->core);
-                }
+                Type* type = ast->as.binop.lhs->type->ptr_count == 1 ? ast->as.binop.lhs->type->inner_type : type_ptr(qbe->arena, ast->as.binop.lhs->type->inner_type, ast->as.binop.lhs->type->ptr_count - 1);
+                size_t byte_size = type_size(type);
                 if(byte_size > 1) nprintfln("    %%.s%zu =l mul %%.s%zu, %zu", offset, index, byte_size);
                 else offset = index;
                 v1 = offset;
