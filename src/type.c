@@ -157,8 +157,7 @@ void type_dump(FILE* f, Type* t) {
     }
 }
 bool type_isbinary(Type* t) {
-    if(t->core != CORE_I8 && t->core != CORE_I16 && t->core != CORE_I32 && t->core != CORE_PTR) return false;
-    return true;
+    return t && (t->core == CORE_I8 || t->core == CORE_I16 || t->core == CORE_I32 || t->core == CORE_PTR);
 }
 bool type_isint(Type* t) {
     return t && (t->core == CORE_I8 || t->core == CORE_I16 || t->core == CORE_I32);
