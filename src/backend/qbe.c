@@ -185,7 +185,13 @@ size_t build_qbe_ast(Qbe* qbe, AST* ast) {
             size_t v0 = build_ptr_to(qbe, ast->as.binop.lhs);
             size_t v1 = build_qbe_ast(qbe, ast->as.binop.rhs);
             if(!v0 || !v1) return 0;
-            nprintfln("    store%s %%.s%zu, %%.s%zu", type_to_qbe(qbe->arena, ast->type), v1, v0); 
+            if(ast->as.binop.lhs->type->core == CORE_STRUCT) {
+                // NOTE: blit might not always be supported by QBE. Maybe call qbe -v first?
+                nprintfln("    # If your QBE doesn't have blit. Update to the latest version");
+                nprintfln("    blit %%.s%zu, %%.s%zu, %zu", v1, v0, type_size(ast->as.binop.lhs->type));
+            } else {
+                nprintfln("    store%s %%.s%zu, %%.s%zu", type_to_qbe(qbe->arena, ast->type), v1, v0); 
+            }
             n = v1;
         } break;
         case TOKEN_SHL: {
@@ -311,7 +317,9 @@ size_t build_qbe_ast(Qbe* qbe, AST* ast) {
         case '.': {
             size_t v0 = build_qbe_ast(qbe, ast->as.binop.lhs);
             Type* t = ast->as.binop.lhs->type;
-            assert(t->core == CORE_STRUCT || t->core == CORE_CONST_ARRAY);
+            assert(t->core == CORE_STRUCT || t->core == CORE_CONST_ARRAY || t->core == CORE_PTR);
+            // FIXME: Very very very very dumb patch.
+            if(t->core == CORE_PTR) t = t->inner_type;
             switch(t->core) {
             case CORE_STRUCT: {
                 Struct* s = &t->struc;
@@ -469,8 +477,14 @@ bool build_qbe_statement(Qbe* qbe, Statement* statement) {
         alloca_params(type_size(type), &sz, &count);
         nprintfln("    %%%s =l alloc%zu %zu", name->data, sz, count);
         if(init) {
-            size_t n = build_qbe_ast(qbe, init);
-            nprintfln("    store%s %%.s%zu, %%%s", type_to_qbe(qbe->arena, type), n, name->data);
+            size_t v1 = build_qbe_ast(qbe, init);
+            if(type->core == CORE_STRUCT) {
+                // NOTE: blit might not always be supported by QBE. Maybe call qbe -v first?
+                nprintfln("    # If your QBE doesn't have blit. Update to the latest version");
+                nprintfln("    blit %%.s%zu, %%%s, %zu", v1, name->data, type_size(type));
+            } else {
+                nprintfln("    store%s %%.s%zu, %%%s", type_to_qbe(qbe->arena, type), v1, name->data); 
+            }
         }
     } break;
     case STATEMENT_SCOPE:

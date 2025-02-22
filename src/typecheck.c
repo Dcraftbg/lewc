@@ -95,11 +95,6 @@ bool typecheck_ast(ProgramState* state, AST* ast) {
                 type_dump(stderr, ast->as.binop.lhs->type); eprintf(" = "); type_dump(stderr, ast->as.binop.rhs->type); eprintf(NEWLINE);
                 return false;
             }
-            if(!type_isbinary(ast->as.binop.lhs->type)) {
-                eprintfln("ERROR: We don't support assignment between nonbinary types:");
-                type_dump(stderr, ast->as.binop.lhs->type); eprintf(" = "); type_dump(stderr, ast->as.binop.rhs->type); eprintf(NEWLINE);
-                return false;
-            }
             if(ast->as.binop.lhs->kind == AST_BINOP && ast->as.binop.lhs->as.binop.op == '.' && ast->as.binop.lhs->as.binop.lhs->type->core == CORE_CONST_ARRAY) {
                 eprintfln("ERROR: Cannot assign to `%s` of a constant array!", ast->as.binop.lhs->as.binop.rhs->as.symbol.name->data);
                 return false;
