@@ -33,10 +33,10 @@ void infer_down_ast(ProgramState* state, AST* ast, Type* type) {
     switch(ast->kind) {
     case AST_SYMBOL: {
         if(ast->as.symbol.sym->type) {
-            if(!type_eq(ast->as.symbol.sym->type, type)) {
-                eprintf("ERROR: Mismatch between symbol type "); type_dump(stderr, ast->as.symbol.sym->type); eprintf(" and type expected by expression: "); type_dump(stderr, type); eprintf(NEWLINE);
-                return;
-            }
+            // if(!type_eq(ast->as.symbol.sym->type, type)) {
+            //     eprintf("ERROR: Mismatch between symbol type "); type_dump(stderr, ast->as.symbol.sym->type); eprintf(" and type expected by expression: "); type_dump(stderr, type); eprintf(NEWLINE);
+            //     return;
+            // }
             ast->type = ast->as.symbol.sym->type;
             return;
         }
