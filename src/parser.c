@@ -366,7 +366,6 @@ AST* parse_subscript(Parser* parser, AST* what) {
     return ast_new_subscript(parser->arena, what, v);
 }
 AST* parse_ast(Parser* parser, int expr_precedence) {
-    // eprintfln("parse_ast");
     Token t;
     AST* v = NULL;
     t = lexer_peak_next(parser->lexer);
@@ -393,6 +392,7 @@ AST* parse_ast(Parser* parser, int expr_precedence) {
             int bin_precedence = binop_prec(binop);
             if (bin_precedence > expr_precedence) return v;
             lexer_eat(parser->lexer, 1);
+            Snapshot snap = lexer_snap_take(parser->lexer);
             AST* v2 = parse_basic(parser);
             if(!v2) return NULL;
             t = lexer_peak_next(parser->lexer);
@@ -403,77 +403,23 @@ AST* parse_ast(Parser* parser, int expr_precedence) {
             BINOPS
             #undef X
                 next_prec = binop_prec(next_op = t.kind);
-                if (bin_precedence > next_prec) {
-                    lexer_eat(parser->lexer, 1);
-                    v2 = ast_new_binop(
-                        parser->arena,
-                        next_op,
-                        v2, 
-                        parse_ast(parser, next_prec)
-                    );
-                }
                 break;
             case '[':
                 next_prec = 2;
-                if (bin_precedence > next_prec) {
-                    v2 = parse_subscript(parser, v2);
-                }
                 break;
             case '(':
                 next_prec = 2;
-                if (bin_precedence > next_prec) {
-                    v2 = parse_astcall(parser, v2);
-                }
                 break;
+            }
+            if (bin_precedence > next_prec) {
+                lexer_snap_restore(parser->lexer, snap);
+                v2 = parse_ast(parser, bin_precedence);
             }
             v = ast_new_binop(parser->arena, binop, v, v2);
         } break;
         default:
             return v;
         }
-#if 0
-        t = lexer_peak_next(parser->lexer);
-        switch(t.kind) {
-        case '(': {
-            v = parse_astcall(parser, v);
-        } break;
-        #define X(op) case op:
-        OPS
-        #undef X
-        {
-            int curop = t.kind;
-            int curprecedence = binop_prec(op);
-            AST* v2 = parse_basic(parser);
-            if(!v2) return NULL;
-            t = lexer_peak_next(parser->lexer);
-            switch(t.kind) {
-            case '(':
-                v = ast_new_binop(parser->arena, op, v, parse_astcall(parser, v2));
-                break;
-            #define X(op) case op:
-            OPS 
-            #undef X
-            {
-                int newop = t.kind;
-                int newprecedence = binop_prec(newop);
-                if (precedence >= newprecedence) {
-                    lexer_eat(parser->lexer, 1);
-                    AST* v3 = parse_ast(parser);
-                    if(!v3) return NULL;
-                    v2 = ast_new_binop(parser->arena, newop, v2, v3);
-                }
-                v = ast_new_binop(parser->arena, op, v, v2);
-            } break;
-            default:
-                v = ast_new_binop(parser->arena, op, v, v2);
-                break;
-            }
-        } break;
-        default:
-            running = false;
-            break;
-        }
-#endif
     }
     return v;
 }
