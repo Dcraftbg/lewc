@@ -104,9 +104,12 @@ bool try_infer_ast(ProgramState* state, AST* ast) {
             // TODO: I don't know how to report this
             if(!signature_type || signature_type->core != CORE_FUNC) return true;
             FuncSignature* signature = &signature_type->signature;
-            if(signature->input.len != ast->as.call.args.len) return true;
-            for(size_t i = 0; i < signature->input.len; ++i) {
-                infer_down_ast(state, ast->as.call.args.items[i], signature->input.items[i].type);
+            // if(signature->input.len != ast->as.call.args.len) return true;
+            for(size_t i = 0; i < ast->as.call.args.len; ++i) {
+                if(i >= signature->input.len) 
+                    try_infer_ast(state, ast->as.call.args.items[i]);
+                else 
+                    infer_down_ast(state, ast->as.call.args.items[i], signature->input.items[i].type);
             }
             ast->type = signature->output;
             return true;
