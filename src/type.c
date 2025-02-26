@@ -134,6 +134,11 @@ void type_dump(FILE* f, Type* t) {
             }
             type_dump(f, arg->type);
         }
+        if(t->signature.variadic) {
+            if(t->signature.input.len > 0) fprintf(f, ", ");
+            assert(t->signature.variadic == VARIADIC_C);
+            fprintf(f, "... #c");
+        }
         fputc(')', f);
         if(t->signature.output) {
             fprintf(f, " -> ");

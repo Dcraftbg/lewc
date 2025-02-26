@@ -12,6 +12,10 @@ typedef struct {
 } Args;
 typedef struct {
     Args input;
+    enum {
+        VARIADIC_NONE,
+        VARIADIC_C
+    } variadic;
     Type* output;
 } FuncSignature;
 typedef struct SymTabNode SymTabNode;

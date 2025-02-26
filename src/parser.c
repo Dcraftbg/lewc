@@ -92,6 +92,7 @@ Type* parse_type(Parser* parser) {
     }
 }
 void parse_func_signature(Parser* parser, FuncSignature* sig) {
+    sig->variadic = VARIADIC_NONE;
     Token t = {0};
     if((t=lexer_next(parser->lexer)).kind != '(') {
         eprintfln("ERROR:%s: Expected '(' but found %s in function signature", tloc(t), tdisplay(t));
@@ -104,6 +105,23 @@ void parse_func_signature(Parser* parser, FuncSignature* sig) {
         if(t.kind == TOKEN_ATOM) {
             name = t.atom;
             lexer_eat(parser->lexer, 1);
+        } else if (t.kind == '.' && lexer_peak(parser->lexer, 1).kind == '.' && lexer_peak(parser->lexer, 2).kind == '.') {
+            lexer_eat(parser->lexer, 3);
+            if ((t = lexer_next(parser->lexer)).kind == '#') {
+                if ((t = lexer_next(parser->lexer)).kind != TOKEN_ATOM || strcmp(t.atom->data, "c") != 0) {
+                    eprintfln("ERROR: %s: Expected c after ... # but found %s", tloc(t), tdisplay(t));
+                    exit(1);
+                }
+                sig->variadic = VARIADIC_C;
+            } else {
+                eprintfln("ERROR: %s: Expected #c after ... but found %s", tloc(t), tdisplay(t));
+                exit(1);
+            }
+            if((t=lexer_peak_next(parser->lexer)).kind != ')') {
+                eprintfln("ERROR: %s: Expected end of function signature ')' after variadic (...) but got %s", tloc(t), tdisplay(t));
+                exit(1);
+            }
+            break;
         }
         t = lexer_next(parser->lexer);
         if(t.kind != ':') {
@@ -121,7 +139,7 @@ void parse_func_signature(Parser* parser, FuncSignature* sig) {
             break;
         } else if (t.kind == ',') {
             lexer_eat(parser->lexer, 1);
-        } else {
+        }  else {
             eprintfln("ERROR: %s: Expected ')' or ',' but found %s in function signature", tloc(t), tdisplay(t));
             exit(1);
         }

@@ -66,13 +66,14 @@ bool typecheck_ast(ProgramState* state, AST* ast) {
             eprintfln("ERROR: Too few argument in function call.");
             goto arg_size_mismatch;
         }
-        if(ast->as.call.args.len > t->signature.input.len) {
+        if(ast->as.call.args.len > t->signature.input.len && t->signature.variadic == VARIADIC_NONE) {
             eprintfln("ERROR: Too many argument in function call.");
             goto arg_size_mismatch;
         }
         FuncSignature* signature = &t->signature;
         for(size_t i = 0; i < ast->as.call.args.len; ++i) {
             if(!typecheck_ast(state, ast->as.call.args.items[i])) return false;
+            if(i >= signature->input.len) continue;
             if(!type_eq(ast->as.call.args.items[i]->type, signature->input.items[i].type)) {
                 eprintfln("Argument %zu did not match type!", i);
                 eprintf("Expected "); type_dump(stderr, signature->input.items[i].type); eprintf("\n");
@@ -195,6 +196,8 @@ bool typecheck_ast(ProgramState* state, AST* ast) {
         case '&':
             if(!ast->type || ast->type->core != CORE_PTR) {
                 eprintfln("Trying to get address, and its non pointer?!?");
+                type_dump(stderr, ast->type);
+                eprintf(NEWLINE);
                 return false;
             }
             switch(ast->as.unary.rhs->kind) {
