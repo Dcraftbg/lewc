@@ -1,0 +1,8 @@
+down_cast :: () -> i32 {
+    foo := c"Foo";
+    return cast(foo, i32);
+}
+up_cast :: () -> i32 {
+    foo := 8u8;
+    return cast(foo, i32);
+}

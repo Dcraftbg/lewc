@@ -1,0 +1,1 @@
+./bin/lewc examples/cast.lew -o ./int/tests/cast.s
