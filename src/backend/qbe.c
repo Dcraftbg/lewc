@@ -140,7 +140,7 @@ size_t build_ptr_to(Qbe* qbe, AST* ast) {
 }
 size_t build_qbe_ast(Qbe* qbe, AST* ast) {
     size_t n=0;
-    static_assert(AST_KIND_COUNT == 9, "Update build_qbe_ast");
+    static_assert(AST_KIND_COUNT == 10, "Update build_qbe_ast");
     switch(ast->kind) {
     case AST_FUNC:
         eprintfln("ERROR: TBD build function ast?");
@@ -148,6 +148,16 @@ size_t build_qbe_ast(Qbe* qbe, AST* ast) {
     case AST_NULL:
         nprintfln("    %%.s%zu =l copy 0", n=qbe->inst++);
         break;
+    case AST_CAST: {
+        size_t v0 = build_qbe_ast(qbe, ast->as.cast.what);
+        size_t v0_t_size = type_size(ast->as.cast.what->type);
+        size_t into_size = type_size(ast->as.cast.into);
+        if(into_size < v0_t_size) {
+            nprintfln("    %%.s%zu =%s copy %%.s%zu", n=qbe->inst++, type_to_qbe(qbe->arena, ast->as.cast.into), v0);
+        } else if(into_size > v0_t_size) {
+            nprintfln("    %%.s%zu =%s ext%s %%.s%zu", n=qbe->inst++, type_to_qbe(qbe->arena, ast->as.cast.into), type_to_qbe_full(qbe->arena, ast->as.cast.what->type), v0);
+        } else n = v0;
+    } break;
     case AST_SUBSCRIPT: {
         size_t v0 = build_qbe_ast(qbe, ast->as.subscript.what);
         size_t v1 = build_qbe_ast(qbe, ast->as.subscript.with);

@@ -321,6 +321,23 @@ AST* parse_basic(Parser* parser) {
         lexer_eat(parser->lexer, 1);
         return v;
     } break;
+    case TOKEN_CAST:
+        if((t=lexer_next(parser->lexer)).kind != '(') {
+            eprintfln("ERROR:%s: Expected '(' after cast keyword but got %s", tloc(t), tdisplay(t));
+            return NULL;
+        }
+        AST* what = parse_ast(parser, INIT_PRECEDENCE);
+        if(!what) return NULL;
+        if((t=lexer_next(parser->lexer)).kind != ',') {
+            eprintfln("ERROR:%s: Expected ',' after cast but got %s", tloc(t), tdisplay(t));
+            return NULL;
+        }
+        Type* into = parse_type(parser);
+        if((t=lexer_next(parser->lexer)).kind != ')') {
+            eprintfln("ERROR:%s: Expected ')' at the end of cast but got %s", tloc(t), tdisplay(t));
+            return NULL;
+        }
+        return ast_new_cast(parser->arena, what, into);
     case TOKEN_NULL:
         return ast_new_null(parser->arena);
     case TOKEN_ATOM:

@@ -50,10 +50,12 @@ SymTabNode* symtab_node_new(SymTabNode* parent, Arena* arena) {
 bool syn_analyse_func(ProgramState* state, Function* func);
 // TODO: Better error messages as AST should probably store location too
 bool syn_analyse_ast(ProgramState* state, SymTabNode* node, AST* ast) {
-    static_assert(AST_KIND_COUNT == 9, "Update syn_analyse_ast");
+    static_assert(AST_KIND_COUNT == 10, "Update syn_analyse_ast");
     switch(ast->kind) {
     case AST_FUNC:
         return syn_analyse_func(state, ast->as.func);
+    case AST_CAST:
+        return syn_analyse_ast(state, node, ast->as.cast.what);
     case AST_CALL:
         if(!syn_analyse_ast(state, node, ast->as.call.what)) return false;
         for(size_t i = 0; i < ast->as.call.args.len; ++i) {

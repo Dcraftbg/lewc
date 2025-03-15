@@ -366,6 +366,7 @@ Token lexer_next(Lexer* lexer) {
             else if (wordeq(word, "typedef")) return MAKE_TOKEN(TOKEN_TYPEDEF);
             else if (wordeq(word, "struct" )) return MAKE_TOKEN(TOKEN_STRUCT);
             else if (wordeq(word, "null"   )) return MAKE_TOKEN(TOKEN_NULL);
+            else if (wordeq(word, "cast"   )) return MAKE_TOKEN(TOKEN_CAST);
             return MAKE_TOKEN(TOKEN_ATOM, .atom = atom_alloc(lexer->atom_table,word.start, (size_t)(word.end-word.start)));
         }
     }

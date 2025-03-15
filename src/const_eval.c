@@ -5,7 +5,7 @@ bool const_eval_const(ProgramState* state, Constant* c);
 // TODO: is evaluating flag for circular definition errors
 // TODO: Actual decent error reporting
 AST* const_eval_ast(ProgramState* state, AST* ast) {
-    static_assert(AST_KIND_COUNT == 9, "Update const_eval_ast");
+    static_assert(AST_KIND_COUNT == 10, "Update const_eval_ast");
     switch(ast->kind) {
     case AST_CALL:
         eprintfln("ERROR: Cannot call inside constant expression");
@@ -21,6 +21,9 @@ AST* const_eval_ast(ProgramState* state, AST* ast) {
         return NULL;
     case AST_SUBSCRIPT:
         eprintfln("ERROR: subscription in constant expressions are currently forbidden. Sorry.");
+        return NULL;
+    case AST_CAST:
+        eprintfln("ERROR: casts in constant expressions are currently forbidden. Sorry.");
         return NULL;
     case AST_SYMBOL: {
         Symbol* sym = ast->as.symbol.sym;

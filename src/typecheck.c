@@ -51,10 +51,18 @@ bool typecheck_get_member_of(Type* type, Atom* member) {
 // TODO: Actually decent error reporting
 bool typecheck_ast(ProgramState* state, AST* ast) {
     if(!ast) return false;
-    static_assert(AST_KIND_COUNT == 9, "Update typecheck_ast");
+    static_assert(AST_KIND_COUNT == 10, "Update typecheck_ast");
     switch(ast->kind) {
     case AST_FUNC:
         return typecheck_func(state, ast->as.func);
+    case AST_CAST: {
+        if(!typecheck_ast(state, ast->as.cast.what)) return false;
+        if((!type_isbinary(ast->as.cast.what->type)) || (!type_isbinary(ast->as.cast.into))) {
+            eprintfln("ERROR: Cannot cast between non-binary types:");
+            eprintf("Trying to cast "); type_dump(stderr, ast->as.cast.what->type); eprintf(" into "); type_dump(stderr, ast->as.cast.into); eprintf(NEWLINE);
+            return false;
+        }
+    } break;
     case AST_CALL: {
         if(!typecheck_ast(state, ast->as.call.what)) return false;
         Type *t = ast->as.call.what->type;

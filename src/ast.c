@@ -85,6 +85,13 @@ AST* ast_new_null(Arena* arena) {
     ast->kind = AST_NULL;
     return ast;
 }
+AST* ast_new_cast(Arena* arena, AST *what, Type* into) {
+    AST* ast = ast_new(arena);
+    ast->kind = AST_CAST;
+    ast->as.cast.what = what;
+    ast->as.cast.into = into;
+    return ast;
+}
 void call_args_dealloc(CallArgs* this) {
     if(this->items) free(this->items);
     this->items = NULL;

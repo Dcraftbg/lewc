@@ -13,6 +13,7 @@ enum {
     AST_FUNC,
     AST_SUBSCRIPT,
     AST_NULL,
+    AST_CAST,
     AST_KIND_COUNT
 };
 typedef struct AST AST;
@@ -35,6 +36,7 @@ struct AST {
         struct { const char* str; size_t len; } str;
         struct { Atom* name; Symbol* sym; } symbol;
         struct { AST *what, *with; } subscript;
+        struct { AST *what; Type* into; } cast;
         Function* func;
     } as;
 };
@@ -48,4 +50,5 @@ AST* ast_new_call(Arena* arena, AST* what, CallArgs args);
 AST* ast_new_func(Arena* arena, Function* func);
 AST* ast_new_subscript(Arena* arena, AST *what, AST* with);
 AST* ast_new_null(Arena* arena);
+AST* ast_new_cast(Arena* arena, AST *what, Type* into);
 void call_args_dealloc(CallArgs* args);

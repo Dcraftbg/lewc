@@ -22,7 +22,7 @@ enum {
     TOKEN_BOOL_AND,
     TOKEN_BOOL_OR,
     TOKEN_NULL,
-
+    TOKEN_CAST,
 
     TOKEN_IF,
     TOKEN_ELSE,

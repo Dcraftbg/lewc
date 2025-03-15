@@ -29,7 +29,7 @@ bool try_infer_ast(ProgramState* state, AST* ast);
 void infer_down_ast(ProgramState* state, AST* ast, Type* type) {
     if(ast->kind != AST_SYMBOL && try_infer_ast(state, ast)) return;
     if(ast->type) return;
-    static_assert(AST_KIND_COUNT == 9, "Update infer_down_ast");
+    static_assert(AST_KIND_COUNT == 10, "Update infer_down_ast");
     switch(ast->kind) {
     case AST_SYMBOL: {
         if(ast->as.symbol.sym->type) {
@@ -88,7 +88,7 @@ void infer_down_ast(ProgramState* state, AST* ast, Type* type) {
 // I'm not sure tho. I think this is fine
 bool try_infer_ast(ProgramState* state, AST* ast) {
     if(ast->type) return true;
-    static_assert(AST_KIND_COUNT == 9, "Update try_infer_ast");
+    static_assert(AST_KIND_COUNT == 10, "Update try_infer_ast");
     switch(ast->kind) {
     case AST_SYMBOL: {
         Symbol* s = ast->as.symbol.sym;
@@ -204,6 +204,10 @@ bool try_infer_ast(ProgramState* state, AST* ast) {
             infer_down_ast(state, ast->as.subscript.with, &type_i32);
             return true;
         }
+    } break;
+    case AST_CAST: {
+        infer_down_ast(state, ast->as.cast.what, ast->as.cast.into);
+        ast->type = ast->as.cast.into;
     } break;
     default:
     }
