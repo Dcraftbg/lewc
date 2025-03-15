@@ -206,8 +206,10 @@ bool try_infer_ast(ProgramState* state, AST* ast) {
         }
     } break;
     case AST_CAST: {
-        infer_down_ast(state, ast->as.cast.what, ast->as.cast.into);
+        try_infer_ast(state, ast->as.cast.what);
+        // infer_down_ast(state, ast->as.cast.what, ast->as.cast.into);
         ast->type = ast->as.cast.into;
+        return true;
     } break;
     default:
     }
