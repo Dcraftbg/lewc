@@ -61,3 +61,10 @@ Statement* statement_local_def(Arena* arena, Atom* name, Symbol* symbol) {
     me->as.local_def.symbol = symbol;
     return me;
 }
+
+Statement* statement_defer(Arena* arena, Statement* statement) {
+    Statement* me = statement_new(arena);
+    me->kind = STATEMENT_DEFER;
+    me->as.defer.statement = statement;
+    return me;
+}

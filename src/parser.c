@@ -500,6 +500,9 @@ Statement* parse_body(Parser* parser) {
 // TODO: Maybe this should be errorable?
 Statement* parse_statement(Parser* parser, Token t) {
     switch(t.kind) {
+        case TOKEN_DEFER: 
+            lexer_eat(parser->lexer, 1);
+            return statement_defer(parser->arena, parse_statement(parser, lexer_peak_next(parser->lexer)));
         case TOKEN_RETURN: {
             lexer_eat(parser->lexer, 1);
             if(lexer_peak_next(parser->lexer).kind == ';') {

@@ -17,6 +17,7 @@ enum {
     STATEMENT_LOOP,
     STATEMENT_IF,
     STATEMENT_LOCAL_DEF,
+    STATEMENT_DEFER,
     STATEMENT_COUNT
 };
 struct Statement {
@@ -41,6 +42,9 @@ struct Statement {
             Atom* name;
             Symbol* symbol;
         } local_def;
+        struct {
+            Statement* statement;
+        } defer;
     } as;
     /*metadata*/;
 };
@@ -51,6 +55,7 @@ Statement* statement_if(Arena* arena, AST* cond, Statement* body, Statement* elz
 Statement* statement_while(Arena* arena, AST* cond, Statement* body);
 Statement* statement_loop(Arena* arena, Statement* body);
 Statement* statement_local_def(Arena* arena, Atom* name, Symbol* symbol);
+Statement* statement_defer(Arena* arena, Statement* statement);
 #include "func.h"
 #include "syn_analys.h"
 #include "constants.h"

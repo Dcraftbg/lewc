@@ -5,7 +5,7 @@ bool cf_analyse_ast(ProgramState* state, AST* ast);
 bool cf_analyse_scope(ProgramState* state, Statements* scope);
 bool cf_analyse_statement(ProgramState* state, Statement* statement) {
     (void)state;
-    static_assert(STATEMENT_COUNT == 7, "Update cf_analyse_statement");
+    static_assert(STATEMENT_COUNT == 8, "Update cf_analyse_statement");
     switch(statement->kind) {
     case STATEMENT_EVAL:
         if(!cf_analyse_ast(state, statement->as.ast)) return false;
@@ -35,6 +35,13 @@ bool cf_analyse_statement(ProgramState* state, Statement* statement) {
         break;
     case STATEMENT_LOCAL_DEF:
         if(statement->as.local_def.symbol->ast) return cf_analyse_ast(state, statement->as.local_def.symbol->ast);
+        break;
+    case STATEMENT_DEFER:
+        if(!cf_analyse_statement(state, statement->as.defer.statement)) return false;
+        if(statement->as.defer.statement->terminal) {
+            eprintfln("ERROR: Terminal statements are not allowed within defer yet. Sorry");
+            return false;
+        }
         break;
     default:
         unreachable("statement->kind=%d", statement->kind);

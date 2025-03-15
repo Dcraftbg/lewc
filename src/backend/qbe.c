@@ -465,7 +465,7 @@ bool build_qbe_cond(Qbe* qbe, AST* ast, const char* yes, const char* no) {
 bool build_qbe_scope(Qbe* qbe, Statements* scope);
 bool build_qbe_statement(Qbe* qbe, Statement* statement) {
     size_t n = 0;
-    static_assert(STATEMENT_COUNT == 7, "Update build_qbe_statement");
+    static_assert(STATEMENT_COUNT == 8, "Update build_qbe_statement");
     switch(statement->kind) {
     case STATEMENT_EVAL:
         build_qbe_ast(qbe, statement->as.ast);
@@ -543,6 +543,10 @@ bool build_qbe_statement(Qbe* qbe, Statement* statement) {
         }
         nprintfln("%s", end);
     } break;
+    // defer is a makeshift statement. Its here just to indicate its existence for 
+    // other processes throughout the chain to verify
+    case STATEMENT_DEFER: 
+        break;
     default:
         unreachable("statement->kind=%d", statement->kind);
     }

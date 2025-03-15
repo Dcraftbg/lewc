@@ -218,7 +218,7 @@ bool try_infer_ast(ProgramState* state, AST* ast) {
 
 void typeinfer_scope(ProgramState* state, Type* return_type, Statements* scope);
 void typeinfer_statement(ProgramState* state, Type* return_type, Statement* statement) {
-    static_assert(STATEMENT_COUNT == 7, "Update typeinfer_statement");
+    static_assert(STATEMENT_COUNT == 8, "Update typeinfer_statement");
     switch(statement->kind) {
     case STATEMENT_RETURN:
         if(statement->as.ast) infer_down_ast(state, statement->as.ast, return_type);
@@ -243,15 +243,18 @@ void typeinfer_statement(ProgramState* state, Type* return_type, Statement* stat
     case STATEMENT_SCOPE:
         typeinfer_scope(state, return_type, statement->as.scope);
         break;
-    case STATEMENT_IF: {
+    case STATEMENT_IF:
         try_infer_ast(state, statement->as.iff.cond);
         typeinfer_statement(state, return_type, statement->as.iff.body);
         if(statement->as.iff.elze) typeinfer_statement(state, return_type, statement->as.iff.elze);
-    } break;
-    case STATEMENT_WHILE: {
+        break;
+    case STATEMENT_WHILE:
         try_infer_ast(state, statement->as.whil.cond);
         typeinfer_statement(state, return_type, statement->as.whil.body);
-    } break;
+        break;
+    case STATEMENT_DEFER:
+        typeinfer_statement(state, return_type, statement->as.defer.statement);
+        break;
     default:
         unreachable("statement->kind=%d", statement->kind);
     }

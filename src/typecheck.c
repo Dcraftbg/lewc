@@ -244,7 +244,7 @@ bool typecheck_ast(ProgramState* state, AST* ast) {
 }
 bool typecheck_scope(ProgramState* state, Type* return_type, Statements* scope);
 bool typecheck_statement(ProgramState* state, Type* return_type, Statement* statement) {
-    static_assert(STATEMENT_COUNT == 7, "Update typecheck_statement");
+    static_assert(STATEMENT_COUNT == 8, "Update typecheck_statement");
     switch(statement->kind) {
     case STATEMENT_RETURN:
         if(!statement->as.ast && !return_type) return true;
@@ -278,6 +278,9 @@ bool typecheck_statement(ProgramState* state, Type* return_type, Statement* stat
         break;
     case STATEMENT_LOOP:
         if(!typecheck_statement(state, return_type, statement->as.loop.body)) return false;
+        break;
+    case STATEMENT_DEFER: 
+        if(!typecheck_statement(state, return_type, statement->as.defer.statement)) return false;
         break;
     case STATEMENT_SCOPE:
         if(!typecheck_scope(state, return_type, statement->as.scope)) return false;
