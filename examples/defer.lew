@@ -1,0 +1,6 @@
+extern printf :: (fmt: *u8, ... #c);
+main :: () -> i32 {
+    defer printf(c"Using defer\n");
+    defer printf(c"We did this\n");
+    return 0;
+}
