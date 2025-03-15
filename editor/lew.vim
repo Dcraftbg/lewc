@@ -13,12 +13,12 @@ endif
 set iskeyword=a-z,A-Z,_,48-57
 
 let s:lew_preproc = ['c']
-let s:lew_preproc_pattern     = '(' . join(s:lew_preproc, '\|') . ')'
+let s:lew_preproc_pattern     = '(' . join(s:lew_preproc, '|') . ')'
 
 " Its a pretty dumb hack but it works I guess :D
 execute 'syn match lewPreprocDirective /\v#\s*' . s:lew_preproc_pattern . '>/'
 execute 'syn match lewPreprocError     /\v#\s*(' . s:lew_preproc_pattern . '>)@!\w*>/'
-syn keyword lewKeywords         return extern if else while loop typedef struct null cast 
+syn keyword lewKeywords         return extern if else while loop typedef struct null cast defer 
 syn region  lewComment          start="//" keepend end="$"
 syn keyword lewType             u8 u16 u32 u64 usize i8 i16 i32 i64 isize bool
 " TODO: these large comments are incorrect as we match /*/**/*/ correctly
