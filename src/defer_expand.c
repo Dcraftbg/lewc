@@ -62,16 +62,19 @@ void defer_expand_statement(Arena* arena, DeferStack* ds, Statement** statement)
     case STATEMENT_RETURN:
         if((*statement)->as.ast) defer_expand_ast(arena, (*statement)->as.ast);
         Statement* ret = *statement;
-        *statement = statement_scope(arena);
-        Statements* scope = (*statement)->as.scope;
+        Statement* scope_statement = statement_scope(arena);
+        Statements* scope = (scope_statement)->as.scope;
         for(int i = ((int)ds->len) - 1; i >= 0; --i) {
             Statements* deferred = &ds->items[i];
+            if(deferred->len == 0) continue;
             da_reserve(scope, deferred->len);
             for(int j = ((int)deferred->len) - 1; j >= 0; --j) {
                 scope->items[scope->len++] = deferred->items[j];
             }
         }
         da_push(scope, ret);
+        if(scope->len > 1) *statement = scope_statement;
+        else free(scope->items);
         break;
     case STATEMENT_IF:
         defer_expand_ast(arena, (*statement)->as.iff.cond);
