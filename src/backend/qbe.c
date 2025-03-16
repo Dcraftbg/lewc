@@ -376,7 +376,6 @@ size_t build_qbe_ast(Qbe* qbe, AST* ast) {
             nprintf("%s %%.s%zu", type_to_qbe(qbe->arena, args->items[i]->type), result_args.items[i]);
         }
         nprintfln(")");
-        free(args->items);
     } break;
     case AST_C_STR: {
         QbeGlobal global = {0};
