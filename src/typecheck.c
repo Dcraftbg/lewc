@@ -224,6 +224,10 @@ bool typecheck_ast(ProgramState* state, AST* ast) {
                     break;
                 }
             } break;
+            case AST_BINOP: {
+                AST* expr = ast->as.unary.rhs;                
+                if(expr->as.binop.op != '.') unreachable("Taking address of binop != '.'");
+            } break;
             default:
                 unreachable("rhs.kind=%c", ast->as.unary.rhs->kind);
             }

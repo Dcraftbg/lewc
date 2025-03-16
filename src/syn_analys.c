@@ -121,8 +121,9 @@ bool syn_analyse_ast(ProgramState* state, SymTabNode* node, AST* ast) {
                 break;
             case AST_BINOP:
                 if(ast->as.unary.rhs->as.binop.op == '.') {
-                    eprintfln("TODO: Take address of field");
-                    return false;
+                    // eprintfln("TODO: Take address of field");
+                    // return false;
+                    break;
                 }
                 // fallthrough
             default:
