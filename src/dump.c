@@ -1,3 +1,4 @@
+#if 0
 #include "dump.h"
 #include "scratch.h"
 #include "strutils.h"
@@ -134,3 +135,4 @@ void dump(ProgramState* state) {
         }
     }
 }
+#endif
