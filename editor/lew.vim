@@ -1,5 +1,6 @@
 " Vim syntax file
 " Language: Lew
+" Version: 0.1.1
 
 " Usage
 " Put this in $VIMRUNTIME/syntax/lew.vim
@@ -25,7 +26,7 @@ syn keyword lewType             u8 u16 u32 u64 usize i8 i16 i32 i64 isize bool
 " inside the lexer but here the second */ gets left out
 " syn region  lewComment          start="/\*" end="\*/"  
 syn match   lewString           /\v(c)?".*"/
-syn match   lewNumber           /\d[a-zA-Z0-9_]*/
+syn match   lewNumber           /\<\d[a-zA-Z0-9_]*/
 
 highlight default link lewPreprocDirective PreProc
 highlight default link lewPreprocError     Error
