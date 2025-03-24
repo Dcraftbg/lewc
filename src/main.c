@@ -27,6 +27,7 @@
 #include "const_eval.h"
 #include "defer_expand.h"
 #include "build.h"
+#include "version.h"
 
 const char* shift_args(int *argc, const char ***argv) {
     if((*argc) <= 0) return NULL;
@@ -39,11 +40,12 @@ const char* shift_args(int *argc, const char ***argv) {
 BuildOptions build_options = { 0 };
 #define UPRINTF(...) fprintf(stderr, __VA_ARGS__)
 void usage() {
-    UPRINTF("Usage %s:\n", build_options.exe);
+    UPRINTF("Usage %s: (v"VERSION_STR" "VERSION_STABLE")\n", build_options.exe);
     UPRINTF(" -o <path>             - Specify output path\n");
     UPRINTF(" <path>                - Specify input path\n");
     UPRINTF(" --arch=<arch>         - Specify output architecture\n");
     UPRINTF(" --platform=<platform> - Specify output platform\n");
+    UPRINTF(" -v|--version          - Get lewc version\n");
 }
 
 static Platform default_platform = 
@@ -85,6 +87,10 @@ int main(int argc, const char** argv) {
                 usage();
                 exit(1);
             }
+        }
+        else if (strcmp(arg, "-v") || strcmp(arg, "--version")) {
+            fprintf(stderr, "lewc v"VERSION_STR" "VERSION_STABLE"\n");
+            return 0;
         }
         else if ((arch=strstrip(arg, "--arch="))) {
             if(strcmp(arch, "x86_64")==0) target.arch = ARCH_X86_64;
