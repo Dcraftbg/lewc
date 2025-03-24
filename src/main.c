@@ -22,6 +22,7 @@
 #include "syn_analys.h"
 #include "control_flow.h"
 #include "typeinfer.h"
+#include "typefix.h"
 #include "typecheck.h"
 #include "const_eval.h"
 #include "defer_expand.h"
@@ -148,6 +149,7 @@ int main(int argc, const char** argv) {
     if(!syn_analyse(&state))          exit(1);
     if(!control_flow_analyse(&state)) exit(1);
     if(!typeinfer(&state))            exit(1);
+    if(!typefix(&state))              exit(1);
     if(!typecheck(&state))            exit(1);
     if(!const_eval(&state))           exit(1);
     defer_expand(&state);
