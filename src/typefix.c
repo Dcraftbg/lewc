@@ -78,6 +78,7 @@ bool typefix_statement(ProgramState* state, Statement* statement) {
     case STATEMENT_LOCAL_DEF:
         Symbol* s = statement->as.local_def.symbol;
         if(s->ast && !typefix_ast_nonvoid(state, s->ast)) return false;
+        if(!s->type && s->ast && s->ast->type) infer_symbol(state, s, s->ast->type);
         if(!s->type) {
             eprintfln("ERROR Failed to infer type for local `%s`", statement->as.local_def.name->data);
             return false;
