@@ -432,6 +432,7 @@ bool build(Build* build);
 bool run(Build* build);
 bool bruh(Build* build);
 bool test(Build* build);
+bool ship(Build* build);
 
 Cmd commands[] = {
    { .name = "help"       , .run=help       , .desc="Help command that explains either what a specific subcommand does or lists all subcommands" },
@@ -439,6 +440,7 @@ Cmd commands[] = {
    { .name = "run"        , .run=run        , .desc="Run the lewc" },
    { .name = "bruh"       , .run=bruh       , .desc="Build+Run the lewc" },
    { .name = "test"       , .run=test       , .desc="Run test suite or test command" },
+   { .name = "ship"       , .run=ship       , .desc="Ship lewc into a bundle" },
 };
 
 bool help(Build* build) {
@@ -537,6 +539,14 @@ bool test(Build* b) {
     if(!build(b)) return false;
     if(!build_testsys(b)) return false; 
     if(!run_testsys(b)) return false;
+    return true;
+}
+bool ship(Build* b) {
+    b->dist = true;
+    if(!build(b)) return false;
+    Nob_Cmd cmd = { 0 };
+    nob_cmd_append(&cmd, "tar", "-czvf", "lew.tar.gz", "-C", "./bin/dist/", "lewc");
+    if(!nob_cmd_run_sync(cmd)) return false;
     return true;
 }
 int main(int argc, char** argv) {
