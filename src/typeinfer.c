@@ -20,7 +20,7 @@ void infer_symbol(ProgramState* state, Symbol* s, Type* type) {
         s->infer_asts.items[i]->type = type;
         infer_up_ast(state, s->infer_asts.items[i]->parent, type);
     }
-    infer_up_ast(state, s->ast, type);
+    infer_down_ast(state, s->ast, type);
     free(s->infer_asts.items);
     memset(&s->infer_asts, 0, sizeof(s->infer_asts));
 }
