@@ -551,8 +551,43 @@ bool ship(Build* b) {
     if(!nob_cmd_run_sync(cmd)) return false;
     return true;
 }
+void go_rebuild_urself(int argc, char** argv) {
+    const char *sources[] = {
+        __FILE__,
+        "src/version.h"
+    };
+    size_t sources_count = NOB_ARRAY_LEN(sources);
+    const char *binary_path = nob_shift(argv, argc);
+#ifdef _WIN32
+    // On Windows executables almost always invoked without extension, so
+    // it's ./nob, not ./nob.exe. For renaming the extension is a must.
+    if (!nob_sv_end_with(nob_sv_from_cstr(binary_path), ".exe")) {
+        binary_path = nob_temp_sprintf("%s.exe", binary_path);
+    }
+#endif
+
+    int rebuild_is_needed = nob_needs_rebuild(binary_path, sources, sources_count);
+    if (rebuild_is_needed < 0) exit(1); // error
+    if (!rebuild_is_needed) return;     // no rebuild is needed
+
+    Nob_Cmd cmd = {0};
+
+    const char *old_binary_path = nob_temp_sprintf("%s.old", binary_path);
+
+    if (!nob_rename(binary_path, old_binary_path)) exit(1);
+    nob_cmd_append(&cmd, NOB_REBUILD_URSELF(binary_path, __FILE__));
+    if (!nob_cmd_run_sync_and_reset(&cmd)) {
+        nob_rename(old_binary_path, binary_path);
+        exit(1);
+    }
+
+    nob_cmd_append(&cmd, binary_path);
+    nob_da_append_many(&cmd, argv, argc);
+    if (!nob_cmd_run_sync_and_reset(&cmd)) exit(1);
+    exit(0);
+}
 int main(int argc, char** argv) {
-    NOB_GO_REBUILD_URSELF(argc,argv);
+    go_rebuild_urself(argc,argv);
     Build build = {0};
     build.exe = shift_args(&argc, &argv);
     assert(build.exe && "First argument should be program itself");
