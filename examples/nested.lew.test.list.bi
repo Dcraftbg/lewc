@@ -5,5 +5,5 @@
 :b stdout 0
 
 :b stderr 64
-ERROR:examples/nested.lew:2:9: Expected name of type but got: :
+ERROR examples/nested.lew:2:9: Expected name of type but got: :
 
