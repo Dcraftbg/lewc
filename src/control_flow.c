@@ -39,7 +39,7 @@ bool cf_analyse_statement(ProgramState* state, Statement* statement) {
     case STATEMENT_DEFER:
         if(!cf_analyse_statement(state, statement->as.defer.statement)) return false;
         if(statement->as.defer.statement->terminal) {
-            eprintfln("ERROR: Terminal statements are not allowed within defer yet. Sorry");
+            eprintfln("ERROR Terminal statements are not allowed within defer yet. Sorry");
             return false;
         }
         break;
@@ -74,7 +74,7 @@ bool cf_analyse_func(ProgramState* state, Function* func) {
             da_push(func->scope, statement_return(state->arena, NULL));
             return true;
         }
-        eprintfln("ERROR: Missing return statement at the end of function");
+        eprintfln("ERROR Missing return statement at the end of function");
         return false;
     }
     return true;

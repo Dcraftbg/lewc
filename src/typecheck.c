@@ -4,13 +4,13 @@
 bool typecheck_func(ProgramState* state, Function* func);
 bool typecheck_get_member_of(Type* type, Atom* member) {
     if(!type) {
-        eprintfln("ERROR: Trying to get member `%s` of void expression!", member->data);
+        eprintfln("ERROR Trying to get member `%s` of void expression!", member->data);
         return false;
     }
     switch(type->core) {
     case CORE_PTR:
         if(type->ptr_count > 1) {
-            eprintf("ERROR: Trying to get member `%s` of ", member->data); type_dump(stderr, type); eprintf(NEWLINE);
+            eprintf("ERROR Trying to get member `%s` of ", member->data); type_dump(stderr, type); eprintf(NEWLINE);
             switch(type->inner_type->core) {
             case CORE_STRUCT:
             case CORE_CONST_ARRAY:
@@ -24,25 +24,25 @@ bool typecheck_get_member_of(Type* type, Atom* member) {
         case CORE_CONST_ARRAY:
             return typecheck_get_member_of(type->inner_type, member);
         }
-        eprintf  ("ERROR: Trying to get member `%s` of ", member->data); type_dump(stderr, type); eprintf(NEWLINE);
+        eprintf  ("ERROR Trying to get member `%s` of ", member->data); type_dump(stderr, type); eprintf(NEWLINE);
         eprintfln("You can only access members to structures, constant arrays (data, len) or pointers to any of the previous.");
         return false;
     case CORE_STRUCT: {
         Struct *s = &type->struc;
         Member* m = members_get(&s->members, member);
         if(!m) {
-            eprintf("ERROR: Unknown member `%s` of ", member->data); type_dump(stderr, type); eprintf(NEWLINE);
+            eprintf("ERROR Unknown member `%s` of ", member->data); type_dump(stderr, type); eprintf(NEWLINE);
             return false;
         }
     } break;
     case CORE_CONST_ARRAY: {
         if(strcmp(member->data, "data") != 0 && strcmp(member->data, "len") != 0)  {
-            eprintfln("ERROR: Unknown member `%s` of constant array", member->data);
+            eprintfln("ERROR Unknown member `%s` of constant array", member->data);
             return false;
         }
     } break;
     default:
-        eprintf  ("ERROR: Trying to get member `%s` of ", member->data); type_dump(stderr, type); eprintf(NEWLINE);
+        eprintf  ("ERROR Trying to get member `%s` of ", member->data); type_dump(stderr, type); eprintf(NEWLINE);
         eprintfln("You can only access members to structures, constant arrays (data, len) or pointers to any of the previous.");
         return false;
     }
@@ -58,7 +58,7 @@ bool typecheck_ast(ProgramState* state, AST* ast) {
     case AST_CAST: {
         if(!typecheck_ast(state, ast->as.cast.what)) return false;
         if((!type_isbinary(ast->as.cast.what->type)) || (!type_isbinary(ast->as.cast.into))) {
-            eprintfln("ERROR: Cannot cast between non-binary types:");
+            eprintfln("ERROR Cannot cast between non-binary types:");
             eprintf("Trying to cast "); type_dump(stderr, ast->as.cast.what->type); eprintf(" into "); type_dump(stderr, ast->as.cast.into); eprintf(NEWLINE);
             return false;
         }
@@ -67,15 +67,15 @@ bool typecheck_ast(ProgramState* state, AST* ast) {
         if(!typecheck_ast(state, ast->as.call.what)) return false;
         Type *t = ast->as.call.what->type;
         if(!t || t->core != CORE_FUNC) {
-            eprintf("ERROR: Tried to call something that is not a function ("); type_dump(stderr, t); eprintfln(")");
+            eprintf("ERROR Tried to call something that is not a function ("); type_dump(stderr, t); eprintfln(")");
             return false;
         }
         if(ast->as.call.args.len < t->signature.input.len) {
-            eprintfln("ERROR: Too few argument in function call.");
+            eprintfln("ERROR Too few argument in function call.");
             goto arg_size_mismatch;
         }
         if(ast->as.call.args.len > t->signature.input.len && t->signature.variadic == VARIADIC_NONE) {
-            eprintfln("ERROR: Too many argument in function call.");
+            eprintfln("ERROR Too many argument in function call.");
             goto arg_size_mismatch;
         }
         FuncSignature* signature = &t->signature;
@@ -105,7 +105,7 @@ bool typecheck_ast(ProgramState* state, AST* ast) {
                 return false;
             }
             if(ast->as.binop.lhs->kind == AST_BINOP && ast->as.binop.lhs->as.binop.op == '.' && ast->as.binop.lhs->as.binop.lhs->type->core == CORE_CONST_ARRAY) {
-                eprintfln("ERROR: Cannot assign to `%s` of a constant array!", ast->as.binop.lhs->as.binop.rhs->as.symbol.name->data);
+                eprintfln("ERROR Cannot assign to `%s` of a constant array!", ast->as.binop.lhs->as.binop.rhs->as.symbol.name->data);
                 return false;
             }
             break;
@@ -130,7 +130,7 @@ bool typecheck_ast(ProgramState* state, AST* ast) {
                 }
             }
             if(!type_isbinary(ast->as.binop.lhs->type)) {
-                eprintfln("ERROR: We don't support addition between nonbinary types:");
+                eprintfln("ERROR We don't support addition between nonbinary types:");
                 type_dump(stderr, ast->as.binop.lhs->type); eprintf(" %c ", ast->as.binop.op); type_dump(stderr, ast->as.binop.rhs->type); eprintf("\n");
                 return false;
             }
@@ -148,7 +148,7 @@ bool typecheck_ast(ProgramState* state, AST* ast) {
                 return false;
             }
             if(!type_isbinary(ast->as.binop.lhs->type)) {
-                eprintfln("ERROR: We don't support addition between nonbinary types:");
+                eprintfln("ERROR We don't support addition between nonbinary types:");
                 type_dump(stderr, ast->as.binop.lhs->type); eprintf(" == "); type_dump(stderr, ast->as.binop.rhs->type); eprintf("\n");
                 return false;
             }
@@ -170,7 +170,7 @@ bool typecheck_ast(ProgramState* state, AST* ast) {
             Type* type = ast->as.binop.lhs->type;
             if(type->core != CORE_STRUCT && type->core != CORE_CONST_ARRAY) {
                 if(type->core == CORE_PTR && (type->inner_type->core == CORE_STRUCT || type->inner_type->core == CORE_CONST_ARRAY)) return true;
-                eprintf("ERROR: Trying to get member of non structure ("); type_dump(stderr, type); eprintfln(") isn't permitted");
+                eprintf("ERROR Trying to get member of non structure ("); type_dump(stderr, type); eprintfln(") isn't permitted");
                 return false;
             }
         } break;
@@ -337,7 +337,7 @@ bool typecheck(ProgramState* state) {
             case SYMBOL_VARIABLE:
                 if(!typecheck_ast(state, s->ast)) return false;
                 if(!type_eq(s->type, s->ast->type)) {
-                    eprintfln("ERROR: Mismatch in definition of `%s`", spair->key->data);
+                    eprintfln("ERROR Mismatch in definition of `%s`", spair->key->data);
                     eprintf(" Defined type: "); type_dump(stderr, s->type); eprintf(NEWLINE);
                     eprintf(" Value: "); type_dump(stderr, s->ast->type); eprintf(NEWLINE);
                     return false;

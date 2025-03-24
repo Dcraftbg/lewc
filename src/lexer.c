@@ -5,7 +5,7 @@ void lexer_create(Lexer* lexer, const char* ipath, AtomTable* table, Arena* aren
     lexer->src = read_entire_file(ipath, &size);
     // TODO: error handling or something?
     if(!lexer->src) {
-        eprintfln("ERROR: Could not read source file: %s",ipath);
+        eprintfln("ERROR Could not read source file: %s",ipath);
         exit(1);
     }
     lexer->cursor = lexer->src;
@@ -65,7 +65,7 @@ static void lex_str(Lexer* lexer, const char **str, size_t *len) {
     int c;
     bool escape=false;
     if((c=lexer_next_c(lexer)) != '"') {
-        eprintfln("ERROR: %s:%zu:%zu: Expected '\"' at the start of string but found %c", lexer->path, lexer->l0, lexer->c0, c);
+        eprintfln("ERROR %s:%zu:%zu: Expected '\"' at the start of string but found %c", lexer->path, lexer->l0, lexer->c0, c);
         *str = NULL;
         return;
     }
@@ -87,7 +87,7 @@ static void lex_str(Lexer* lexer, const char **str, size_t *len) {
                 break;
             default:
                 if(c >= 256) {
-                     eprintfln("ERROR: %s:%zu:%zu: UTF8 characters are not yet supported in strings :(", lexer->path, lexer->l0, lexer->c0);
+                     eprintfln("ERROR %s:%zu:%zu: UTF8 characters are not yet supported in strings :(", lexer->path, lexer->l0, lexer->c0);
                      abort();
                 }
                 scratchbuf_push(&lexer->buf, c);
@@ -100,7 +100,7 @@ static void lex_str(Lexer* lexer, const char **str, size_t *len) {
             }
             else {
                 if(c >= 256) {
-                     eprintfln("ERROR: %s:%zu:%zu: UTF8 characters are not yet supported in strings :(", lexer->path, lexer->l0, lexer->c0);
+                     eprintfln("ERROR %s:%zu:%zu: UTF8 characters are not yet supported in strings :(", lexer->path, lexer->l0, lexer->c0);
                      abort();
                 }
                 scratchbuf_push(&lexer->buf, c);
@@ -108,7 +108,7 @@ static void lex_str(Lexer* lexer, const char **str, size_t *len) {
         }
     }
     if((c=lexer_next_c(lexer)) != '"') {
-        eprintfln("ERROR: %s:%zu:%zu: Expected '\"' at the end of string but found %c", lexer->path, lexer->l0, lexer->c0, c);
+        eprintfln("ERROR %s:%zu:%zu: Expected '\"' at the end of string but found %c", lexer->path, lexer->l0, lexer->c0, c);
         *str = NULL;
         return;
     }
@@ -146,7 +146,7 @@ static Token lex_num_base16(size_t l0, size_t c0, const char* src_start, Lexer* 
             result = result * 16 + 10 + (c - 'A');
         } else if (c == '_') {}
         else {
-            eprintfln("ERROR:%s:%zu:%zu: Invalid character in base16 integer '%c' (%u)", lexer->path, lexer->l0, lexer->c0, c, c);
+            eprintfln("ERROR %s:%zu:%zu: Invalid character in base16 integer '%c' (%u)", lexer->path, lexer->l0, lexer->c0, c, c);
             return MAKE_TOKEN(TOKEN_INVALID_INT_LITERAL);
         }
     }
@@ -164,7 +164,7 @@ static Token lex_num_base2(size_t l0, size_t c0, const char* src_start, Lexer* l
             result = result * 2 + (c - '0');
         } else if (c == '_') {}
         else {
-            eprintfln("ERROR:%s:%zu:%zu: Invalid character in base10 integer '%c' (%u)", lexer->path, lexer->l0, lexer->c0, c, c);
+            eprintfln("ERROR %s:%zu:%zu: Invalid character in base10 integer '%c' (%u)", lexer->path, lexer->l0, lexer->c0, c, c);
             return MAKE_TOKEN(TOKEN_INVALID_INT_LITERAL);
         }
     }
@@ -180,7 +180,7 @@ static Token lex_num_base10(size_t l0, size_t c0, const char* src_start, Lexer* 
             result = result * 10 + (c - '0');
         } else if (c == '_') {}
         else {
-            eprintfln("ERROR:%s:%zu:%zu: Invalid character in base10 integer '%c' (%u)", lexer->path, lexer->l0, lexer->c0, c, c);
+            eprintfln("ERROR %s:%zu:%zu: Invalid character in base10 integer '%c' (%u)", lexer->path, lexer->l0, lexer->c0, c, c);
             return MAKE_TOKEN(TOKEN_INVALID_INT_LITERAL);
         }
     }
@@ -198,7 +198,7 @@ static Token lex_num_base8(size_t l0, size_t c0, const char* src_start, Lexer* l
             result = result * 8 + (c - '0');
         } else if (c == '_') {}
         else {
-            eprintfln("ERROR:%s:%zu:%zu: Invalid character in base10 integer '%c' (%u)", lexer->path, lexer->l0, lexer->c0, c, c);
+            eprintfln("ERROR %s:%zu:%zu: Invalid character in base10 integer '%c' (%u)", lexer->path, lexer->l0, lexer->c0, c, c);
             return MAKE_TOKEN(TOKEN_INVALID_INT_LITERAL);
         }
     }
@@ -211,7 +211,7 @@ static Token lex_num_by_radix(size_t l0, size_t c0, const char* src_start, Lexer
     case 2 : return lex_num_base2 (l0, c0, src_start, lexer);
     case 8 : return lex_num_base8 (l0, c0, src_start, lexer);
     default:
-        eprintfln("ERROR:%s:%zu:%zu: Unsupported integer with radix=%zu", lexer->path, l0, c0, radix);
+        eprintfln("ERROR %s:%zu:%zu: Unsupported integer with radix=%zu", lexer->path, l0, c0, radix);
         return MAKE_TOKEN(TOKEN_INVALID_INT_LITERAL);
     }
     return MAKE_TOKEN(TOKEN_INVALID_INT_LITERAL);
@@ -230,7 +230,7 @@ static bool lex_num_suffix(Lexer* lexer, Token* t) {
     } else if (wordeq(word, "i32")) {
         t->integer.type = &type_i32;
     } else {
-        eprintfln("ERROR:%s: Invalid suffix `%.*s`", tloc(*t), (int)(word.end-word.start), word.start);
+        eprintfln("ERROR %s: Invalid suffix `%.*s`", tloc(*t), (int)(word.end-word.start), word.start);
         return false;
     }
     return true;
@@ -330,12 +330,12 @@ Token lexer_next(Lexer* lexer) {
         if(lexer->cursor >= lexer->end) return MAKE_TOKEN(TOKEN_INT, .integer= { .value = 0 });
         size_t radix = lex_prefix_to_radix(lexer);
         if(!radix) {
-            eprintfln("ERROR:%s:%zu:%zu Cannot have an integer with multiple 0's (i.e. 000000)", lexer->path, lexer->l0, lexer->c0);
+            eprintfln("ERROR %s:%zu:%zu Cannot have an integer with multiple 0's (i.e. 000000)", lexer->path, lexer->l0, lexer->c0);
             return MAKE_TOKEN(TOKEN_INVALID_INT_LITERAL);
         }
         Token t = lex_num_by_radix(l0, c0, src_start, lexer, radix);
         if(!lex_num_suffix(lexer, &t)) {
-            eprintfln("ERROR:%s:%zu:%zu Invalid type suffix for integer", lexer->path, lexer->l0, lexer->c0);
+            eprintfln("ERROR %s:%zu:%zu Invalid type suffix for integer", lexer->path, lexer->l0, lexer->c0);
             return MAKE_TOKEN(TOKEN_INVALID_INT_LITERAL);
         }
         return t;
@@ -344,7 +344,7 @@ Token lexer_next(Lexer* lexer) {
         if (c >= '0' && c <= '9') {
             Token t = lex_num_by_radix(l0, c0, src_start, lexer, 10);
             if(!lex_num_suffix(lexer, &t)) {
-                eprintfln("ERROR:%s:%zu:%zu Invalid type suffix for integer", lexer->path, lexer->l0, lexer->c0);
+                eprintfln("ERROR %s:%zu:%zu Invalid type suffix for integer", lexer->path, lexer->l0, lexer->c0);
                 return MAKE_TOKEN(TOKEN_INVALID_INT_LITERAL);
             }
             return t;

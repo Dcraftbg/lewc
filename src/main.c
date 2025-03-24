@@ -88,21 +88,21 @@ int main(int argc, const char** argv) {
         else if ((arch=strstrip(arg, "--arch="))) {
             if(strcmp(arch, "x86_64")==0) target.arch = ARCH_X86_64;
             else {
-                eprintfln("ERROR: Unknown target arch: %s", arch);
+                eprintfln("ERROR Unknown target arch: %s", arch);
                 exit(1);
             }
         }
         else if ((platform=strstrip(arg, "--platform="))) {
             if (strcmp(platform, "Linux")==0) target.platform = OS_LINUX;
             else {
-                eprintfln("ERROR: Unknown target platform: %s", platform);
+                eprintfln("ERROR Unknown target platform: %s", platform);
                 exit(1);
             }
         }
         else if ((backend=strstrip(arg, "--backend="))) {
             if (strcmp(backend, "qbe") == 0) target.backend = BACKEND_QBE;
             else {
-                eprintfln("ERROR: Unknown target backend: %s", backend);
+                eprintfln("ERROR Unknown target backend: %s", backend);
                 exit(1);
             }
         }
@@ -117,12 +117,12 @@ int main(int argc, const char** argv) {
         }
     }
     if(!build_options.ipath) {
-        eprintf("ERROR: Missing input path!\n");
+        eprintf("ERROR Missing input path!\n");
         usage();
         exit(1);
     }
     if(!target.platform) {
-        eprintfln("ERROR: Could not infer platform automatically. Please specify it with --platform={your platform}");
+        eprintfln("ERROR Could not infer platform automatically. Please specify it with --platform={your platform}");
         usage();
         exit(1);
     }

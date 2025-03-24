@@ -25,7 +25,7 @@ typedef struct {
 } Qbe;
 #define nprintf(...) do { \
        if(fprintf(qbe->f, __VA_ARGS__) < 0) {\
-           eprintfln("ERROR: Failed to encode something");\
+           eprintfln("ERROR Failed to encode something");\
            return false;\
        }\
    } while(0)
@@ -143,7 +143,7 @@ size_t build_qbe_ast(Qbe* qbe, AST* ast) {
     static_assert(AST_KIND_COUNT == 10, "Update build_qbe_ast");
     switch(ast->kind) {
     case AST_FUNC:
-        eprintfln("ERROR: TBD build function ast?");
+        eprintfln("ERROR TBD build function ast?");
         return 0;
     case AST_NULL:
         nprintfln("    %%.s%zu =l copy 0", n=qbe->inst++);
@@ -433,7 +433,7 @@ size_t build_qbe_ast(Qbe* qbe, AST* ast) {
         }
     } break;
     default:
-        eprintfln("ERROR: Unsupported. I guess :( %d (build_qbe_ast)", ast->kind);
+        eprintfln("ERROR Unsupported. I guess :( %d (build_qbe_ast)", ast->kind);
         exit(1);
         break;
     }
@@ -664,7 +664,7 @@ bool build_qbe(Build* build, ProgramState* state) {
     strcpy(ssa_path+opath_len, ".ssa");
     qbe.f = fopen(ssa_path, "wb");
     if(!qbe.f) {
-        eprintfln("ERROR: Could not open output file %s: %s", ssa_path, strerror(errno));
+        eprintfln("ERROR Could not open output file %s: %s", ssa_path, strerror(errno));
         return false;
     }
     if(!build_qbe_qbe(&qbe)) {
@@ -675,7 +675,7 @@ bool build_qbe(Build* build, ProgramState* state) {
     // More than enough for everyone
     char* cmd = malloc(4096);
     if(!cmd) {
-        eprintfln("ERROR: Not enough memory for cmd");
+        eprintfln("ERROR Not enough memory for cmd");
         return false;
     }
     strcpy(cmd, "qbe ");
@@ -685,7 +685,7 @@ bool build_qbe(Build* build, ProgramState* state) {
     int e = system(cmd);
     free(cmd);
     if(e != 0) {
-        eprintfln("ERROR: Failed to build with qbe");
+        eprintfln("ERROR Failed to build with qbe");
         return false;
     }
     return true;

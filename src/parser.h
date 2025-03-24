@@ -14,7 +14,7 @@ static void _example_dump() {
     while(lexer_peak_next(&lexer).kind != TOKEN_EOF) {
         Token t = lexer_next(&lexer);
         if(t.kind >= TOKEN_END) {
-            eprintfln("ERROR:%s: Lexer: %s", tloc(t), tdisplay(t));
+            eprintfln("ERROR %s: Lexer: %s", tloc(t), tdisplay(t));
             exit(1);
         }
         printf("%s: Gotten token: %s\n", tloc(t), tdisplay(t));

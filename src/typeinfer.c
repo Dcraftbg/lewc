@@ -34,7 +34,7 @@ void infer_down_ast(ProgramState* state, AST* ast, Type* type) {
     case AST_SYMBOL: {
         if(ast->as.symbol.sym->type) {
             // if(!type_eq(ast->as.symbol.sym->type, type)) {
-            //     eprintf("ERROR: Mismatch between symbol type "); type_dump(stderr, ast->as.symbol.sym->type); eprintf(" and type expected by expression: "); type_dump(stderr, type); eprintf(NEWLINE);
+            //     eprintf("ERROR Mismatch between symbol type "); type_dump(stderr, ast->as.symbol.sym->type); eprintf(" and type expected by expression: "); type_dump(stderr, type); eprintf(NEWLINE);
             //     return;
             // }
             ast->type = ast->as.symbol.sym->type;
@@ -57,7 +57,7 @@ void infer_down_ast(ProgramState* state, AST* ast, Type* type) {
         }
         if(ast->as.unary.op == '&') {
             if(ast->type->core != CORE_PTR) {
-                eprintf("ERROR: not pointer");
+                eprintf("ERROR not pointer");
                 return;
             }
             infer_down_ast(state, ast->as.unary.rhs, ast->type->ptr_count == 1 ? ast->type : type_ptr(state->arena, ast->type->inner_type, ast->type->ptr_count - 1));
@@ -66,7 +66,7 @@ void infer_down_ast(ProgramState* state, AST* ast, Type* type) {
     } break;
     case AST_INT: {
         if(!type_isint(type) && type->core != CORE_PTR) {
-            eprintf("ERROR: Non integer type expected for integer: "); type_dump(stderr, type); eprintf(NEWLINE);
+            eprintf("ERROR Non integer type expected for integer: "); type_dump(stderr, type); eprintf(NEWLINE);
             return;
         }
         ast->type = type;
@@ -79,7 +79,7 @@ void infer_down_ast(ProgramState* state, AST* ast, Type* type) {
         if(type->core == CORE_PTR) {
             ast->type = type;
         } else {
-            eprintf("ERROR: Non pointer type expected for null: "); type_dump(stderr, type); eprintf(NEWLINE);
+            eprintf("ERROR Non pointer type expected for null: "); type_dump(stderr, type); eprintf(NEWLINE);
         }
     } break;
     }
