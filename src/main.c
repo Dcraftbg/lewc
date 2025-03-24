@@ -88,7 +88,7 @@ int main(int argc, const char** argv) {
                 exit(1);
             }
         }
-        else if (strcmp(arg, "-v") || strcmp(arg, "--version")) {
+        else if (strcmp(arg, "-v") == 0 || strcmp(arg, "--version") == 0) {
             fprintf(stderr, "lewc v"VERSION_STR" "VERSION_STABLE"\n");
             return 0;
         }
