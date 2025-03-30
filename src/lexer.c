@@ -355,6 +355,12 @@ Token lexer_next(Lexer* lexer) {
             lex_str(lexer, &str, &len);
             if(!str) return MAKE_TOKEN(TOKEN_INVALID_STR);
             return MAKE_TOKEN(TOKEN_C_STR, .str = str, .str_len = len);
+        } else if(c == '"') {
+            const char* str = NULL;
+            size_t len=0;
+            lex_str(lexer, &str, &len);
+            if(!str) return MAKE_TOKEN(TOKEN_INVALID_STR);
+            return MAKE_TOKEN(TOKEN_STR, .str = str, .str_len = len);
         } else if(c == '_' || isalpha(c)) {
             Word word = lexer_parse_word(lexer);
                  if (wordeq(word, "return" )) return MAKE_TOKEN(TOKEN_RETURN);
