@@ -32,6 +32,11 @@ bool modules_join(Module* parent, Module* child) {
         Atom* name = child->symbols.items[i].name;
         sym_tab_insert(&parent->symtab_root.symtab, name, s);
     }
+    for(size_t i = 0; i < child->typedefs.len; ++i) {
+        Type* type = child->typedefs.items[i].type;
+        Atom* name = child->typedefs.items[i].name;
+        type_table_insert(&parent->type_table, name->data, type);
+    }
     // TODO: join types
     return true;
 }

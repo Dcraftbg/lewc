@@ -14,9 +14,18 @@ typedef struct {
     ModuleSymbol* items;
     size_t len, cap;
 } ModuleSymbols;
+typedef struct {
+    Type* type;
+    Atom* name;
+} ModuleTypeDef;
+typedef struct {
+    ModuleTypeDef* items;
+    size_t len, cap;
+} ModuleTypeDefs;
 struct Module {
     const char* path;
     TypeTable type_table;
+    ModuleTypeDefs typedefs;
     SymTabNode symtab_root;
     ModuleSymbols symbols;
     Arena* arena;

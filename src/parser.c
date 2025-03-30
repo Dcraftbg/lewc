@@ -64,6 +64,7 @@ Type* parse_type(Parser* parser) {
             exit(1);
         }
         Struct struc = { 0 };
+        struc.alignment = 1;
         while((t=lexer_peak_next(parser->lexer)).kind != '}') {
             if(t.kind != TOKEN_ATOM) {
                 eprintfln("ERROR %s Unexpected token in structure definition %s (expected field name)", tloc(t), tdisplay(t));
@@ -615,6 +616,7 @@ void parse(Parser* parser, Arena* arena) {
                 // TODO: maybe collect the symbols first like with the syntactical analysis instead of 
                 // Directly inserting and checking from a table in the future
                 type_table_insert(&parser->module->type_table, name->data, type);
+                da_push(&parser->module->typedefs, ((ModuleTypeDef){type, name}));
             } else if (lexer_peak(parser->lexer, 1).kind == ':') {
                 Atom* name = t.atom;
                 lexer_eat(parser->lexer, 2);
