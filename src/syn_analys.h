@@ -8,10 +8,6 @@
 
 typedef struct SymTabNode SymTabNode;
 typedef struct Symbol Symbol;
-typedef struct {
-    AST **items;
-    size_t len, cap;
-} ASTs;
 struct Symbol {
     Type* type;
     enum {

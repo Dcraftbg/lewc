@@ -40,7 +40,10 @@ struct AST {
         Function* func;
     } as;
 };
-
+typedef struct {
+    AST **items;
+    size_t len, cap;
+} ASTs;
 AST* ast_new_binop(Arena* arena, int op, AST* lhs, AST* rhs);
 AST* ast_new_symbol(Arena* arena, Atom* symbol);
 AST* ast_new_cstr(Arena* arena, const char* str, size_t len);
