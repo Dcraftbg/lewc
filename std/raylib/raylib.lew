@@ -1,0 +1,7 @@
+extern InitWindow :: (width: i32, height: i32, title: *u8);
+extern CloseWindow :: ();
+extern WindowShouldClose :: () -> i32;
+extern BeginDrawing :: ();
+extern EndDrawing :: ();
+extern ClearBackground :: (color: i32);
+extern DrawRectangle :: (x: i32, y: i32, width: i32, height: i32, color: i32);
