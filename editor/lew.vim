@@ -1,6 +1,6 @@
 " Vim syntax file
 " Language: Lew
-" Version: 0.1.1
+" Version: 0.1.2
 
 " Usage
 " Put this in $VIMRUNTIME/syntax/lew.vim
