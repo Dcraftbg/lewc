@@ -23,3 +23,4 @@ struct Module {
 };
 Module* module_new(Arena* arena, const char* path);
 bool module_do_intermediate_steps(Module* module);
+bool modules_join(Module* parent, Module* child);

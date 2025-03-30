@@ -25,3 +25,13 @@ bool module_do_intermediate_steps(Module* module) {
     defer_expand_module(module);
     return true;
 }
+
+bool modules_join(Module* parent, Module* child) {
+    for(size_t i = 0; i < child->symbols.len; ++i) {
+        Symbol* s  = child->symbols.items[i].symbol;
+        Atom* name = child->symbols.items[i].name;
+        sym_tab_insert(&parent->symtab_root.symtab, name, s);
+    }
+    // TODO: join types
+    return true;
+}
