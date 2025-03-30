@@ -1,0 +1,6 @@
+FILE :: typedef struct {};
+extern snprintf :: (buf: *u8, n: i32, fmt: *u8, ... #c);
+extern printf :: (fmt: *u8, ... #c);
+extern fprintf :: (f: *FILE, fmt: *u8, ... #c);
+extern puts :: (cstr: *u8);
+extern putchar :: (c: u8);

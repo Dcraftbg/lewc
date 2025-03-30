@@ -1,0 +1,3 @@
+extern malloc :: (sz: i32) -> *u8;
+extern getenv :: (name: *u8) -> *u8;
+
