@@ -1,4 +1,11 @@
 #include "module.h"
+#include "syn_analys.h"
+#include "control_flow.h"
+#include "typeinfer.h"
+#include "typefix.h"
+#include "typecheck.h"
+#include "const_eval.h"
+#include "defer_expand.h"
 Module* module_new(Arena* arena, const char* path) {
     Module* me = arena_alloc(arena, sizeof(Module));
     assert(me && "Ran out of memory");
@@ -6,4 +13,15 @@ Module* module_new(Arena* arena, const char* path) {
     me->path = path;
     me->arena = arena;
     return me;
+}
+
+bool module_do_intermediate_steps(Module* module) {
+    if(!syn_analyse_module(module))          return false;
+    if(!control_flow_analyse_module(module)) return false;
+    if(!typeinfer_module(module))            return false;
+    if(!typefix_module(module))              return false;
+    if(!typecheck_module(module))            return false;
+    if(!const_eval_module(module))           return false;
+    defer_expand_module(module);
+    return true;
 }

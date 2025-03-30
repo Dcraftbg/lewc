@@ -22,3 +22,4 @@ struct Module {
     Arena* arena;
 };
 Module* module_new(Arena* arena, const char* path);
+bool module_do_intermediate_steps(Module* module);
