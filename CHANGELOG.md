@@ -1,4 +1,4 @@
-v0.2 alpha: (hash: e2e8c3c) 
+v0.2 alpha: (hash: cbb6a26) 
 - i8, i16, i64, u64 - added integer types
 - #import - import directive + update highlighting
 - ""  - parsing string tokens (only used for import atm)
