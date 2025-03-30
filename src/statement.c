@@ -1,5 +1,8 @@
-#include "progstate.h"
-
+#include "statement.h"
+#include "arena.h"
+#include "atom.h"
+#include "ast.h"
+#include <assert.h>
 Statements* scope_new(Arena* arena) {
     Statements* s = arena_alloc(arena, sizeof(*s));
     if(!s) return s;

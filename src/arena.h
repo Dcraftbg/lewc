@@ -6,9 +6,10 @@ typedef struct ArenaBlock {
     size_t cap;
     char data[];
 } ArenaBlock;
-typedef struct {
+typedef struct Arena Arena; 
+struct Arena {
     ArenaBlock* first;
-} Arena;
+};
 // TODO: error message on missing ARENA_MALLOC definitions?
 #define INIT_ARENA_SIZE 4096
 #if !defined(ARENA_MALLOC) && !defined(ARENA_FREE)

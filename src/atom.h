@@ -3,10 +3,11 @@
 #include "arena.h"
 #include <stddef.h>
 #include <string.h>
-typedef struct {
+typedef struct Atom Atom;
+struct Atom {
     size_t len;
     char data[];
-} Atom;
+};
 
 #ifdef ATOM_HASHTABLE_DEFINE
 #define HASHMAP_DEFINE
