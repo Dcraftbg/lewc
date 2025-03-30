@@ -574,63 +574,58 @@ bool build_qbe_qbe(Qbe* qbe) {
             nprintfln("type :%s = { b %zu }", name, type_size(t));
         }
     }
-    for(size_t i = 0; i < qbe->module->symtab_root.symtab.buckets.len; ++i) {
-        for(
-            Pair_SymTab* spair = qbe->module->symtab_root.symtab.buckets.items[i].first;
-            spair;
-            spair = spair->next
-        ) {
-            qbe->inst = 1;
-            Symbol* s = spair->value;
-            if(s->ast->kind != AST_FUNC) continue;
-            Atom* name     = spair->key;
-            Function* func = s->ast->as.func;
-            assert(func->type->core == CORE_FUNC);
-            // I think QBE automatically assumes external function
-            if(func->type->attribs & TYPE_ATTRIB_EXTERN) {
-                nprintf("# extern %s :: ", name->data);
-                type_dump(qbe->f, func->type);
-                nprintf("%s", NEWLINE);
-                continue;
-            }
-            nprintf("# %s :: ", name->data);
+    for(size_t i = 0; i < qbe->module->symbols.len; ++i) {
+        Symbol* s  = qbe->module->symbols.items[i].symbol;
+        Atom* name = qbe->module->symbols.items[i].name;
+        qbe->inst = 1;
+        if(s->ast->kind != AST_FUNC) continue;
+        Function* func = s->ast->as.func;
+        assert(func->type->core == CORE_FUNC);
+        // I think QBE automatically assumes external function
+        if(func->type->attribs & TYPE_ATTRIB_EXTERN) {
+            nprintf("# extern %s :: ", name->data);
             type_dump(qbe->f, func->type);
             nprintf("%s", NEWLINE);
-            nprintf("export function");
-            if(func->type->signature.output) {
-                nprintf(" %s", type_to_qbe(qbe->arena, func->type->signature.output));
-            }
-            nprintf(" $%s (", name->data);
-            for(size_t i = 0; i < func->type->signature.input.len; ++i) {
-                if(i > 0) nprintf(", ");
-                Arg* arg = &func->type->signature.input.items[i];
-                
-                nprintf("%s", type_to_qbe(qbe->arena, arg->type));
-                if(arg->name && arg->type->core == CORE_STRUCT) {
-                    nprintf(" %%%s", arg->name->data);
-                } else nprintf(" %%.a%zu", i);
-            }
-            nprintfln(") {");
-            nprintfln("@start");
-            for(size_t i = 0; i < func->type->signature.input.len; ++i) {
-                Arg* arg = &func->type->signature.input.items[i];
-                if(arg->type->core == CORE_STRUCT) continue;
-                size_t sz, count;
-                alloca_params(type_size(arg->type), &sz, &count);
-                if(arg->name) {
-                    nprintfln("    %%%s =l alloc%zu %zu", arg->name->data, sz, count);
-                    if(arg->type->core == CORE_BOOL) {
-                        size_t n;
-                        nprintfln("    %%.s%zu =w cnew %%.a%zu, 0", (n=qbe->inst++), i);
-                        nprintfln("    store%s %%.s%zu, %%%s", type_to_qbe(qbe->arena, arg->type), n, arg->name->data);
-                    } else {
-                        nprintfln("    store%s %%.a%zu, %%%s", type_to_qbe(qbe->arena, arg->type), i, arg->name->data);
-                    }
+            continue;
+        }
+        nprintf("# %s :: ", name->data);
+        type_dump(qbe->f, func->type);
+        nprintf("%s", NEWLINE);
+        nprintf("export function");
+        if(func->type->signature.output) {
+            nprintf(" %s", type_to_qbe(qbe->arena, func->type->signature.output));
+        }
+        nprintf(" $%s (", name->data);
+        for(size_t i = 0; i < func->type->signature.input.len; ++i) {
+            if(i > 0) nprintf(", ");
+            Arg* arg = &func->type->signature.input.items[i];
+            
+            nprintf("%s", type_to_qbe(qbe->arena, arg->type));
+            if(arg->name && arg->type->core == CORE_STRUCT) {
+                nprintf(" %%%s", arg->name->data);
+            } else nprintf(" %%.a%zu", i);
+        }
+        nprintfln(") {");
+        nprintfln("@start");
+        for(size_t i = 0; i < func->type->signature.input.len; ++i) {
+            Arg* arg = &func->type->signature.input.items[i];
+            if(arg->type->core == CORE_STRUCT) continue;
+            size_t sz, count;
+            alloca_params(type_size(arg->type), &sz, &count);
+            if(arg->name) {
+                nprintfln("    %%%s =l alloc%zu %zu", arg->name->data, sz, count);
+                if(arg->type->core == CORE_BOOL) {
+                    size_t n;
+                    nprintfln("    %%.s%zu =w cnew %%.a%zu, 0", (n=qbe->inst++), i);
+                    nprintfln("    store%s %%.s%zu, %%%s", type_to_qbe(qbe->arena, arg->type), n, arg->name->data);
+                } else {
+                    nprintfln("    store%s %%.a%zu, %%%s", type_to_qbe(qbe->arena, arg->type), i, arg->name->data);
                 }
             }
-            if(!build_qbe_scope(qbe, func->scope)) return false;
-            nprintfln("}");
         }
+        if(!build_qbe_scope(qbe, func->scope)) return false;
+        nprintfln("}");
+        
     }
     for(size_t i = 0; i < qbe->globals.len; ++i) {
         QbeGlobal* global = &qbe->globals.items[i];

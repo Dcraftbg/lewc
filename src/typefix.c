@@ -118,28 +118,23 @@ bool typefix_func(Arena* arena, Function* func) {
     return typefix_scope(arena, func->scope);
 }
 bool typefix_module(Module* module) {
-    for(size_t i = 0; i < module->symtab_root.symtab.buckets.len; ++i) {
-        for(
-            Pair_SymTab* spair = module->symtab_root.symtab.buckets.items[i].first;
-            spair;
-            spair = spair->next
-        ) {
-            Symbol* s = spair->value;
-            static_assert(SYMBOL_COUNT == 2, "Update typefix");
-            switch(s->kind) {
-            case SYMBOL_CONSTANT:
-            case SYMBOL_VARIABLE:
-                if(!s->type) {
-                    eprintfln("ERROR Failed to infer type for constant `%s`", spair->key->data);
-                    // NOTE: Intentionally fallthrough so that the ast will report what part needs to be inferred
-                }
-                if(!typefix_ast_nonvoid(module->arena, s->ast)) return false;
-                assert(s->type);
-                break;
-            case SYMBOL_COUNT:
-            default:
-                unreachable("s->kind=%d", s->kind);
+    for(size_t i = 0; i < module->symbols.len; ++i) {
+        Symbol* s  = module->symbols.items[i].symbol;
+        Atom* name = module->symbols.items[i].name;
+        static_assert(SYMBOL_COUNT == 2, "Update typefix");
+        switch(s->kind) {
+        case SYMBOL_CONSTANT:
+        case SYMBOL_VARIABLE:
+            if(!s->type) {
+                eprintfln("ERROR Failed to infer type for constant `%s`", name->data);
+                // NOTE: Intentionally fallthrough so that the ast will report what part needs to be inferred
             }
+            if(!typefix_ast_nonvoid(module->arena, s->ast)) return false;
+            assert(s->type);
+            break;
+        case SYMBOL_COUNT:
+        default:
+            unreachable("s->kind=%d", s->kind);
         }
     }
     return true;

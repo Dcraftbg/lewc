@@ -119,24 +119,19 @@ void defer_expand_ast(Arena* arena, AST* ast) {
 }
 
 void defer_expand_module(Module* module) {
-    for(size_t i = 0; i < module->symtab_root.symtab.buckets.len; ++i) {
-        for(
-            Pair_SymTab* spair = module->symtab_root.symtab.buckets.items[i].first;
-            spair;
-            spair = spair->next
-        ) {
-            Symbol* s = spair->value;
-            static_assert(SYMBOL_COUNT == 2, "Update defer_expand");
-            switch(s->kind) {
-            case SYMBOL_CONSTANT:
-            case SYMBOL_VARIABLE:
-                defer_expand_ast(module->arena, s->ast);
-                break;
-            case SYMBOL_COUNT:
-            default:
-                unreachable("s->kind=%d", s->kind);
-            }
+    for(size_t i = 0; i < module->symbols.len; ++i) {
+        Symbol* s  = module->symbols.items[i].symbol;
+        static_assert(SYMBOL_COUNT == 2, "Update defer_expand");
+        switch(s->kind) {
+        case SYMBOL_CONSTANT:
+        case SYMBOL_VARIABLE:
+            defer_expand_ast(module->arena, s->ast);
+            break;
+        case SYMBOL_COUNT:
+        default:
+            unreachable("s->kind=%d", s->kind);
         }
+        
     }
 }
 void defer_expand(ProgramState* state) {

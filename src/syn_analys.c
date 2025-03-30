@@ -186,24 +186,19 @@ bool syn_analyse_func(Arena* arena, SymTabNode* parent, Function* func) {
 }
 bool syn_analyse_module(Module* module) {
     SymTabNode* node = &module->symtab_root;
-    for(size_t i = 0; i < module->symtab_root.symtab.buckets.len; ++i) {
-        for(
-            Pair_SymTab* spair = module->symtab_root.symtab.buckets.items[i].first;
-            spair;
-            spair = spair->next
-        ) {
-            Symbol* s = spair->value;
-            static_assert(SYMBOL_COUNT == 2, "Update syn_analyse");
-            switch(s->kind) {
-            case SYMBOL_VARIABLE:
-            case SYMBOL_CONSTANT:
-                if(!syn_analyse_ast(module->arena, node, s->ast)) return false;
-                break;
-            case SYMBOL_COUNT:
-            default:
-                unreachable("s->kind = %d", s->kind);
-            }
+    for(size_t i = 0; i < module->symbols.len; ++i) {
+        Symbol* s  = module->symbols.items[i].symbol;
+        static_assert(SYMBOL_COUNT == 2, "Update syn_analyse");
+        switch(s->kind) {
+        case SYMBOL_VARIABLE:
+        case SYMBOL_CONSTANT:
+            if(!syn_analyse_ast(module->arena, node, s->ast)) return false;
+            break;
+        case SYMBOL_COUNT:
+        default:
+            unreachable("s->kind = %d", s->kind);
         }
+        
     }
     return true;
 }

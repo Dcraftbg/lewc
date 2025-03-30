@@ -64,20 +64,14 @@ AST* const_eval_ast(Arena* arena, AST* ast) {
     unreachable("const_eval_ast non exhaustive");
 }
 bool const_eval_module(Module* module) {
-    for(size_t i = 0; i < module->symtab_root.symtab.buckets.len; ++i) {
-        for(
-            Pair_SymTab* spair = module->symtab_root.symtab.buckets.items[i].first;
-            spair;
-            spair = spair->next
-        ) {
-            Symbol* s = spair->value;
-            if(s->kind != SYMBOL_CONSTANT) continue;
-            if(s->evaluated) continue;
-            AST* ast = const_eval_ast(module->arena, s->ast);
-            if(!ast) return false;
-            s->evaluated = true;
-            s->ast = ast;
-        }
+    for(size_t i = 0; i < module->symbols.len; ++i) {
+        Symbol* s = module->symbols.items[i].symbol;
+        if(s->kind != SYMBOL_CONSTANT) continue;
+        if(s->evaluated) continue;
+        AST* ast = const_eval_ast(module->arena, s->ast);
+        if(!ast) return false;
+        s->evaluated = true;
+        s->ast = ast;
     }
     return true;
 }

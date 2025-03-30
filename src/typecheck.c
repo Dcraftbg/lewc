@@ -324,29 +324,24 @@ bool typecheck_func(Arena* arena, Function* func) {
     return typecheck_scope(arena, func->type->signature.output, func->scope);
 }
 bool typecheck_module(Module* module) {
-    for(size_t i = 0; i < module->symtab_root.symtab.buckets.len; ++i) {
-        for(
-            Pair_SymTab* spair = module->symtab_root.symtab.buckets.items[i].first;
-            spair;
-            spair = spair->next
-        ) {
-            Symbol* s = spair->value;
-            static_assert(SYMBOL_COUNT == 2, "Update typecheck");
-            switch(s->kind) {
-            case SYMBOL_CONSTANT:
-            case SYMBOL_VARIABLE:
-                if(!typecheck_ast(module->arena, s->ast)) return false;
-                if(!type_eq(s->type, s->ast->type)) {
-                    eprintfln("ERROR Mismatch in definition of `%s`", spair->key->data);
-                    eprintf(" Defined type: "); type_dump(stderr, s->type); eprintf(NEWLINE);
-                    eprintf(" Value: "); type_dump(stderr, s->ast->type); eprintf(NEWLINE);
-                    return false;
-                }
-                break;
-            case SYMBOL_COUNT:
-            default:
-                unreachable("s->kind=%d", s->kind);
+    for(size_t i = 0; i < module->symbols.len; ++i) {
+        Symbol* s  = module->symbols.items[i].symbol;
+        Atom* name = module->symbols.items[i].name;
+        static_assert(SYMBOL_COUNT == 2, "Update typecheck");
+        switch(s->kind) {
+        case SYMBOL_CONSTANT:
+        case SYMBOL_VARIABLE:
+            if(!typecheck_ast(module->arena, s->ast)) return false;
+            if(!type_eq(s->type, s->ast->type)) {
+                eprintfln("ERROR Mismatch in definition of `%s`", name->data);
+                eprintf(" Defined type: "); type_dump(stderr, s->type); eprintf(NEWLINE);
+                eprintf(" Value: "); type_dump(stderr, s->ast->type); eprintf(NEWLINE);
+                return false;
             }
+            break;
+        case SYMBOL_COUNT:
+        default:
+            unreachable("s->kind=%d", s->kind);
         }
     }
     return true;
