@@ -147,9 +147,10 @@ int main(int argc, const char** argv) {
 
     ProgramState state = {0};
     state.arena = &arena;
-    type_table_init(&state.type_table);
+    state.main = module_new(&arena, build_options.ipath);
+    type_table_init(&state.main->type_table);
     Parser parser = {0};
-    parser_create(&parser, &lexer, &arena, &state);
+    parser_create(&parser, &lexer, &arena, state.main);
     parse(&parser, &arena);
 
     if(!syn_analyse(&state))          exit(1);

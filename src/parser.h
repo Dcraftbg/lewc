@@ -22,11 +22,11 @@ static void _example_dump() {
     lexer_cleanup(&lexer);
 }
 
-#include "progstate.h"
+#include "module.h"
 typedef struct {
     Arena* arena;
     Lexer* lexer;
-    ProgramState* state;
+    Module* module;
 } Parser;
-void parser_create(Parser* this, Lexer* lexer, Arena* arena, ProgramState* state);
+void parser_create(Parser* this, Lexer* lexer, Arena* arena, Module* module);
 void parse(Parser* parser, Arena* arena);

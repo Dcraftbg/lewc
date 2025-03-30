@@ -1,10 +1,10 @@
 #include "const_eval.h"
 #include "token.h"
 
-bool const_eval_const(ProgramState* state, Constant* c); 
+bool const_eval_const(Arena* arena, Constant* c); 
 // TODO: is evaluating flag for circular definition errors
 // TODO: Actual decent error reporting
-AST* const_eval_ast(ProgramState* state, AST* ast) {
+AST* const_eval_ast(Arena* arena, AST* ast) {
     static_assert(AST_KIND_COUNT == 10, "Update const_eval_ast");
     switch(ast->kind) {
     case AST_CALL:
@@ -33,7 +33,7 @@ AST* const_eval_ast(ProgramState* state, AST* ast) {
             return NULL;
         }
         if(sym->evaluated) return sym->ast;
-        AST* ast = const_eval_ast(state, sym->ast);
+        AST* ast = const_eval_ast(arena, sym->ast);
         if(!ast) return NULL;
         sym->evaluated = true;
         return sym->ast = ast;
@@ -43,13 +43,13 @@ AST* const_eval_ast(ProgramState* state, AST* ast) {
         return ast;
     case AST_BINOP: {
         AST *lhs = NULL, *rhs = NULL;
-        if(!(lhs = const_eval_ast(state, ast->as.binop.lhs))) return NULL;
-        if(!(rhs = const_eval_ast(state, ast->as.binop.rhs))) return NULL;
+        if(!(lhs = const_eval_ast(arena, ast->as.binop.lhs))) return NULL;
+        if(!(rhs = const_eval_ast(arena, ast->as.binop.rhs))) return NULL;
         switch(ast->as.binop.op) {
         case '+':
             assert(lhs->kind == AST_INT);
             assert(rhs->kind == AST_INT);
-            return ast_new_int(state->arena, lhs->type, lhs->as.integer.value + rhs->as.integer.value);
+            return ast_new_int(arena, lhs->type, lhs->as.integer.value + rhs->as.integer.value);
         default:
             eprintf("ERROR Cannot have binary operation `");
             if(ast->as.binop.op < 256) eprintf("%c", ast->as.binop.op);
@@ -63,21 +63,24 @@ AST* const_eval_ast(ProgramState* state, AST* ast) {
     }
     unreachable("const_eval_ast non exhaustive");
 }
-bool const_eval(ProgramState* state) {
-    for(size_t i = 0; i < state->symtab_root.symtab.buckets.len; ++i) {
+bool const_eval_module(Module* module) {
+    for(size_t i = 0; i < module->symtab_root.symtab.buckets.len; ++i) {
         for(
-            Pair_SymTab* spair = state->symtab_root.symtab.buckets.items[i].first;
+            Pair_SymTab* spair = module->symtab_root.symtab.buckets.items[i].first;
             spair;
             spair = spair->next
         ) {
             Symbol* s = spair->value;
             if(s->kind != SYMBOL_CONSTANT) continue;
             if(s->evaluated) continue;
-            AST* ast = const_eval_ast(state, s->ast);
+            AST* ast = const_eval_ast(module->arena, s->ast);
             if(!ast) return false;
             s->evaluated = true;
             s->ast = ast;
         }
     }
     return true;
+}
+bool const_eval(ProgramState* state) {
+    return const_eval_module(state->main);
 }

@@ -17,7 +17,7 @@ typedef struct {
 } QbeGlobals;
 typedef struct {
     Build* build;
-    ProgramState* state;
+    Module* module;
     FILE* f;
     QbeGlobals globals;
     Arena* arena;
@@ -562,9 +562,9 @@ bool build_qbe_qbe(Qbe* qbe) {
     nprintfln("# Target: %s %s", platform_str(qbe->build->target->platform), arch_str(qbe->build->target->arch));
     // TODO: Fuck me, QBE requires types to be in order for some fucking reason.
     // And also no implicit types I guess
-    for(size_t i = 0; i < qbe->state->type_table.buckets.len; ++i) {
+    for(size_t i = 0; i < qbe->module->type_table.buckets.len; ++i) {
         for(
-            Pair_TypeTable* tpair = qbe->state->type_table.buckets.items[i].first;
+            Pair_TypeTable* tpair = qbe->module->type_table.buckets.items[i].first;
             tpair;
             tpair = tpair->next
         ) {
@@ -574,9 +574,9 @@ bool build_qbe_qbe(Qbe* qbe) {
             nprintfln("type :%s = { b %zu }", name, type_size(t));
         }
     }
-    for(size_t i = 0; i < qbe->state->symtab_root.symtab.buckets.len; ++i) {
+    for(size_t i = 0; i < qbe->module->symtab_root.symtab.buckets.len; ++i) {
         for(
-            Pair_SymTab* spair = qbe->state->symtab_root.symtab.buckets.items[i].first;
+            Pair_SymTab* spair = qbe->module->symtab_root.symtab.buckets.items[i].first;
             spair;
             spair = spair->next
         ) {
@@ -653,7 +653,7 @@ bool build_qbe(Build* build, ProgramState* state) {
     assert(build->target->outputKind == OUTPUT_GAS);
     Qbe qbe = {
         .build = build,
-        .state = state,
+        .module = state->main,
         .f = NULL,
         .arena = state->arena,
     };

@@ -47,31 +47,31 @@ SymTabNode* symtab_node_new(SymTabNode* parent, Arena* arena) {
     return node;
 }
 
-bool syn_analyse_func(ProgramState* state, Function* func);
+bool syn_analyse_func(Arena* arena, SymTabNode* node, Function* func);
 // TODO: Better error messages as AST should probably store location too
-bool syn_analyse_ast(ProgramState* state, SymTabNode* node, AST* ast) {
+bool syn_analyse_ast(Arena* arena, SymTabNode* node, AST* ast) {
     static_assert(AST_KIND_COUNT == 10, "Update syn_analyse_ast");
     switch(ast->kind) {
     case AST_FUNC:
-        return syn_analyse_func(state, ast->as.func);
+        return syn_analyse_func(arena, node, ast->as.func);
     case AST_CAST:
-        return syn_analyse_ast(state, node, ast->as.cast.what);
+        return syn_analyse_ast(arena, node, ast->as.cast.what);
     case AST_CALL:
-        if(!syn_analyse_ast(state, node, ast->as.call.what)) return false;
+        if(!syn_analyse_ast(arena, node, ast->as.call.what)) return false;
         for(size_t i = 0; i < ast->as.call.args.len; ++i) {
-            if(!syn_analyse_ast(state, node, ast->as.call.args.items[i])) return false;
+            if(!syn_analyse_ast(arena, node, ast->as.call.args.items[i])) return false;
         }
         break;
     case AST_SUBSCRIPT:
-        if(!syn_analyse_ast(state, node, ast->as.subscript.what)) return false;
-        if(!syn_analyse_ast(state, node, ast->as.subscript.with)) return false;
+        if(!syn_analyse_ast(arena, node, ast->as.subscript.what)) return false;
+        if(!syn_analyse_ast(arena, node, ast->as.subscript.with)) return false;
         break;
     case AST_BINOP:
         // ------ For any other binop
-        if(!syn_analyse_ast(state, node, ast->as.binop.lhs)) return false;
+        if(!syn_analyse_ast(arena, node, ast->as.binop.lhs)) return false;
         switch(ast->as.binop.op) {
         case '=': {
-            if(!syn_analyse_ast(state, node, ast->as.binop.rhs)) return false;
+            if(!syn_analyse_ast(arena, node, ast->as.binop.rhs)) return false;
             AST* lhs = ast->as.binop.lhs;
             switch(lhs->kind) {
             case AST_SYMBOL: {
@@ -109,12 +109,12 @@ bool syn_analyse_ast(ProgramState* state, SymTabNode* node, AST* ast) {
             }
         } break;
         default:
-            if(!syn_analyse_ast(state, node, ast->as.binop.rhs)) return false;
+            if(!syn_analyse_ast(arena, node, ast->as.binop.rhs)) return false;
         }
         
         break;
     case AST_UNARY:
-        if(!syn_analyse_ast(state, node, ast->as.unary.rhs)) return false;
+        if(!syn_analyse_ast(arena, node, ast->as.unary.rhs)) return false;
         if(ast->as.unary.op == '&') {
             switch(ast->as.unary.rhs->kind) {
             case AST_SYMBOL:
@@ -148,47 +148,47 @@ bool syn_analyse_ast(ProgramState* state, SymTabNode* node, AST* ast) {
     return true;
 }
 
-bool syn_analyse_scope(ProgramState* state, SymTabNode* node, Statements* scope);
-bool syn_analyse_statement(ProgramState* state, SymTabNode* node, Statement* statement) {
+bool syn_analyse_scope(Arena* arena, SymTabNode* node, Statements* scope);
+bool syn_analyse_statement(Arena* arena, SymTabNode* node, Statement* statement) {
     static_assert(STATEMENT_COUNT == 8, "Update syn_analyse");
     switch(statement->kind) {
     case STATEMENT_RETURN:
         if(!statement->as.ast) return true;
-        if(!syn_analyse_ast(state, node, statement->as.ast)) return false;
+        if(!syn_analyse_ast(arena, node, statement->as.ast)) return false;
         break;
     case STATEMENT_EVAL:
-        if(!syn_analyse_ast(state, node, statement->as.ast)) return false;
+        if(!syn_analyse_ast(arena, node, statement->as.ast)) return false;
         break;
     case STATEMENT_SCOPE:
-        if(!syn_analyse_scope(state, node, statement->as.scope)) return false;
+        if(!syn_analyse_scope(arena, node, statement->as.scope)) return false;
         break;
     case STATEMENT_LOOP:
-        if(!syn_analyse_statement(state, node, statement->as.loop.body)) return false;
+        if(!syn_analyse_statement(arena, node, statement->as.loop.body)) return false;
         break;
     case STATEMENT_IF:
-        if(!syn_analyse_ast(state, node, statement->as.iff.cond)) return false;
-        if(!syn_analyse_statement(state, node, statement->as.iff.body)) return false;
-        if(statement->as.iff.elze && !syn_analyse_statement(state, node, statement->as.iff.elze)) return false;
+        if(!syn_analyse_ast(arena, node, statement->as.iff.cond)) return false;
+        if(!syn_analyse_statement(arena, node, statement->as.iff.body)) return false;
+        if(statement->as.iff.elze && !syn_analyse_statement(arena, node, statement->as.iff.elze)) return false;
         break;
     case STATEMENT_DEFER:
-        if(!syn_analyse_statement(state, node, statement->as.defer.statement)) return false;
+        if(!syn_analyse_statement(arena, node, statement->as.defer.statement)) return false;
         break;
     case STATEMENT_WHILE:
-        if(!syn_analyse_ast(state, node, statement->as.whil.cond)) return false;
-        if(!syn_analyse_statement(state, node, statement->as.whil.body)) return false;
+        if(!syn_analyse_ast(arena, node, statement->as.whil.cond)) return false;
+        if(!syn_analyse_statement(arena, node, statement->as.whil.body)) return false;
         break;
     case STATEMENT_LOCAL_DEF:
         sym_tab_insert(&node->symtab, statement->as.local_def.name, statement->as.local_def.symbol);
-        if(statement->as.local_def.symbol->ast && !syn_analyse_ast(state, node, statement->as.local_def.symbol->ast)) return false;
+        if(statement->as.local_def.symbol->ast && !syn_analyse_ast(arena, node, statement->as.local_def.symbol->ast)) return false;
         break;
     default:
         unreachable("statement->kind=%d", statement->kind);
     }
     return true;
 }
-bool syn_analyse_scope(ProgramState* state, SymTabNode* node, Statements* scope) {
+bool syn_analyse_scope(Arena* arena, SymTabNode* node, Statements* scope) {
     for(size_t j=0; j < scope->len; ++j) {
-        if(!syn_analyse_statement(state, node, scope->items[j])) return false;
+        if(!syn_analyse_statement(arena, node, scope->items[j])) return false;
     }
     return true;
 }
@@ -197,24 +197,24 @@ bool syn_analyse_scope(ProgramState* state, SymTabNode* node, Statements* scope)
 // But I'm not too sure since at least local variables have to be collected here (even tho you can
 // technically just collect everything else and leave the symbol collection for local vars
 // when you get to them
-bool syn_analyse_func(ProgramState* state, Function* func) {
+bool syn_analyse_func(Arena* arena, SymTabNode* parent, Function* func) {
     Type* type = func->type;
     assert(type->core == CORE_FUNC);
     if(type->attribs & TYPE_ATTRIB_EXTERN) return true;
-    func->symtab_node = symtab_node_new(&state->symtab_root, state->arena);
+    func->symtab_node = symtab_node_new(parent, arena);
     for(size_t j=0; j < type->signature.input.len; ++j) {
         if(type->signature.input.items[j].name) {
-            sym_tab_insert(&func->symtab_node->symtab, type->signature.input.items[j].name, symbol_new_var(state->arena, type->signature.input.items[j].type, NULL));
+            sym_tab_insert(&func->symtab_node->symtab, type->signature.input.items[j].name, symbol_new_var(arena, type->signature.input.items[j].type, NULL));
         }
     }
-    if(!syn_analyse_scope(state, func->symtab_node, func->scope)) return false;
+    if(!syn_analyse_scope(arena, func->symtab_node, func->scope)) return false;
     return true;
 }
-bool syn_analyse(ProgramState* state) {
-    SymTabNode* node = &state->symtab_root;
-    for(size_t i = 0; i < state->symtab_root.symtab.buckets.len; ++i) {
+bool syn_analyse_module(Module* module) {
+    SymTabNode* node = &module->symtab_root;
+    for(size_t i = 0; i < module->symtab_root.symtab.buckets.len; ++i) {
         for(
-            Pair_SymTab* spair = state->symtab_root.symtab.buckets.items[i].first;
+            Pair_SymTab* spair = module->symtab_root.symtab.buckets.items[i].first;
             spair;
             spair = spair->next
         ) {
@@ -223,7 +223,7 @@ bool syn_analyse(ProgramState* state) {
             switch(s->kind) {
             case SYMBOL_VARIABLE:
             case SYMBOL_CONSTANT:
-                if(!syn_analyse_ast(state, node, s->ast)) return false;
+                if(!syn_analyse_ast(module->arena, node, s->ast)) return false;
                 break;
             case SYMBOL_COUNT:
             default:
@@ -232,4 +232,7 @@ bool syn_analyse(ProgramState* state) {
         }
     }
     return true;
+}
+bool syn_analyse(ProgramState* state) {
+    return syn_analyse_module(state->main);
 }

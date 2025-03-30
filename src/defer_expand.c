@@ -118,10 +118,10 @@ void defer_expand_ast(Arena* arena, AST* ast) {
     }
 }
 
-void defer_expand(ProgramState* state) {
-    for(size_t i = 0; i < state->symtab_root.symtab.buckets.len; ++i) {
+void defer_expand_module(Module* module) {
+    for(size_t i = 0; i < module->symtab_root.symtab.buckets.len; ++i) {
         for(
-            Pair_SymTab* spair = state->symtab_root.symtab.buckets.items[i].first;
+            Pair_SymTab* spair = module->symtab_root.symtab.buckets.items[i].first;
             spair;
             spair = spair->next
         ) {
@@ -130,7 +130,7 @@ void defer_expand(ProgramState* state) {
             switch(s->kind) {
             case SYMBOL_CONSTANT:
             case SYMBOL_VARIABLE:
-                defer_expand_ast(state->arena, s->ast);
+                defer_expand_ast(module->arena, s->ast);
                 break;
             case SYMBOL_COUNT:
             default:
@@ -138,4 +138,7 @@ void defer_expand(ProgramState* state) {
             }
         }
     }
+}
+void defer_expand(ProgramState* state) {
+    return defer_expand_module(state->main);
 }

@@ -1,7 +1,7 @@
 #include "typecheck.h"
 #include "token.h"
 
-bool typecheck_func(ProgramState* state, Function* func);
+bool typecheck_func(Arena* arena, Function* func);
 bool typecheck_get_member_of(Type* type, Atom* member) {
     if(!type) {
         eprintfln("ERROR Trying to get member `%s` of void expression!", member->data);
@@ -49,14 +49,14 @@ bool typecheck_get_member_of(Type* type, Atom* member) {
     return true;
 }
 // TODO: Actually decent error reporting
-bool typecheck_ast(ProgramState* state, AST* ast) {
+bool typecheck_ast(Arena* arena, AST* ast) {
     if(!ast) return false;
     static_assert(AST_KIND_COUNT == 10, "Update typecheck_ast");
     switch(ast->kind) {
     case AST_FUNC:
-        return typecheck_func(state, ast->as.func);
+        return typecheck_func(arena, ast->as.func);
     case AST_CAST: {
-        if(!typecheck_ast(state, ast->as.cast.what)) return false;
+        if(!typecheck_ast(arena, ast->as.cast.what)) return false;
         if((!type_isbinary(ast->as.cast.what->type)) || (!type_isbinary(ast->as.cast.into))) {
             eprintfln("ERROR Cannot cast between non-binary types:");
             eprintf("Trying to cast "); type_dump(stderr, ast->as.cast.what->type); eprintf(" into "); type_dump(stderr, ast->as.cast.into); eprintf(NEWLINE);
@@ -64,7 +64,7 @@ bool typecheck_ast(ProgramState* state, AST* ast) {
         }
     } break;
     case AST_CALL: {
-        if(!typecheck_ast(state, ast->as.call.what)) return false;
+        if(!typecheck_ast(arena, ast->as.call.what)) return false;
         Type *t = ast->as.call.what->type;
         if(!t || t->core != CORE_FUNC) {
             eprintf("ERROR Tried to call something that is not a function ("); type_dump(stderr, t); eprintfln(")");
@@ -80,7 +80,7 @@ bool typecheck_ast(ProgramState* state, AST* ast) {
         }
         FuncSignature* signature = &t->signature;
         for(size_t i = 0; i < ast->as.call.args.len; ++i) {
-            if(!typecheck_ast(state, ast->as.call.args.items[i])) return false;
+            if(!typecheck_ast(arena, ast->as.call.args.items[i])) return false;
             if(i >= signature->input.len) continue;
             if(!type_eq(ast->as.call.args.items[i]->type, signature->input.items[i].type)) {
                 eprintfln("Argument %zu did not match type!", i);
@@ -95,8 +95,8 @@ bool typecheck_ast(ProgramState* state, AST* ast) {
         return false;
     }
     case AST_BINOP:
-        if(!typecheck_ast(state, ast->as.binop.lhs)) return false;
-        if(!typecheck_ast(state, ast->as.binop.rhs)) return false;
+        if(!typecheck_ast(arena, ast->as.binop.lhs)) return false;
+        if(!typecheck_ast(arena, ast->as.binop.rhs)) return false;
         switch(ast->as.binop.op) {
         case '=':
             if(!type_eq(ast->as.binop.lhs->type, ast->as.binop.rhs->type)) {
@@ -179,8 +179,8 @@ bool typecheck_ast(ProgramState* state, AST* ast) {
         }
         break;
     case AST_SUBSCRIPT:
-        if(!typecheck_ast(state, ast->as.subscript.what)) return false;
-        if(!typecheck_ast(state, ast->as.subscript.with)) return false;
+        if(!typecheck_ast(arena, ast->as.subscript.what)) return false;
+        if(!typecheck_ast(arena, ast->as.subscript.with)) return false;
         if(!ast->as.subscript.what->type || ast->as.subscript.what->type->core != CORE_CONST_ARRAY) {
             eprintf("Trying to subscript an expression of type "); type_dump(stderr, ast->as.subscript.what->type); eprintfln(" You can only subscript arrays!");
             return false;
@@ -192,7 +192,7 @@ bool typecheck_ast(ProgramState* state, AST* ast) {
         // TODO: If integer type != usize. Cast to usize maybe?
         break;
     case AST_UNARY: {
-        if(!typecheck_ast(state, ast->as.unary.rhs)) return false;
+        if(!typecheck_ast(arena, ast->as.unary.rhs)) return false;
         AST* rhs = ast->as.unary.rhs;
         switch(ast->as.unary.op) {
         case '*':
@@ -246,8 +246,8 @@ bool typecheck_ast(ProgramState* state, AST* ast) {
     }
     return true;
 }
-bool typecheck_scope(ProgramState* state, Type* return_type, Statements* scope);
-bool typecheck_statement(ProgramState* state, Type* return_type, Statement* statement) {
+bool typecheck_scope(Arena* arena, Type* return_type, Statements* scope);
+bool typecheck_statement(Arena* arena, Type* return_type, Statement* statement) {
     static_assert(STATEMENT_COUNT == 8, "Update typecheck_statement");
     switch(statement->kind) {
     case STATEMENT_RETURN:
@@ -256,7 +256,7 @@ bool typecheck_statement(ProgramState* state, Type* return_type, Statement* stat
             eprintf("Expected return value as function returns "); type_dump(stderr, return_type); eprintfln(" but got empty return");
             return false;
         }
-        if(!typecheck_ast(state, statement->as.ast)) return false;
+        if(!typecheck_ast(arena, statement->as.ast)) return false;
         if(statement->as.ast && !return_type) {
             eprintf("Expected empty return as the function doesn't have a return type but got "); type_dump(stderr, statement->as.ast->type); eprintf(NEWLINE);
             return false;
@@ -269,7 +269,7 @@ bool typecheck_statement(ProgramState* state, Type* return_type, Statement* stat
     case STATEMENT_LOCAL_DEF: {
         Symbol* s = statement->as.local_def.symbol;
         if(s->ast) {
-            if(!typecheck_ast(state, s->ast)) return false;
+            if(!typecheck_ast(arena, s->ast)) return false;
             if(!type_eq(s->type, s->ast->type)) {
                 eprintfln("Type mismatch in variable definition %s.", statement->as.local_def.name->data);
                 eprintf("Variable defined as "); type_dump(stderr, s->type); eprintf(" but got "); type_dump(stderr, s->ast->type); eprintf(NEWLINE);
@@ -278,55 +278,55 @@ bool typecheck_statement(ProgramState* state, Type* return_type, Statement* stat
         }
     } break;
     case STATEMENT_EVAL:
-        if(!typecheck_ast(state, statement->as.ast)) return false;
+        if(!typecheck_ast(arena, statement->as.ast)) return false;
         break;
     case STATEMENT_LOOP:
-        if(!typecheck_statement(state, return_type, statement->as.loop.body)) return false;
+        if(!typecheck_statement(arena, return_type, statement->as.loop.body)) return false;
         break;
     case STATEMENT_DEFER: 
-        if(!typecheck_statement(state, return_type, statement->as.defer.statement)) return false;
+        if(!typecheck_statement(arena, return_type, statement->as.defer.statement)) return false;
         break;
     case STATEMENT_SCOPE:
-        if(!typecheck_scope(state, return_type, statement->as.scope)) return false;
+        if(!typecheck_scope(arena, return_type, statement->as.scope)) return false;
         break;
     case STATEMENT_IF: {
-        if(!typecheck_ast(state, statement->as.iff.cond)) return false;
+        if(!typecheck_ast(arena, statement->as.iff.cond)) return false;
         AST* cond = statement->as.iff.cond;
         if(!type_eq(cond->type, &type_bool)) {
             eprintf("If loop condition has type "); type_dump(stderr, cond->type); eprintfln(" Expected type bool");
             return false;
         }
-        if(!typecheck_statement(state, return_type, statement->as.iff.body)) return false;
-        if(statement->as.iff.elze && !typecheck_statement(state, return_type, statement->as.iff.elze)) return false;
+        if(!typecheck_statement(arena, return_type, statement->as.iff.body)) return false;
+        if(statement->as.iff.elze && !typecheck_statement(arena, return_type, statement->as.iff.elze)) return false;
     } break;
     case STATEMENT_WHILE: {
-        if(!typecheck_ast(state, statement->as.whil.cond)) return false;
+        if(!typecheck_ast(arena, statement->as.whil.cond)) return false;
         AST* cond = statement->as.whil.cond;
         if(!type_eq(cond->type, &type_bool)) {
             eprintf("While loop condition has type "); type_dump(stderr, cond->type); eprintfln(" Expected type bool");
             return false;
         }
-        if(!typecheck_statement(state, return_type, statement->as.whil.body)) return false;
+        if(!typecheck_statement(arena, return_type, statement->as.whil.body)) return false;
     } break;
     default:
         unreachable("statement->kind=%d", statement->kind);
     }
     return true;
 }
-bool typecheck_scope(ProgramState* state, Type* return_type, Statements* scope) {
+bool typecheck_scope(Arena* arena, Type* return_type, Statements* scope) {
     for(size_t j = 0; j < scope->len; ++j) {
-        if(!typecheck_statement(state, return_type, scope->items[j])) return false;
+        if(!typecheck_statement(arena, return_type, scope->items[j])) return false;
     }
     return true;
 }
-bool typecheck_func(ProgramState* state, Function* func) {
+bool typecheck_func(Arena* arena, Function* func) {
     if(func->type->attribs & TYPE_ATTRIB_EXTERN) return true; 
-    return typecheck_scope(state, func->type->signature.output, func->scope);
+    return typecheck_scope(arena, func->type->signature.output, func->scope);
 }
-bool typecheck(ProgramState* state) {
-    for(size_t i = 0; i < state->symtab_root.symtab.buckets.len; ++i) {
+bool typecheck_module(Module* module) {
+    for(size_t i = 0; i < module->symtab_root.symtab.buckets.len; ++i) {
         for(
-            Pair_SymTab* spair = state->symtab_root.symtab.buckets.items[i].first;
+            Pair_SymTab* spair = module->symtab_root.symtab.buckets.items[i].first;
             spair;
             spair = spair->next
         ) {
@@ -335,7 +335,7 @@ bool typecheck(ProgramState* state) {
             switch(s->kind) {
             case SYMBOL_CONSTANT:
             case SYMBOL_VARIABLE:
-                if(!typecheck_ast(state, s->ast)) return false;
+                if(!typecheck_ast(module->arena, s->ast)) return false;
                 if(!type_eq(s->type, s->ast->type)) {
                     eprintfln("ERROR Mismatch in definition of `%s`", spair->key->data);
                     eprintf(" Defined type: "); type_dump(stderr, s->type); eprintf(NEWLINE);
@@ -350,4 +350,7 @@ bool typecheck(ProgramState* state) {
         }
     }
     return true;
+}
+bool typecheck(ProgramState* state) {
+    return typecheck_module(state->main);
 }

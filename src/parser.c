@@ -1,12 +1,13 @@
 #define FUNC_MAP_DEFINE
 #include "parser.h"
 #include "darray.h"
+#include "statement.h"
 
-void parser_create(Parser* this, Lexer* lexer, Arena* arena, ProgramState* state) {
+void parser_create(Parser* this, Lexer* lexer, Arena* arena, Module* module) {
     memset(this, 0, sizeof(*this));
     this->arena = arena;
     this->lexer = lexer;
-    this->state = state;
+    this->module = module;
     // scope_init(&this->global);
 }
 Type* parse_type(Parser* parser) {
@@ -48,7 +49,7 @@ Type* parse_type(Parser* parser) {
         }
     } break;
     case TOKEN_ATOM: {
-        Type** idp = type_table_get(&parser->state->type_table, t.atom->data);
+        Type** idp = type_table_get(&parser->module->type_table, t.atom->data);
         if(!idp) {
             eprintfln("ERROR %s: Unknown type name: %s", tloc(t), t.atom->data);
             exit(1);
@@ -592,8 +593,8 @@ void parse(Parser* parser, Arena* arena) {
                 // TODO: This step is kinda unnecessary now
                 Function* f = func_new(parser->arena, fid, NULL);
                 Symbol* sym = symbol_new_constant(parser->arena, fid, ast_new_func(parser->arena, f));
-                sym_tab_insert(&parser->state->symtab_root.symtab, name, sym);
-                da_push(&parser->state->constants, sym);
+                sym_tab_insert(&parser->module->symtab_root.symtab, name, sym);
+                da_push(&parser->module->constants, sym);
             } else {
                 eprintfln("ERROR %s: Expected signature of external function to follow the syntax:", tloc(t));
                 eprintfln("  extern <func name> :: <(<Arguments>)> (-> <Output Type>)");
@@ -613,7 +614,7 @@ void parse(Parser* parser, Arena* arena) {
                 // Definitely need to check the type.
                 // TODO: maybe collect the symbols first like with the syntactical analysis instead of 
                 // Directly inserting and checking from a table in the future
-                type_table_insert(&parser->state->type_table, name->data, type);
+                type_table_insert(&parser->module->type_table, name->data, type);
             } else if (lexer_peak(parser->lexer, 1).kind == ':') {
                 Atom* name = t.atom;
                 lexer_eat(parser->lexer, 2);
@@ -629,8 +630,8 @@ void parse(Parser* parser, Arena* arena) {
                 }
                 AST* ast = parse_ast(parser, INIT_PRECEDENCE);
                 Symbol* sym = symbol_new_constant(arena, type, ast);
-                sym_tab_insert(&parser->state->symtab_root.symtab, name, sym);
-                da_push(&parser->state->constants, sym);
+                sym_tab_insert(&parser->module->symtab_root.symtab, name, sym);
+                da_push(&parser->module->constants, sym);
             } else {
                 eprintfln("ERROR %s: Unexpected Atom: %s",tloc(t), t.atom->data);
                 exit(1);

@@ -1,4 +1,5 @@
 #pragma once
+#include "module.h"
 #include "statement.h"
 #include "type.h"
 #include "ast.h"
@@ -11,11 +12,6 @@ typedef struct ProgramState ProgramState;
 // That way the main way to lookup a symbol is through the symbol table
 // but for actually iterating we can just go through a list hopefully
 struct ProgramState {
-    TypeTable type_table;
-    SymTabNode symtab_root;
-    struct {
-        Symbol** items;
-        size_t len, cap;
-    } constants;
+    Module* main;
     Arena* arena;
 };
