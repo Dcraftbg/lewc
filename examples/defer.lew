@@ -1,4 +1,4 @@
-extern printf :: (fmt: *u8, ... #c);
+#import "std/libc/stdio.lew"
 main :: () -> i32 {
     defer printf(c"Using defer\n");
     defer printf(c"We did this\n");

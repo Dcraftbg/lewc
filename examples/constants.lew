@@ -1,5 +1,5 @@
-nice : i32 : 69;
-extern printf :: (fmt: *u8, arg: i32);
+#import "std/libc/stdio.lew"
+nice :: 69i32;
 main :: () -> i32 {
     printf(c"Nice %d", nice);
     return 0;
