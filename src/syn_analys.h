@@ -26,5 +26,7 @@ struct SymTabNode {
     size_t   len, cap;
 };
 typedef struct ProgramState ProgramState;
+typedef struct Module Module;
 
+bool syn_analyse_module(Module* module);
 bool syn_analyse(ProgramState* state);

@@ -12,6 +12,7 @@ enum {
     TOKEN_TYPEDEF,
     TOKEN_STRUCT,
     TOKEN_C_STR,
+    TOKEN_STR,
     TOKEN_INT,
     TOKEN_EQEQ,
     TOKEN_NEQ,
