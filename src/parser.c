@@ -640,6 +640,37 @@ void parse(Parser* parser, Arena* arena) {
         case ';':
             lexer_eat(parser->lexer, 1);
             break;
+        case '#': {
+            lexer_eat(parser->lexer, 1);
+            if((t=lexer_next(parser->lexer)).kind != TOKEN_ATOM) {
+                eprintfln("ERROR %s: Expected atom for preprocessor directive but found: %s", tloc(t), tdisplay(t));
+                exit(1);
+            }
+            Atom* directive = t.atom;
+            if(strcmp(directive->data, "import") == 0) {
+                if((t=lexer_next(parser->lexer)).kind != TOKEN_STR) {
+                    eprintfln("ERROR %s: Expected string (path to file) for #import but found: %s", tloc(t), tdisplay(t));
+                    if(t.kind == TOKEN_C_STR) eprintfln("NOTE: Maybe you meant to use a string instead of a cstring?");
+                    exit(1);
+                }
+                const char* path = t.str;
+                Lexer child_lexer;
+                lexer_create(&child_lexer, path, parser->lexer->atom_table, parser->lexer->arena);
+                    Module* child = module_new(parser->arena, path);
+                    type_table_init(&child->type_table);
+                    Parser child_parser = { 0 };
+                    parser_create(&child_parser, &child_lexer, parser->arena, child);
+                    parse(&child_parser, parser->arena);
+                    if(!module_do_intermediate_steps(child)) exit(1);
+                // FIXME: Memory leak but maybe intentional?
+                // Like we store pointers to inside the contents of the file so I'm not sure
+                // lexer_cleanup(&child_lexer);
+                if(!modules_join(parser->module, child)) exit(1);
+            } else {
+                eprintfln("ERROR %s: Unexpected top level preprocessor directive `%s`", tloc(t), directive->data);
+                exit(1);
+            }
+        } break;
         default:
             eprintfln("ERROR %s:  Unexpected token: %s", tloc(t), tdisplay(t));
             exit(1);
