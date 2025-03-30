@@ -5,10 +5,6 @@
 #include "syn_analys.h"
 #include "darray.h"
 
-typedef struct {
-    SymTab *items;
-    size_t len, cap;
-} SymTabList;
 static Symbol* stl_lookup(SymTabNode* node, Atom* a) {
     while(node) {
         Symbol** s;
@@ -16,27 +12,6 @@ static Symbol* stl_lookup(SymTabNode* node, Atom* a) {
         node = node->parent;
     }
     return false;
-}
-static Symbol* symbol_new(Arena* arena, Type* type) {
-    Symbol* symbol = arena_alloc(arena, sizeof(*symbol));
-    assert(symbol && "Ran out of memory");
-    memset(symbol, 0, sizeof(*symbol));
-    symbol->type = type;
-    return symbol;
-}
-Symbol* symbol_new_var(Arena* arena, Type* type, AST* init) {
-    Symbol* me = symbol_new(arena, type);
-    if(!me) return NULL;
-    me->kind = SYMBOL_VARIABLE;
-    me->ast = init;
-    return me;
-}
-Symbol* symbol_new_constant(Arena* arena, Type* type, AST* init) {
-    Symbol* me = symbol_new(arena, type);
-    if(!me) return NULL;
-    me->kind = SYMBOL_CONSTANT;
-    me->ast = init;
-    return me;
 }
 SymTabNode* symtab_node_new(SymTabNode* parent, Arena* arena) {
     SymTabNode* node = arena_alloc(arena, sizeof(*node));
@@ -46,7 +21,6 @@ SymTabNode* symtab_node_new(SymTabNode* parent, Arena* arena) {
     da_push(parent, node);
     return node;
 }
-
 bool syn_analyse_func(Arena* arena, SymTabNode* node, Function* func);
 // TODO: Better error messages as AST should probably store location too
 bool syn_analyse_ast(Arena* arena, SymTabNode* node, AST* ast) {
