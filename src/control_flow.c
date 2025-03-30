@@ -87,7 +87,7 @@ bool cf_analyse_ast(Arena* arena, AST* ast) {
     }
     return true;
 }
-bool control_flow_module(Module* module) {
+bool control_flow_analyse_module(Module* module) {
     for(size_t i = 0; i < module->symbols.len; ++i) {
         Symbol* s  = module->symbols.items[i].symbol;
         static_assert(SYMBOL_COUNT == 2, "Update syn_analyse");
@@ -104,5 +104,5 @@ bool control_flow_module(Module* module) {
     return true;
 }
 bool control_flow_analyse(ProgramState* state) {
-    return control_flow_module(state->main);
+    return control_flow_analyse_module(state->main);
 }
