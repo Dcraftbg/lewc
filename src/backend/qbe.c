@@ -68,6 +68,7 @@ const char* type_to_qbe(Arena* arena, Type* t) {
     assert(t);
     assert(t->core != CORE_FUNC);
     switch(t->core) {
+    case CORE_I64:
     case CORE_PTR:
         return "l";
     case CORE_BOOL:

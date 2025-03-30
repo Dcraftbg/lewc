@@ -221,15 +221,35 @@ static Token lex_num_by_radix(size_t l0, size_t c0, const char* src_start, Lexer
 static bool lex_num_suffix(Lexer* lexer, Token* t) {
     Word word = lexer_parse_word(lexer);
     if(word.start == word.end) return true;
-    if (wordeq(word, "u8")) {
+
+    if (wordeq(word, "i8")) {
+        t->integer.type = &type_i8;
+    } 
+    else if (wordeq(word, "u8")) {
         t->integer.type = &type_u8;
-    } else if (wordeq(word, "u16")) {
+    }
+    else if (wordeq(word, "i16")) {
+        t->integer.type = &type_i16;
+    } 
+    else if (wordeq(word, "u16")) {
         t->integer.type = &type_u16;
-    } else if (wordeq(word, "bool")) {
-        t->integer.type = &type_bool;
-    } else if (wordeq(word, "i32")) {
+    } 
+    else if (wordeq(word, "i32")) {
         t->integer.type = &type_i32;
-    } else {
+    } 
+    else if (wordeq(word, "u32")) {
+        t->integer.type = &type_u32;
+    }
+    else if (wordeq(word, "i64")) {
+        t->integer.type = &type_i64;
+    }
+    else if (wordeq(word, "u64")) {
+        t->integer.type = &type_u64;
+    } 
+    else if (wordeq(word, "bool")) {
+        t->integer.type = &type_bool;
+    } 
+    else {
         eprintfln("ERROR %s: Invalid suffix `%.*s`", tloc(*t), (int)(word.end-word.start), word.start);
         return false;
     }

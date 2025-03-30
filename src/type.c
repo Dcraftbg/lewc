@@ -2,15 +2,30 @@
 #define MEMBERS_DEFINE
 #include "type.h"
 Type type_bool   = { .name="bool", .core=CORE_BOOL, .ptr_count=0, .unsign=true  }; 
-Type type_u8     = { .name="u8"  , .core=CORE_I8  , .ptr_count=0, .unsign=true  };
-Type type_u16    = { .name="u16" , .core=CORE_I16 , .ptr_count=0, .unsign=true  };
-Type type_i32    = { .name="i32" , .core=CORE_I32 , .ptr_count=0, .unsign=false };
+
+Type type_i8     = { .name="i8"  , .core=CORE_I8  , .ptr_count=0, .unsign=false },
+     type_u8     = { .name="u8"  , .core=CORE_I8  , .ptr_count=0, .unsign=true  };
+
+Type type_i16    = { .name="i16" , .core=CORE_I16 , .ptr_count=0, .unsign=false },
+     type_u16    = { .name="u16" , .core=CORE_I16 , .ptr_count=0, .unsign=true  };
+
+Type type_i32    = { .name="i32" , .core=CORE_I32 , .ptr_count=0, .unsign=false },
+     type_u32    = { .name="u32" , .core=CORE_I32 , .ptr_count=0, .unsign=true  };
+
+Type type_i64    = { .name="i64" , .core=CORE_I64 , .ptr_count=0, .unsign=false },
+     type_u64    = { .name="u64" , .core=CORE_I64 , .ptr_count=0, .unsign=true  };
+
 Type type_u8_ptr = { .name=NULL  , .core=CORE_PTR , .ptr_count=1, .inner_type=&type_u8};
 Type* core_types[] = {
     &type_bool,
+    &type_i8,
     &type_u8,
+    &type_i16,
     &type_u16,
     &type_i32,
+    &type_u32,
+    &type_i64,
+    &type_u64,
 };
 // TODO: Maybe have a more fine control over size for smaller types in bits
 // FIXME: Stuff like pointer size / function size depend on architecture.
@@ -24,6 +39,7 @@ size_t type_size(Type* type) {
         return 2;
     case CORE_I32:
         return 4;
+    case CORE_I64:
     case CORE_PTR:
     case CORE_FUNC:
         return 8;
@@ -43,6 +59,7 @@ size_t type_alignment(Type* type) {
         return 2;
     case CORE_I32:
         return 4;
+    case CORE_I64:
     case CORE_FUNC:
     case CORE_PTR:
         return 8;
@@ -162,8 +179,8 @@ void type_dump(FILE* f, Type* t) {
     }
 }
 bool type_isbinary(Type* t) {
-    return t && (t->core == CORE_I8 || t->core == CORE_I16 || t->core == CORE_I32 || t->core == CORE_PTR);
+    return t && (t->core == CORE_I8 || t->core == CORE_I16 || t->core == CORE_I32 || t->core == CORE_I64 || t->core == CORE_PTR);
 }
 bool type_isint(Type* t) {
-    return t && (t->core == CORE_I8 || t->core == CORE_I16 || t->core == CORE_I32);
+    return t && (t->core == CORE_I8 || t->core == CORE_I16 || t->core == CORE_I32 || t->core == CORE_I64);
 }

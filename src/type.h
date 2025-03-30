@@ -11,6 +11,7 @@ enum {
     CORE_I8,
     CORE_I16,
     CORE_I32,
+    CORE_I64,
     CORE_FUNC,
     CORE_STRUCT,
     CORE_CONST_ARRAY,
@@ -90,10 +91,11 @@ MAKE_HASHMAP_EX(TypeTable, type_table, Type*, const char*, djb2_cstr, cstr_eq, T
 #   undef HASHMAP_DEFINE
 #endif
 extern Type type_bool;
-extern Type type_u8;
+extern Type type_i8 , type_u8;
+extern Type type_i16, type_u16;
+extern Type type_i32, type_u32;
+extern Type type_i64, type_u64;
 extern Type type_u8_ptr;
-extern Type type_u16;
-extern Type type_i32;
 Type* type_ptr(Arena* arena, Type* to, size_t ptr_count);
 void type_table_move(TypeTable* into, TypeTable* from);
 void type_table_init(TypeTable* t);
