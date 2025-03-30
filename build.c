@@ -547,7 +547,9 @@ bool ship(Build* b) {
     b->dist = true;
     if(!build(b)) return false;
     if(!nob_copy_file("./bin/dist/lewc", "./dist/lewc")) return false;
+    if(!nob_copy_file("./CHANGELOG.md", "./dist/CHANGELOG.md")) return false;
     if(!nob_copy_directory_recursively("./editor", "./dist/editor")) return false;
+    if(!nob_copy_directory_recursively("./std", "./dist/std")) return false;
     Nob_Cmd cmd = { 0 };
     nob_cmd_append(&cmd, "tar", "-czvf", "lew-linux-"VERSION_STR"-"VERSION_STABLE".tar.gz", "./dist");
     if(!nob_cmd_run_sync(cmd)) return false;

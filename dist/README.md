@@ -7,6 +7,7 @@ Please do not distribute these binaries or any other files included with this ar
 In the root directory you can find:
 - lewc   - the compiler binary for your platform
 - editor - editor highlighting for lew
+- std    - std library
 - README - this document
 
 ## Communicating
