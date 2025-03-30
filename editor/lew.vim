@@ -13,7 +13,7 @@ endif
 
 set iskeyword=a-z,A-Z,_,48-57
 
-let s:lew_preproc = ['c']
+let s:lew_preproc = ['c', 'import']
 let s:lew_preproc_pattern     = '(' . join(s:lew_preproc, '|') . ')'
 
 " Its a pretty dumb hack but it works I guess :D
