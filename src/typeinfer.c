@@ -65,6 +65,7 @@ void infer_down_ast(Arena* arena, AST* ast, Type* type) {
         }
     } break;
     case AST_INT: {
+        if(!type) return;
         if(!type_isint(type) && type->core != CORE_PTR) {
             eprintf("ERROR Non integer type expected for integer: "); type_dump(stderr, type); eprintf(NEWLINE);
             return;
