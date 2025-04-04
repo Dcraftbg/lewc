@@ -31,7 +31,7 @@ bool typefix_ast(Arena* arena, AST* ast) {
         break;
     case AST_NULL:
         if(!ast->type) {
-            eprintfln("ERROR Failed to infer type for `null` consider casting (i.e. `cast(null, *<type>)`)");
+            eprintfln("ERROR %s: Failed to infer type for `null` consider casting (i.e. `cast(null, *<type>)`)", tloc(&ast->loc));
             return false;
         }
         break;
@@ -40,7 +40,7 @@ bool typefix_ast(Arena* arena, AST* ast) {
         break;
     case AST_SYMBOL:
         if(!ast->type) {
-            eprintfln("ERROR Failed to infer type for symbol `%s`", ast->as.symbol.name->data);
+            eprintfln("ERROR %s: Failed to infer type for symbol `%s`", tloc(&ast->loc), ast->as.symbol.name->data);
             return false;
         }
         break;
@@ -51,7 +51,7 @@ bool typefix_ast(Arena* arena, AST* ast) {
         unreachable("ast->kind=%d", ast->kind);
     }
     if(ast->type == NULL && ast->kind != AST_CALL) {
-        eprintfln("ERROR Failed to infer type for expression <TBD, dump expression>");
+        eprintfln("ERROR %s: Failed to infer type for expression <TBD, dump expression>", tloc(&ast->loc));
         return false;
     }
     if(ast->type != old) {
@@ -62,7 +62,7 @@ bool typefix_ast(Arena* arena, AST* ast) {
 bool typefix_ast_nonvoid(Arena* arena, AST* ast) {
     if(!typefix_ast(arena, ast)) return false;
     if(!ast->type) {
-        eprintfln("ERROR Expected type for expression: <TBD, dump expression> but got void");
+        eprintfln("ERROR %s: Expected type for expression: <TBD, dump expression> but got void", tloc(&ast->loc));
         return false;
     }
     return true;
@@ -80,7 +80,7 @@ bool typefix_statement(Arena* arena, Statement* statement) {
         if(s->ast && !typefix_ast_nonvoid(arena, s->ast)) return false;
         if(!s->type && s->ast && s->ast->type) infer_symbol(arena, s, s->ast->type);
         if(!s->type) {
-            eprintfln("ERROR Failed to infer type for local `%s`", statement->as.local_def.name->data);
+            eprintfln("ERROR %s: Failed to infer type for local `%s`", "<TBD, dump location>", statement->as.local_def.name->data);
             return false;
         }
         break;
@@ -126,7 +126,7 @@ bool typefix_module(Module* module) {
         case SYMBOL_CONSTANT:
         case SYMBOL_VARIABLE:
             if(!s->type) {
-                eprintfln("ERROR Failed to infer type for constant `%s`", name->data);
+                eprintfln("ERROR %s: Failed to infer type for constant `%s`", "<TBD, dump location>", name->data);
                 // NOTE: Intentionally fallthrough so that the ast will report what part needs to be inferred
             }
             if(!typefix_ast_nonvoid(module->arena, s->ast)) return false;
