@@ -1,4 +1,4 @@
-#import "std/libc/stdio.lew"
+#import "../std/libc/stdio.lew"
 foo :: (a: i32) {
     if a == 69 {
         printf(c"a> Nice\n");

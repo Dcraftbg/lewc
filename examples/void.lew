@@ -1,4 +1,4 @@
-#import "std/libc/stdio.lew"
+#import "../std/libc/stdio.lew"
 foo :: () {
     puts(c"Hello from foo (void function)");
 }

@@ -1,4 +1,4 @@
-#import "std/libc/stdio.lew"
+#import "../std/libc/stdio.lew"
 say_hello :: () -> i32 {
    puts(c"Hello World!");
    return 0;

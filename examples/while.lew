@@ -1,4 +1,4 @@
-#import "std/libc/stdio.lew"
+#import "../std/libc/stdio.lew"
 main :: () -> i32 {
     while 1 == 1 {
         puts(c"Hello World");

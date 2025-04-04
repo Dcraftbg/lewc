@@ -1,5 +1,5 @@
-#import "std/libc/stdio.lew"
-#import "std/libc/string.lew"
+#import "../std/libc/stdio.lew"
+#import "../std/libc/string.lew"
 BOARD_CAP : i32 : 30;
 main :: () -> i32 {
     board : [i32; 30];

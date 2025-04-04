@@ -1,4 +1,4 @@
-#import "std/libc/stdio.lew"
+#import "../std/libc/stdio.lew"
 a :: () -> bool {
     printf(c"Called a!\n");
     return 1i32 == 1i32;

@@ -1,4 +1,4 @@
-#import "std/libc/stdio.lew"
+#import "../std/libc/stdio.lew"
 
 ret_69 :: () -> i32 {
     a : i32 = 69;
