@@ -1,6 +1,8 @@
+#import "stddef.lew"
+#import "../ffi/c.lew"
 FILE :: typedef struct {};
-extern snprintf :: (buf: *u8, n: i32, fmt: *u8, ... #c);
-extern printf :: (fmt: *u8, ... #c);
-extern fprintf :: (f: *FILE, fmt: *u8, ... #c);
-extern puts :: (cstr: *u8);
-extern putchar :: (c: u8);
+extern snprintf :: (buf: *c_char, n: size_t, fmt: *c_char, ... #c);
+extern printf :: (fmt: *c_char, ... #c);
+extern fprintf :: (f: *FILE, fmt: *c_char, ... #c);
+extern puts :: (cstr: *c_char);
+extern putchar :: (c: c_char);

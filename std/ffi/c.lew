@@ -1,0 +1,9 @@
+c_void   :: typedef struct {};
+c_char   :: typedef i8;
+c_uchar  :: typedef u8;
+c_short  :: typedef i16;
+c_ushort :: typedef u16;
+c_int    :: typedef i32;
+c_uint   :: typedef u32;
+c_long   :: typedef i64;
+c_ulong  :: typedef u64;

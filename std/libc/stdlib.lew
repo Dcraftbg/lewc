@@ -1,3 +1,4 @@
-extern malloc :: (sz: i32) -> *u8;
-extern getenv :: (name: *u8) -> *u8;
+#import "../ffi/c.lew"
+extern malloc :: (sz: i32) -> *c_void;
+extern getenv :: (name: *c_char) -> *c_char;
 

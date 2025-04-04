@@ -1,0 +1,3 @@
+size_t :: typedef u64;
+ssize_t :: typedef i64;
+ptrdiff_t :: typedef i64;

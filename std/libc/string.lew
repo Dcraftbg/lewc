@@ -1,5 +1,7 @@
-extern memset :: (data: *i32, c: i32, n: i32);
-extern memcpy :: (a: *u8, b: *u8, sz: i32);
-extern strlen :: (str: *u8) -> i32;
-extern strcmp :: (a: *u8, b: *u8) -> i32;
+#import "../ffi/c.lew"
+#import "stddef.lew"
+extern memset :: (data: *c_void, c: i32, n: size_t);
+extern memcpy :: (a: *c_void, b: *c_void, sz: size_t);
+extern strlen :: (str: *c_char) -> i32;
+extern strcmp :: (a: *c_char, b: *c_char) -> i32;
 
