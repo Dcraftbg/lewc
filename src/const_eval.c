@@ -45,11 +45,14 @@ AST* const_eval_ast(Arena* arena, AST* ast) {
         AST *lhs = NULL, *rhs = NULL;
         if(!(lhs = const_eval_ast(arena, ast->as.binop.lhs))) return NULL;
         if(!(rhs = const_eval_ast(arena, ast->as.binop.rhs))) return NULL;
+
+        Location loc = loc_join(&ast->as.binop.lhs->loc, &ast->as.binop.rhs->loc);
         switch(ast->as.binop.op) {
-        case '+':
+        case '+': {
             assert(lhs->kind == AST_INT);
             assert(rhs->kind == AST_INT);
-            return ast_new_int(arena, lhs->type, lhs->as.integer.value + rhs->as.integer.value);
+            return ast_new_int(arena, &loc, lhs->type, lhs->as.integer.value + rhs->as.integer.value);
+        } break;
         default:
             eprintf("ERROR Cannot have binary operation `");
             if(ast->as.binop.op < 256) eprintf("%c", ast->as.binop.op);

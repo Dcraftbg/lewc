@@ -9,3 +9,4 @@ typedef struct {
     size_t src_len;
 } Location;
 const char* tloc(const Location* loc);
+Location loc_join(const Location* a, const Location* b);

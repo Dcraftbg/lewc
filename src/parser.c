@@ -288,6 +288,7 @@ void parse_func_body(Parser* parser, Statements* s) {
 }
 AST* parse_basic(Parser* parser) {
     Token t;
+    Location loc = lexer_peak_next(parser->lexer).loc;
     if(peak_is_func(parser->lexer)) {
         Type* fid = type_new(parser->arena);
         fid->core    = CORE_FUNC;
@@ -298,9 +299,12 @@ AST* parse_basic(Parser* parser) {
         }
         Statements* s = scope_new(parser->arena);
         parse_func_body(parser, s);
+        // TODO: isn't actually correct. pls fix
+        Location end = lexer_peak_next(parser->lexer).loc;
+        loc = loc_join(&loc, &end);
         // TODO: This step is kinda unnecessary now
         Function* f = func_new(parser->arena, fid, s);
-        return ast_new_func(parser->arena, f);
+        return ast_new_func(parser->arena, &loc, f);
     }
     t = lexer_next(parser->lexer);
     switch(t.kind) {
@@ -310,7 +314,8 @@ AST* parse_basic(Parser* parser) {
     {
         AST* rhs = parse_ast(parser, unaryop_prec(t.kind));
         if(!rhs) return NULL;
-        return ast_new_unary(parser->arena, t.kind, rhs);
+        loc = loc_join(&loc, &rhs->loc);
+        return ast_new_unary(parser->arena, &loc, t.kind, rhs);
     } break;
     case '(': {
         AST* v = parse_ast(parser, INIT_PRECEDENCE);
@@ -321,6 +326,7 @@ AST* parse_basic(Parser* parser) {
             return NULL;
         }
         lexer_eat(parser->lexer, 1);
+        loc = loc_join(&loc, &t2.loc);
         return v;
     } break;
     case TOKEN_CAST:
@@ -339,15 +345,16 @@ AST* parse_basic(Parser* parser) {
             eprintfln("ERROR %s: Expected ')' at the end of cast but got %s", tloc(&t.loc), tdisplay(t));
             return NULL;
         }
-        return ast_new_cast(parser->arena, what, into);
+        loc = loc_join(&loc, &t.loc);
+        return ast_new_cast(parser->arena, &loc, what, into);
     case TOKEN_NULL:
-        return ast_new_null(parser->arena);
+        return ast_new_null(parser->arena, &t.loc);
     case TOKEN_ATOM:
-        return ast_new_symbol(parser->arena, t.atom);
+        return ast_new_symbol(parser->arena, &t.loc, t.atom);
     case TOKEN_C_STR:
-        return ast_new_cstr(parser->arena, t.str, t.str_len); 
+        return ast_new_cstr(parser->arena, &t.loc, t.str, t.str_len); 
     case TOKEN_INT:
-        return ast_new_int(parser->arena, t.integer.type, t.integer.value); 
+        return ast_new_int(parser->arena, &t.loc, t.integer.type, t.integer.value); 
     default:
         eprintfln("ERROR %s: Unexpected token in expression: %s", tloc(&t.loc),tdisplay(t));
         exit(1);
@@ -384,7 +391,8 @@ AST* parse_astcall(Parser* parser, AST* what) {
         eprintfln("ERROR %s: Expected ')' but found %s in function call",tloc(&t.loc),tdisplay(t));
         exit(1);
     }
-    return ast_new_call(parser->arena, what, args);
+    Location loc = loc_join(&what->loc, &t.loc);
+    return ast_new_call(parser->arena, &loc, what, args);
 }
 AST* parse_subscript(Parser* parser, AST* what) {
     Token t;
@@ -400,7 +408,8 @@ AST* parse_subscript(Parser* parser, AST* what) {
         return NULL;
     }
     lexer_eat(parser->lexer, 1);
-    return ast_new_subscript(parser->arena, what, v);
+    Location loc = loc_join(&what->loc, &t.loc);
+    return ast_new_subscript(parser->arena, &loc, what, v);
 }
 AST* parse_ast(Parser* parser, int expr_precedence) {
     Token t;
@@ -452,7 +461,8 @@ AST* parse_ast(Parser* parser, int expr_precedence) {
                 lexer_snap_restore(parser->lexer, snap);
                 v2 = parse_ast(parser, bin_precedence);
             }
-            v = ast_new_binop(parser->arena, binop, v, v2);
+            Location loc = loc_join(&v->loc, &v2->loc);
+            v = ast_new_binop(parser->arena, &loc, binop, v, v2);
         } break;
         default:
             return v;
@@ -593,7 +603,10 @@ void parse(Parser* parser, Arena* arena) {
                 parse_func_signature(parser, &fid->signature);
                 // TODO: This step is kinda unnecessary now
                 Function* f = func_new(parser->arena, fid, NULL);
-                Symbol* sym = symbol_new_constant(parser->arena, fid, ast_new_func(parser->arena, f));
+                // TODO: I know its technically wrong but maybe its fine
+                // For error reporting it should highlight only the name anyway 
+                // so idrc
+                Symbol* sym = symbol_new_constant(parser->arena, fid, ast_new_func(parser->arena, &t.loc, f));
                 sym_tab_insert(&parser->module->symtab_root.symtab, name, sym);
                 da_push(&parser->module->symbols, ((ModuleSymbol){sym, name}));
             } else {

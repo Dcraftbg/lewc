@@ -1,5 +1,6 @@
 #pragma once
 #include "arena.h"
+#include "location.h"
 #include <stdint.h>
 #include "atom.h"
 #include "func.h"
@@ -26,6 +27,7 @@ typedef struct Type Type;
 typedef struct Symbol Symbol;
 struct AST {
     AST* parent;
+    Location loc;
     int kind;
     Type* type;
     union {
@@ -44,14 +46,14 @@ typedef struct {
     AST **items;
     size_t len, cap;
 } ASTs;
-AST* ast_new_binop(Arena* arena, int op, AST* lhs, AST* rhs);
-AST* ast_new_symbol(Arena* arena, Atom* symbol);
-AST* ast_new_cstr(Arena* arena, const char* str, size_t len);
-AST* ast_new_int(Arena* arena, Type* type, uint64_t value);
-AST* ast_new_unary(Arena* arena, int op, AST* rhs);
-AST* ast_new_call(Arena* arena, AST* what, CallArgs args);
-AST* ast_new_func(Arena* arena, Function* func);
-AST* ast_new_subscript(Arena* arena, AST *what, AST* with);
-AST* ast_new_null(Arena* arena);
-AST* ast_new_cast(Arena* arena, AST *what, Type* into);
+AST* ast_new_binop(Arena* arena, const Location* loc, int op, AST* lhs, AST* rhs);
+AST* ast_new_symbol(Arena* arena, const Location* loc, Atom* symbol);
+AST* ast_new_cstr(Arena* arena, const Location* loc, const char* str, size_t len);
+AST* ast_new_int(Arena* arena, const Location* loc, Type* type, uint64_t value);
+AST* ast_new_unary(Arena* arena, const Location* loc, int op, AST* rhs);
+AST* ast_new_call(Arena* arena, const Location* loc, AST* what, CallArgs args);
+AST* ast_new_func(Arena* arena, const Location* loc, Function* func);
+AST* ast_new_subscript(Arena* arena, const Location* loc, AST *what, AST* with);
+AST* ast_new_null(Arena* arena, const Location* loc);
+AST* ast_new_cast(Arena* arena, const Location* loc, AST *what, Type* into);
 void call_args_dealloc(CallArgs* args);
