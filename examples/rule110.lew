@@ -1,9 +1,11 @@
 #import "../std/libc/stdio.lew"
 #import "../std/libc/string.lew"
-BOARD_CAP : i32 : 30;
+#import "../std/ffi/c.lew"
+#import "../std/libc/stddef.lew"
+BOARD_CAP :: 30i32;
 main :: () -> i32 {
     board : [i32; 30];
-    memset(board.data, 0, BOARD_CAP * 4);
+    memset(cast(board.data, *c_void), 0, cast(BOARD_CAP * 4, size_t));
     i := 0;
     j := 0;
     board[BOARD_CAP-2] = 1;
