@@ -333,7 +333,7 @@ bool typecheck_module(Module* module) {
         case SYMBOL_VARIABLE:
             if(!typecheck_ast(module->arena, s->ast)) return false;
             if(!type_eq(s->type, s->ast->type)) {
-                eprintfln("ERROR <TBD location>: Mismatch in definition of `%s`", name->data);
+                eprintfln("ERROR %s: Mismatch in definition of `%s`", tloc(&s->loc), name->data);
                 eprintf(" Defined type: "); type_dump(stderr, s->type); eprintf(NEWLINE);
                 eprintf(" Value: "); type_dump(stderr, s->ast->type); eprintf(NEWLINE);
                 return false;

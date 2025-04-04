@@ -178,7 +178,7 @@ bool syn_analyse_func(Arena* arena, SymTabNode* parent, Function* func) {
     func->symtab_node = symtab_node_new(parent, arena);
     for(size_t j=0; j < type->signature.input.len; ++j) {
         if(type->signature.input.items[j].name) {
-            sym_tab_insert(&func->symtab_node->symtab, type->signature.input.items[j].name, symbol_new_var(arena, type->signature.input.items[j].type, NULL));
+            sym_tab_insert(&func->symtab_node->symtab, type->signature.input.items[j].name, symbol_new_var(arena, &type->signature.input.items[j].loc, type->signature.input.items[j].type, NULL));
         }
     }
     if(!syn_analyse_scope(arena, func->symtab_node, func->scope)) return false;

@@ -1,10 +1,12 @@
 #pragma once
 #include "atom.h"
+#include "location.h"
 typedef struct Type Type;
 // TODO: Symbol instead of this maybe
 typedef struct {
     Atom* name; // NULL if no name is specified
     Type* type;
+    Location loc;
 } Arg;
 typedef struct {
     Arg *items;

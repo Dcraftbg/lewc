@@ -80,7 +80,7 @@ bool typefix_statement(Arena* arena, Statement* statement) {
         if(s->ast && !typefix_ast_nonvoid(arena, s->ast)) return false;
         if(!s->type && s->ast && s->ast->type) infer_symbol(arena, s, s->ast->type);
         if(!s->type) {
-            eprintfln("ERROR %s: Failed to infer type for local `%s`", "<TBD, dump location>", statement->as.local_def.name->data);
+            eprintfln("ERROR %s: Failed to infer type for local `%s`", tloc(&s->loc), statement->as.local_def.name->data);
             return false;
         }
         break;
@@ -126,7 +126,7 @@ bool typefix_module(Module* module) {
         case SYMBOL_CONSTANT:
         case SYMBOL_VARIABLE:
             if(!s->type) {
-                eprintfln("ERROR %s: Failed to infer type for constant `%s`", "<TBD, dump location>", name->data);
+                eprintfln("ERROR %s: Failed to infer type for constant `%s`", tloc(&s->loc), name->data);
                 // NOTE: Intentionally fallthrough so that the ast will report what part needs to be inferred
             }
             if(!typefix_ast_nonvoid(module->arena, s->ast)) return false;

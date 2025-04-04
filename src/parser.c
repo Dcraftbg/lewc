@@ -83,7 +83,7 @@ Type* parse_type(Parser* parser) {
             lexer_eat(parser->lexer, 1);
         }
         if((t=lexer_next(parser->lexer)).kind != '}') {
-            eprintfln("ERROR Expected '}' at the end of a structure definition");
+            eprintfln("ERROR %s: Unexpected `%s` at the end of structure definition. Expected '}'", tloc(&t.loc), tdisplay(t));
             exit(1);
         }
         return type_new_struct(parser->arena, struc);
@@ -104,8 +104,10 @@ void parse_func_signature(Parser* parser, FuncSignature* sig) {
         t = lexer_peak_next(parser->lexer);
         if(t.kind == ')') break;
         Atom* name = NULL;
+        Location loc = { 0 };
         if(t.kind == TOKEN_ATOM) {
             name = t.atom;
+            loc = t.loc;
             lexer_eat(parser->lexer, 1);
         } else if (t.kind == '.' && lexer_peak(parser->lexer, 1).kind == '.' && lexer_peak(parser->lexer, 2).kind == '.') {
             lexer_eat(parser->lexer, 3);
@@ -136,7 +138,7 @@ void parse_func_signature(Parser* parser, FuncSignature* sig) {
             exit(1);
         }
         t = lexer_peak_next(parser->lexer);
-        da_push(&sig->input, ((Arg){ name, typeid }));
+        da_push(&sig->input, ((Arg){ name, typeid, loc }));
         if(t.kind == ')') {
             break;
         } else if (t.kind == ',') {
@@ -544,7 +546,7 @@ Statement* parse_statement(Parser* parser, Token t) {
                     if(!(init = parse_ast(parser, INIT_PRECEDENCE))) 
                         exit(1);
                 }
-                return statement_local_def(parser->arena, name, symbol_new_var(parser->arena, type, init));
+                return statement_local_def(parser->arena, name, symbol_new_var(parser->arena, &t.loc, type, init));
             }
         } break;
         case '{':
@@ -606,7 +608,7 @@ void parse(Parser* parser, Arena* arena) {
                 // TODO: I know its technically wrong but maybe its fine
                 // For error reporting it should highlight only the name anyway 
                 // so idrc
-                Symbol* sym = symbol_new_constant(parser->arena, fid, ast_new_func(parser->arena, &t.loc, f));
+                Symbol* sym = symbol_new_constant(parser->arena, &t.loc, fid, ast_new_func(parser->arena, &t.loc, f));
                 sym_tab_insert(&parser->module->symtab_root.symtab, name, sym);
                 da_push(&parser->module->symbols, ((ModuleSymbol){sym, name}));
             } else {
@@ -632,6 +634,7 @@ void parse(Parser* parser, Arena* arena) {
                 da_push(&parser->module->typedefs, ((ModuleTypeDef){type, name}));
             } else if (lexer_peak(parser->lexer, 1).kind == ':') {
                 Atom* name = t.atom;
+                Location loc = t.loc;
                 lexer_eat(parser->lexer, 2);
                 Type* type = NULL;
                 if(lexer_peak_next(parser->lexer).kind != ':') {
@@ -644,7 +647,7 @@ void parse(Parser* parser, Arena* arena) {
                     exit(1);
                 }
                 AST* ast = parse_ast(parser, INIT_PRECEDENCE);
-                Symbol* sym = symbol_new_constant(arena, type, ast);
+                Symbol* sym = symbol_new_constant(arena, &loc, type, ast);
                 sym_tab_insert(&parser->module->symtab_root.symtab, name, sym);
                 da_push(&parser->module->symbols, ((ModuleSymbol){sym, name}));
             } else {
