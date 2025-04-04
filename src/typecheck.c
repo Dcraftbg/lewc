@@ -2,15 +2,15 @@
 #include "token.h"
 
 bool typecheck_func(Arena* arena, Function* func);
-bool typecheck_get_member_of(Type* type, Atom* member) {
+bool typecheck_get_member_of(const Location* loc, Type* type, Atom* member) {
     if(!type) {
-        eprintfln("ERROR Trying to get member `%s` of void expression!", member->data);
+        eprintfln("ERROR %s: Trying to get member `%s` of void expression!", tloc(loc), member->data);
         return false;
     }
     switch(type->core) {
     case CORE_PTR:
         if(type->ptr_count > 1) {
-            eprintf("ERROR Trying to get member `%s` of ", member->data); type_dump(stderr, type); eprintf(NEWLINE);
+            eprintf("ERROR %s: Trying to get member `%s` of ", tloc(loc), member->data); type_dump(stderr, type); eprintf(NEWLINE);
             switch(type->inner_type->core) {
             case CORE_STRUCT:
             case CORE_CONST_ARRAY:
@@ -22,27 +22,27 @@ bool typecheck_get_member_of(Type* type, Atom* member) {
         switch(type->inner_type->core) {
         case CORE_STRUCT:
         case CORE_CONST_ARRAY:
-            return typecheck_get_member_of(type->inner_type, member);
+            return typecheck_get_member_of(loc, type->inner_type, member);
         }
-        eprintf  ("ERROR Trying to get member `%s` of ", member->data); type_dump(stderr, type); eprintf(NEWLINE);
+        eprintf  ("ERROR %s: Trying to get member `%s` of ", tloc(loc), member->data); type_dump(stderr, type); eprintf(NEWLINE);
         eprintfln("You can only access members to structures, constant arrays (data, len) or pointers to any of the previous.");
         return false;
     case CORE_STRUCT: {
         Struct *s = &type->struc;
         Member* m = members_get(&s->members, member);
         if(!m) {
-            eprintf("ERROR Unknown member `%s` of ", member->data); type_dump(stderr, type); eprintf(NEWLINE);
+            eprintf("ERROR %s: Unknown member `%s` of ", tloc(loc), member->data); type_dump(stderr, type); eprintf(NEWLINE);
             return false;
         }
     } break;
     case CORE_CONST_ARRAY: {
         if(strcmp(member->data, "data") != 0 && strcmp(member->data, "len") != 0)  {
-            eprintfln("ERROR Unknown member `%s` of constant array", member->data);
+            eprintfln("ERROR %s: Unknown member `%s` of constant array", tloc(loc), member->data);
             return false;
         }
     } break;
     default:
-        eprintf  ("ERROR Trying to get member `%s` of ", member->data); type_dump(stderr, type); eprintf(NEWLINE);
+        eprintf  ("ERROR %s: Trying to get member `%s` of ", tloc(loc), member->data); type_dump(stderr, type); eprintf(NEWLINE);
         eprintfln("You can only access members to structures, constant arrays (data, len) or pointers to any of the previous.");
         return false;
     }
@@ -58,7 +58,7 @@ bool typecheck_ast(Arena* arena, AST* ast) {
     case AST_CAST: {
         if(!typecheck_ast(arena, ast->as.cast.what)) return false;
         if((!type_isbinary(ast->as.cast.what->type)) || (!type_isbinary(ast->as.cast.into))) {
-            eprintfln("ERROR Cannot cast between non-binary types:");
+            eprintfln("ERROR %s: Cannot cast between non-binary types:", tloc(&ast->loc));
             eprintf("Trying to cast "); type_dump(stderr, ast->as.cast.what->type); eprintf(" into "); type_dump(stderr, ast->as.cast.into); eprintf(NEWLINE);
             return false;
         }
@@ -67,15 +67,15 @@ bool typecheck_ast(Arena* arena, AST* ast) {
         if(!typecheck_ast(arena, ast->as.call.what)) return false;
         Type *t = ast->as.call.what->type;
         if(!t || t->core != CORE_FUNC) {
-            eprintf("ERROR Tried to call something that is not a function ("); type_dump(stderr, t); eprintfln(")");
+            eprintf("ERROR %s: Tried to call something that is not a function (", tloc(&ast->loc)); type_dump(stderr, t); eprintfln(")");
             return false;
         }
         if(ast->as.call.args.len < t->signature.input.len) {
-            eprintfln("ERROR Too few argument in function call.");
+            eprintfln("ERROR %s: Too few argument in function call.", tloc(&ast->loc));
             goto arg_size_mismatch;
         }
         if(ast->as.call.args.len > t->signature.input.len && t->signature.variadic == VARIADIC_NONE) {
-            eprintfln("ERROR Too many argument in function call.");
+            eprintfln("ERROR %s: Too many argument in function call.", tloc(&ast->loc));
             goto arg_size_mismatch;
         }
         FuncSignature* signature = &t->signature;
@@ -83,7 +83,7 @@ bool typecheck_ast(Arena* arena, AST* ast) {
             if(!typecheck_ast(arena, ast->as.call.args.items[i])) return false;
             if(i >= signature->input.len) continue;
             if(!type_eq(ast->as.call.args.items[i]->type, signature->input.items[i].type)) {
-                eprintfln("Argument %zu did not match type!", i);
+                eprintfln("ERROR %s: Argument %zu did not match type!", tloc(&ast->loc), i);
                 eprintf("Expected "); type_dump(stderr, signature->input.items[i].type); eprintf("\n");
                 eprintf("But got  "); type_dump(stderr, ast->as.call.args.items[i]->type); eprintf("\n");
                 return false;
@@ -91,7 +91,7 @@ bool typecheck_ast(Arena* arena, AST* ast) {
         }
         break;
     arg_size_mismatch:
-        eprintf("Function ");type_dump(stderr, t);eprintfln(" expects %zu arguments, but got %zu", t->signature.input.len, ast->as.call.args.len);
+        eprintf("ERROR %s: Function ", tloc(&ast->loc));type_dump(stderr, t);eprintfln(" expects %zu arguments, but got %zu", t->signature.input.len, ast->as.call.args.len);
         return false;
     }
     case AST_BINOP:
@@ -100,12 +100,12 @@ bool typecheck_ast(Arena* arena, AST* ast) {
         switch(ast->as.binop.op) {
         case '=':
             if(!type_eq(ast->as.binop.lhs->type, ast->as.binop.rhs->type)) {
-                eprintfln("Trying to assign to a different type");
+                eprintfln("ERROR %s: Trying to assign to a different type", tloc(&ast->loc));
                 type_dump(stderr, ast->as.binop.lhs->type); eprintf(" = "); type_dump(stderr, ast->as.binop.rhs->type); eprintf(NEWLINE);
                 return false;
             }
             if(ast->as.binop.lhs->kind == AST_BINOP && ast->as.binop.lhs->as.binop.op == '.' && ast->as.binop.lhs->as.binop.lhs->type->core == CORE_CONST_ARRAY) {
-                eprintfln("ERROR Cannot assign to `%s` of a constant array!", ast->as.binop.lhs->as.binop.rhs->as.symbol.name->data);
+                eprintfln("ERROR %s: Cannot assign to `%s` of a constant array!", tloc(&ast->loc), ast->as.binop.lhs->as.binop.rhs->as.symbol.name->data);
                 return false;
             }
             break;
@@ -124,13 +124,13 @@ bool typecheck_ast(Arena* arena, AST* ast) {
                 // Allow offseting with +
                 // TODO: Maybe insert a cast to isize in here 
                 if(ast->as.binop.op != '+' || ast->as.binop.lhs->type->core != CORE_PTR || (!type_isbinary(ast->as.binop.rhs->type))) {
-                    eprintfln("Trying to add two different types together with '%c'", ast->as.binop.op);
+                    eprintfln("ERROR %s: Trying to add two different types together with '%c'", tloc(&ast->loc), ast->as.binop.op);
                     type_dump(stderr, ast->as.binop.lhs->type); eprintf(" %c ", ast->as.binop.op); type_dump(stderr, ast->as.binop.rhs->type); eprintf("\n");
                     return false;
                 }
             }
             if(!type_isbinary(ast->as.binop.lhs->type)) {
-                eprintfln("ERROR We don't support addition between nonbinary types:");
+                eprintfln("ERROR %s: We don't support addition between nonbinary types:", tloc(&ast->loc));
                 type_dump(stderr, ast->as.binop.lhs->type); eprintf(" %c ", ast->as.binop.op); type_dump(stderr, ast->as.binop.rhs->type); eprintf("\n");
                 return false;
             }
@@ -148,7 +148,7 @@ bool typecheck_ast(Arena* arena, AST* ast) {
                 return false;
             }
             if(!type_isbinary(ast->as.binop.lhs->type)) {
-                eprintfln("ERROR We don't support addition between nonbinary types:");
+                eprintfln("ERROR %s: We don't support addition between nonbinary types:", tloc(&ast->loc));
                 type_dump(stderr, ast->as.binop.lhs->type); eprintf(" == "); type_dump(stderr, ast->as.binop.rhs->type); eprintf("\n");
                 return false;
             }
@@ -170,7 +170,7 @@ bool typecheck_ast(Arena* arena, AST* ast) {
             Type* type = ast->as.binop.lhs->type;
             if(type->core != CORE_STRUCT && type->core != CORE_CONST_ARRAY) {
                 if(type->core == CORE_PTR && (type->inner_type->core == CORE_STRUCT || type->inner_type->core == CORE_CONST_ARRAY)) return true;
-                eprintf("ERROR Trying to get member of non structure ("); type_dump(stderr, type); eprintfln(") isn't permitted");
+                eprintf("ERROR %s: Trying to get member of non structure (", tloc(&ast->loc)); type_dump(stderr, type); eprintfln(") isn't permitted");
                 return false;
             }
         } break;
@@ -333,7 +333,7 @@ bool typecheck_module(Module* module) {
         case SYMBOL_VARIABLE:
             if(!typecheck_ast(module->arena, s->ast)) return false;
             if(!type_eq(s->type, s->ast->type)) {
-                eprintfln("ERROR Mismatch in definition of `%s`", name->data);
+                eprintfln("ERROR <TBD location>: Mismatch in definition of `%s`", name->data);
                 eprintf(" Defined type: "); type_dump(stderr, s->type); eprintf(NEWLINE);
                 eprintf(" Value: "); type_dump(stderr, s->ast->type); eprintf(NEWLINE);
                 return false;
