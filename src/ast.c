@@ -44,7 +44,7 @@ AST* ast_new_int(Arena* arena, Type* type, uint64_t value) {
 AST* ast_new_cstr(Arena* arena, const char* str, size_t len) {
     AST* ast = ast_new(arena);
     ast->kind = AST_C_STR;
-    ast->type = &type_u8_ptr;
+    ast->type = &type_i8_ptr;
     ast->as.str.str = str;
     ast->as.str.len = len;
     return ast;

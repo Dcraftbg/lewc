@@ -71,12 +71,14 @@ struct Type {
 
 size_t type_size(Type* type);
 size_t type_alignment(Type* type);
+bool type_isint(Type* t);
 // TODO: type_eq for structs fields and whatnot
 static bool type_eq(Type* a, Type* b) {
     if(a == NULL && b == NULL) return true;
     if(a == NULL || b == NULL) return false;
     if(a->core != b->core || a->ptr_count != b->ptr_count) return false;
     if(a->core == CORE_PTR) return type_eq(a->inner_type, b->inner_type);
+    if(type_isint(a) && a->unsign != b->unsign) return false;
     return true;
 }
 #ifdef TYPE_TABLE_DEFINE
@@ -95,7 +97,7 @@ extern Type type_i8 , type_u8;
 extern Type type_i16, type_u16;
 extern Type type_i32, type_u32;
 extern Type type_i64, type_u64;
-extern Type type_u8_ptr;
+extern Type type_i8_ptr;
 Type* type_ptr(Arena* arena, Type* to, size_t ptr_count);
 void type_table_move(TypeTable* into, TypeTable* from);
 void type_table_init(TypeTable* t);

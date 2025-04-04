@@ -15,7 +15,7 @@ Type type_i32    = { .name="i32" , .core=CORE_I32 , .ptr_count=0, .unsign=false 
 Type type_i64    = { .name="i64" , .core=CORE_I64 , .ptr_count=0, .unsign=false },
      type_u64    = { .name="u64" , .core=CORE_I64 , .ptr_count=0, .unsign=true  };
 
-Type type_u8_ptr = { .name=NULL  , .core=CORE_PTR , .ptr_count=1, .inner_type=&type_u8};
+Type type_i8_ptr = { .name=NULL  , .core=CORE_PTR , .ptr_count=1, .inner_type=&type_i8};
 Type* core_types[] = {
     &type_bool,
     &type_i8,
