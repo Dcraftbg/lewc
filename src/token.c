@@ -22,8 +22,8 @@ const char* tdisplay(Token t) {
         TPRINTF("Invalid integer literal");
         return tdisplay_buf;
     default:
-        assert(sizeof(tdisplay_buf) > (t.src_len + 1));
-        strncpy(tdisplay_buf, t.src, t.src_len);
+        assert(sizeof(tdisplay_buf) > (t.loc.src_len + 1));
+        strncpy(tdisplay_buf, t.loc.src, t.loc.src_len);
         return tdisplay_buf;
     }
     unreachable("Non exhaustive tdisplay");
@@ -31,6 +31,6 @@ const char* tdisplay(Token t) {
 
 const char* tloc(Token t) {
     static char tdisplay_buf[1024];
-    TPRINTF("%s:%zu:%zu",t.path,t.l0,t.c0);
+    TPRINTF("%s:%zu:%zu",t.loc.path,t.loc.l0,t.loc.c0);
     return tdisplay_buf;
 }

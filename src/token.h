@@ -1,5 +1,6 @@
 #pragma once
 #include "atom.h"
+#include "location.h"
 #include <stdint.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -41,12 +42,7 @@ enum {
 };
 typedef struct Type Type;
 typedef struct {
-    const char* path;
-    size_t l0, c0;
-    size_t l1, c1;
-    // Pointer to the original token source string
-    const char *src;
-    size_t src_len;
+    Location loc;
     int kind;
     union {
         Atom* atom;

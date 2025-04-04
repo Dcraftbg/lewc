@@ -121,7 +121,7 @@ static void lex_str(Lexer* lexer, const char **str, size_t *len) {
     scratchbuf_reset(&lexer->buf);
     return;
 }
-#define MAKE_TOKEN(...) (Token) { lexer->path, l0, c0, lexer->l0, lexer->c0, src_start, lexer->cursor-src_start, .kind=__VA_ARGS__ }
+#define MAKE_TOKEN(...) (Token) { (Location){ lexer->path, l0, c0, lexer->l0, lexer->c0, src_start, lexer->cursor-src_start }, .kind=__VA_ARGS__ }
 static size_t lex_prefix_to_radix(Lexer* lexer) {
     int c = lexer_peak_c(lexer);
     switch(c) {
