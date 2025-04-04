@@ -655,7 +655,13 @@ void parse(Parser* parser, Arena* arena) {
                     if(t.kind == TOKEN_C_STR) eprintfln("NOTE: Maybe you meant to use a string instead of a cstring?");
                     exit(1);
                 }
-                const char* path = t.str;
+                const char* file_path = t.str;
+                (void)file_path;
+                char path[1024];
+                size_t n = path_name(parser->lexer->path) - parser->lexer->path;
+                memcpy(path, parser->lexer->path, n);
+                assert(sizeof(path)-n >= strlen(file_path));
+                strcpy(path + n, file_path);
                 Lexer child_lexer;
                 lexer_create(&child_lexer, path, parser->lexer->atom_table, parser->lexer->arena);
                     Module* child = module_new(parser->arena, path);

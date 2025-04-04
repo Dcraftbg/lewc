@@ -10,3 +10,5 @@
 #define FS_MALLOC(size) malloc(size)
 // TODO: Utf8 checks
 const char* read_entire_file(const char* path, size_t* size);
+// NOTE: Stolen from nob.h
+const char *path_name(const char *path);

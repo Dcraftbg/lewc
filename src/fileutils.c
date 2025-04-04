@@ -42,3 +42,17 @@ DEFER:
     fclose(f);
     return result;
 }
+
+// NOTE: Stolen from nob.h
+const char *path_name(const char *path)
+{
+#ifdef _WIN32
+    const char *p1 = strrchr(path, '/');
+    const char *p2 = strrchr(path, '\\');
+    const char *p = (p1 > p2)? p1 : p2;  // NULL is ignored if the other search is successful
+    return p ? p + 1 : path;
+#else
+    const char *p = strrchr(path, '/');
+    return p ? p + 1 : path;
+#endif // _WIN32
+}
