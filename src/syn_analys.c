@@ -50,13 +50,13 @@ bool syn_analyse_ast(Arena* arena, SymTabNode* node, AST* ast) {
             switch(lhs->kind) {
             case AST_SYMBOL: {
                 if(lhs->as.symbol.sym->kind != SYMBOL_VARIABLE) {
-                    eprintfln("Cannot assign to non-variable `%s`", lhs->as.symbol.name->data);
+                    eprintfln("ERROR %s: Cannot assign to non-variable `%s`", tloc(&lhs->loc), lhs->as.symbol.name->data);
                     return false;
                 }
             } break;
             case AST_UNARY: {
                 if(lhs->as.unary.op != '*') {
-                    eprintfln("Can only assign to variables, dereferences or fields. found unary: %c", lhs->as.unary.op);
+                    eprintfln("ERROR %s: Can only assign to variables, dereferences or fields. found unary: %c", tloc(&lhs->loc), lhs->as.unary.op);
                     return false;
                 }
             } break;
@@ -64,13 +64,13 @@ bool syn_analyse_ast(Arena* arena, SymTabNode* node, AST* ast) {
                 break;
             case AST_BINOP: {
                 if(lhs->as.binop.op != '.') {
-                    eprintfln("Can only assign to variables, dereferences or fields. found binop: %c", lhs->as.binop.op);
+                    eprintfln("ERROR %s: Can only assign to variables, dereferences or fields. found binop: %c", tloc(&lhs->loc), lhs->as.binop.op);
                     return false;
                 }
             } break;
             default:
                 // TODO: Better error messages
-                eprintfln("Can only assign to variables, dereferences, fields or subscripts. found: %d", lhs->kind);
+                eprintfln("ERROR %s: Can only assign to variables, dereferences, fields or subscripts. found: %d", tloc(&lhs->loc), lhs->kind);
                 return false;
             }
         } break;
@@ -78,7 +78,7 @@ bool syn_analyse_ast(Arena* arena, SymTabNode* node, AST* ast) {
             AST* rhs = ast->as.binop.rhs;
             if(rhs->kind != AST_SYMBOL) {
                 // TODO: Better error messages
-                eprintfln("Field access can only be done through symbols!");
+                eprintfln("ERROR %s: Field access can only be done through symbols!", tloc(&rhs->loc));
                 return false;
             }
         } break;
@@ -101,14 +101,14 @@ bool syn_analyse_ast(Arena* arena, SymTabNode* node, AST* ast) {
                 }
                 // fallthrough
             default:
-                eprintfln("ERORR: `&` can only be used on variables or fields!");
+                eprintfln("ERROR %s: `&` can only be used on variables or fields!", tloc(&ast->as.unary.rhs->loc));
                 return false;
             }
         }
         break;
     case AST_SYMBOL:
         if(!(ast->as.symbol.sym = stl_lookup(node, ast->as.symbol.name))) {
-            eprintfln("Unknown variable or function `%s`", ast->as.symbol.name->data);
+            eprintfln("ERROR %s: Unknown variable or function `%s`", tloc(&ast->loc), ast->as.symbol.name->data);
             return false;
         }
         break;
