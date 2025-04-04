@@ -656,7 +656,6 @@ void parse(Parser* parser, Arena* arena) {
                     exit(1);
                 }
                 const char* file_path = t.str;
-                (void)file_path;
                 char path[1024];
                 size_t n = path_name(parser->lexer->path) - parser->lexer->path;
                 memcpy(path, parser->lexer->path, n);
