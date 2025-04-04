@@ -1,4 +1,5 @@
 #pragma once
+#include <stddef.h>
 typedef struct {
     const char* path;
     size_t l0, c0;
@@ -7,3 +8,4 @@ typedef struct {
     const char *src;
     size_t src_len;
 } Location;
+const char* tloc(const Location* loc);

@@ -250,7 +250,7 @@ static bool lex_num_suffix(Lexer* lexer, Token* t) {
         t->integer.type = &type_bool;
     } 
     else {
-        eprintfln("ERROR %s: Invalid suffix `%.*s`", tloc(*t), (int)(word.end-word.start), word.start);
+        eprintfln("ERROR %s: Invalid suffix `%.*s`", tloc(&t->loc), (int)(word.end-word.start), word.start);
         return false;
     }
     return true;

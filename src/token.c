@@ -29,8 +29,3 @@ const char* tdisplay(Token t) {
     unreachable("Non exhaustive tdisplay");
 }
 
-const char* tloc(Token t) {
-    static char tdisplay_buf[1024];
-    TPRINTF("%s:%zu:%zu",t.loc.path,t.loc.l0,t.loc.c0);
-    return tdisplay_buf;
-}

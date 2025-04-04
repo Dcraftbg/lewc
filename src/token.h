@@ -60,4 +60,3 @@ typedef struct {
 } Token;
 // NOTE: Temporarily display a Token
 const char* tdisplay(Token t);
-const char* tloc(Token t);

@@ -34,24 +34,24 @@ Type* parse_type(Parser* parser) {
                 len = t.integer.value;
                 break;
             default:
-                eprintfln("ERROR %s: Expected integer N for array length (i.e. [<Type>;N], but got %s)", tloc(t), tdisplay(t));
+                eprintfln("ERROR %s: Expected integer N for array length (i.e. [<Type>;N], but got %s)", tloc(&t.loc), tdisplay(t));
                 exit(1);
             }
             if((t=lexer_next(parser->lexer)).kind != ']') {
-                eprintfln("ERROR %s Expected `]` after size to end the array (i.e. [<Type>;N] but got %s)", tloc(t), tdisplay(t));
+                eprintfln("ERROR %s Expected `]` after size to end the array (i.e. [<Type>;N] but got %s)", tloc(&t.loc), tdisplay(t));
                 exit(1);
             }
             return type_new_const_array(parser->arena, of, len);
         } break;
         default:
-            eprintfln("ERROR %s: Expected `;` after type to indicate size (i.e. [<Type>;N]) but got %s", tloc(t), tdisplay(t));
+            eprintfln("ERROR %s: Expected `;` after type to indicate size (i.e. [<Type>;N]) but got %s", tloc(&t.loc), tdisplay(t));
             exit(1);
         }
     } break;
     case TOKEN_ATOM: {
         Type** idp = type_table_get(&parser->module->type_table, t.atom->data);
         if(!idp) {
-            eprintfln("ERROR %s: Unknown type name: %s", tloc(t), t.atom->data);
+            eprintfln("ERROR %s: Unknown type name: %s", tloc(&t.loc), t.atom->data);
             exit(1);
         }
         Type* id = *idp;
@@ -60,20 +60,20 @@ Type* parse_type(Parser* parser) {
     } break;
     case TOKEN_STRUCT: {
         if((t=lexer_next(parser->lexer)).kind != '{') {
-            eprintfln("ERROR %s: Unexpected `%s` at the start of structure definition. Expected '{'", tloc(t), tdisplay(t));
+            eprintfln("ERROR %s: Unexpected `%s` at the start of structure definition. Expected '{'", tloc(&t.loc), tdisplay(t));
             exit(1);
         }
         Struct struc = { 0 };
         struc.alignment = 1;
         while((t=lexer_peak_next(parser->lexer)).kind != '}') {
             if(t.kind != TOKEN_ATOM) {
-                eprintfln("ERROR %s Unexpected token in structure definition %s (expected field name)", tloc(t), tdisplay(t));
+                eprintfln("ERROR %s Unexpected token in structure definition %s (expected field name)", tloc(&t.loc), tdisplay(t));
                 exit(1);
             }
             Atom* name = t.atom;
             lexer_eat(parser->lexer, 1);
             if((t=lexer_next(parser->lexer)).kind != ':') {
-                eprintfln("ERROR %s Expected : after field name. Found %s", tloc(t), tdisplay(t));
+                eprintfln("ERROR %s Expected : after field name. Found %s", tloc(&t.loc), tdisplay(t));
                 exit(1);
             }
             Type* type = parse_type(parser);
@@ -89,7 +89,7 @@ Type* parse_type(Parser* parser) {
         return type_new_struct(parser->arena, struc);
     } break;
     default:
-        eprintfln("ERROR %s: Expected name of type but got: %s", tloc(t), tdisplay(t));
+        eprintfln("ERROR %s: Expected name of type but got: %s", tloc(&t.loc), tdisplay(t));
         exit(1);
     }
 }
@@ -97,7 +97,7 @@ void parse_func_signature(Parser* parser, FuncSignature* sig) {
     sig->variadic = VARIADIC_NONE;
     Token t = {0};
     if((t=lexer_next(parser->lexer)).kind != '(') {
-        eprintfln("ERROR %s: Expected '(' but found %s in function signature", tloc(t), tdisplay(t));
+        eprintfln("ERROR %s: Expected '(' but found %s in function signature", tloc(&t.loc), tdisplay(t));
         exit(1);
     }
     for(;;) {
@@ -111,28 +111,28 @@ void parse_func_signature(Parser* parser, FuncSignature* sig) {
             lexer_eat(parser->lexer, 3);
             if ((t = lexer_next(parser->lexer)).kind == '#') {
                 if ((t = lexer_next(parser->lexer)).kind != TOKEN_ATOM || strcmp(t.atom->data, "c") != 0) {
-                    eprintfln("ERROR %s: Expected c after ... # but found %s", tloc(t), tdisplay(t));
+                    eprintfln("ERROR %s: Expected c after ... # but found %s", tloc(&t.loc), tdisplay(t));
                     exit(1);
                 }
                 sig->variadic = VARIADIC_C;
             } else {
-                eprintfln("ERROR %s: Expected #c after ... but found %s", tloc(t), tdisplay(t));
+                eprintfln("ERROR %s: Expected #c after ... but found %s", tloc(&t.loc), tdisplay(t));
                 exit(1);
             }
             if((t=lexer_peak_next(parser->lexer)).kind != ')') {
-                eprintfln("ERROR %s: Expected end of function signature ')' after variadic (...) but got %s", tloc(t), tdisplay(t));
+                eprintfln("ERROR %s: Expected end of function signature ')' after variadic (...) but got %s", tloc(&t.loc), tdisplay(t));
                 exit(1);
             }
             break;
         }
         t = lexer_next(parser->lexer);
         if(t.kind != ':') {
-            eprintfln("ERROR %s: Expected ':' before argument type but found: %s", tloc(t), tdisplay(t));
+            eprintfln("ERROR %s: Expected ':' before argument type but found: %s", tloc(&t.loc), tdisplay(t));
             exit(1);
         }
         Type* typeid = parse_type(parser);
         if(!typeid) {
-            eprintfln("ERROR %s: Invalid type in signature", tloc(t));
+            eprintfln("ERROR %s: Invalid type in signature", tloc(&t.loc));
             exit(1);
         }
         t = lexer_peak_next(parser->lexer);
@@ -142,12 +142,12 @@ void parse_func_signature(Parser* parser, FuncSignature* sig) {
         } else if (t.kind == ',') {
             lexer_eat(parser->lexer, 1);
         }  else {
-            eprintfln("ERROR %s: Expected ')' or ',' but found %s in function signature", tloc(t), tdisplay(t));
+            eprintfln("ERROR %s: Expected ')' or ',' but found %s in function signature", tloc(&t.loc), tdisplay(t));
             exit(1);
         }
     } 
     if((t=lexer_next(parser->lexer)).kind != ')') {
-        eprintfln("ERROR %s: Expected ')' but found %s in function signature",tloc(t),tdisplay(t));
+        eprintfln("ERROR %s: Expected ')' but found %s in function signature",tloc(&t.loc),tdisplay(t));
         exit(1);
     }
     sig->output = NULL;
@@ -155,7 +155,7 @@ void parse_func_signature(Parser* parser, FuncSignature* sig) {
         lexer_eat(parser->lexer, 1);
         sig->output = parse_type(parser);
         if(!sig->output) {
-            eprintfln("ERROR %s: Invalid return type",tloc(t));
+            eprintfln("ERROR %s: Invalid return type",tloc(&t.loc));
             exit(1);
         }
     }
@@ -267,10 +267,10 @@ void parse_func_body(Parser* parser, Statements* s) {
     while((t=lexer_peak_next(parser->lexer)).kind != '}') {
         if(t.kind >= TOKEN_END) {
             if(t.kind >= TOKEN_ERR) {
-                eprintfln("ERROR %s: Lexer error %s", tloc(t), tdisplay(t));
+                eprintfln("ERROR %s: Lexer error %s", tloc(&t.loc), tdisplay(t));
                 exit(1);
             } else {
-                eprintfln("ERROR %s: Unexpected token in function body: %s", tloc(t), tdisplay(t));
+                eprintfln("ERROR %s: Unexpected token in function body: %s", tloc(&t.loc), tdisplay(t));
                 exit(1);
             }
         }
@@ -282,7 +282,7 @@ void parse_func_body(Parser* parser, Statements* s) {
     }
     t = lexer_next(parser->lexer);
     if(t.kind != '}') {
-        eprintfln("ERROR %s: Expected '}' at the end of function body, but found: %s", tloc(t), tdisplay(t));
+        eprintfln("ERROR %s: Expected '}' at the end of function body, but found: %s", tloc(&t.loc), tdisplay(t));
         exit(1);
     }
 }
@@ -293,7 +293,7 @@ AST* parse_basic(Parser* parser) {
         fid->core    = CORE_FUNC;
         parse_func_signature(parser, &fid->signature);
         if((t=lexer_next(parser->lexer)).kind != '{') {
-            eprintfln("ERROR %s: Missing '{' at the start of function. Got: %s", tloc(t), tdisplay(t));
+            eprintfln("ERROR %s: Missing '{' at the start of function. Got: %s", tloc(&t.loc), tdisplay(t));
             exit(1);
         }
         Statements* s = scope_new(parser->arena);
@@ -317,7 +317,7 @@ AST* parse_basic(Parser* parser) {
         if(!v) return NULL;
         Token t2 = lexer_peak_next(parser->lexer);
         if(t2.kind != ')') {
-            eprintfln("ERROR %s: Expected closing paren but got %s", tloc(t2), tdisplay(t2));
+            eprintfln("ERROR %s: Expected closing paren but got %s", tloc(&t2.loc), tdisplay(t2));
             return NULL;
         }
         lexer_eat(parser->lexer, 1);
@@ -325,18 +325,18 @@ AST* parse_basic(Parser* parser) {
     } break;
     case TOKEN_CAST:
         if((t=lexer_next(parser->lexer)).kind != '(') {
-            eprintfln("ERROR %s: Expected '(' after cast keyword but got %s", tloc(t), tdisplay(t));
+            eprintfln("ERROR %s: Expected '(' after cast keyword but got %s", tloc(&t.loc), tdisplay(t));
             return NULL;
         }
         AST* what = parse_ast(parser, INIT_PRECEDENCE);
         if(!what) return NULL;
         if((t=lexer_next(parser->lexer)).kind != ',') {
-            eprintfln("ERROR %s: Expected ',' after cast but got %s", tloc(t), tdisplay(t));
+            eprintfln("ERROR %s: Expected ',' after cast but got %s", tloc(&t.loc), tdisplay(t));
             return NULL;
         }
         Type* into = parse_type(parser);
         if((t=lexer_next(parser->lexer)).kind != ')') {
-            eprintfln("ERROR %s: Expected ')' at the end of cast but got %s", tloc(t), tdisplay(t));
+            eprintfln("ERROR %s: Expected ')' at the end of cast but got %s", tloc(&t.loc), tdisplay(t));
             return NULL;
         }
         return ast_new_cast(parser->arena, what, into);
@@ -349,7 +349,7 @@ AST* parse_basic(Parser* parser) {
     case TOKEN_INT:
         return ast_new_int(parser->arena, t.integer.type, t.integer.value); 
     default:
-        eprintfln("ERROR %s: Unexpected token in expression: %s", tloc(t),tdisplay(t));
+        eprintfln("ERROR %s: Unexpected token in expression: %s", tloc(&t.loc),tdisplay(t));
         exit(1);
     }
 }
@@ -357,7 +357,7 @@ AST* parse_basic(Parser* parser) {
 AST* parse_astcall(Parser* parser, AST* what) {
     Token t;
     if((t=lexer_next(parser->lexer)).kind != '(') {
-        eprintfln("ERROR %s: Expected '(' but found %s in function call", tloc(t), tdisplay(t));
+        eprintfln("ERROR %s: Expected '(' but found %s in function call", tloc(&t.loc), tdisplay(t));
         exit(1);
     }
     CallArgs args = {0};
@@ -376,12 +376,12 @@ AST* parse_astcall(Parser* parser, AST* what) {
         } else if (t.kind == ',') {
             lexer_eat(parser->lexer, 1);
         } else {
-            eprintfln("ERROR %s: Expected ')' or ',' but found %s in function call", tloc(t), tdisplay(t));
+            eprintfln("ERROR %s: Expected ')' or ',' but found %s in function call", tloc(&t.loc), tdisplay(t));
             exit(1);
         }
     } 
     if((t=lexer_next(parser->lexer)).kind != ')') {
-        eprintfln("ERROR %s: Expected ')' but found %s in function call",tloc(t),tdisplay(t));
+        eprintfln("ERROR %s: Expected ')' but found %s in function call",tloc(&t.loc),tdisplay(t));
         exit(1);
     }
     return ast_new_call(parser->arena, what, args);
@@ -389,14 +389,14 @@ AST* parse_astcall(Parser* parser, AST* what) {
 AST* parse_subscript(Parser* parser, AST* what) {
     Token t;
     if((t=lexer_next(parser->lexer)).kind != '[') {
-        eprintfln("ERROR %s: Subsript must start with '['. Got %s", tloc(t), tdisplay(t));
+        eprintfln("ERROR %s: Subsript must start with '['. Got %s", tloc(&t.loc), tdisplay(t));
         return NULL;
     }
     AST* v = parse_ast(parser, INIT_PRECEDENCE);
     if(!v) return NULL;
     t = lexer_peak_next(parser->lexer);
     if(t.kind != ']') {
-        eprintfln("ERROR %s: Expected closing ']' paren but got %s", tloc(t), tdisplay(t));
+        eprintfln("ERROR %s: Expected closing ']' paren but got %s", tloc(&t.loc), tdisplay(t));
         return NULL;
     }
     lexer_eat(parser->lexer, 1);
@@ -468,10 +468,10 @@ Statement* parse_scope(Parser* parser) {
     while((t=lexer_peak_next(parser->lexer)).kind != '}') {
         if(t.kind >= TOKEN_END) {
             if(t.kind >= TOKEN_ERR) {
-                eprintfln("ERROR %s: Lexer error %s", tloc(t), tdisplay(t));
+                eprintfln("ERROR %s: Lexer error %s", tloc(&t.loc), tdisplay(t));
                 exit(1);
             } else {
-                eprintfln("ERROR %s: Unexpected token in scope body: %s", tloc(t), tdisplay(t));
+                eprintfln("ERROR %s: Unexpected token in scope body: %s", tloc(&t.loc), tdisplay(t));
                 exit(1);
             }
         }
@@ -483,7 +483,7 @@ Statement* parse_scope(Parser* parser) {
     }
     t = lexer_next(parser->lexer);
     if(t.kind != '}') {
-        eprintfln("ERROR %s: Expected '}' at the end of function body, but found: %s", tloc(t), tdisplay(t));
+        eprintfln("ERROR %s: Expected '}' at the end of function body, but found: %s", tloc(&t.loc), tdisplay(t));
         exit(1);
     }
     return scope;
@@ -494,7 +494,7 @@ Statement* parse_body(Parser* parser) {
     case '{':
         return parse_scope(parser);
     default:
-        eprintfln("ERROR %s: body must either start with `then` or `{`. Found %s", tloc(t), tdisplay(t));
+        eprintfln("ERROR %s: body must either start with `then` or `{`. Found %s", tloc(&t.loc), tdisplay(t));
         exit(1);
     }
     return NULL;
@@ -513,7 +513,7 @@ Statement* parse_statement(Parser* parser, Token t) {
             }
             AST* ast = parse_ast(parser, INIT_PRECEDENCE);
             if(!ast) {
-                eprintfln("ERROR %s: Failed to parse return statement",tloc(t));
+                eprintfln("ERROR %s: Failed to parse return statement",tloc(&t.loc));
                 exit(1);
             }
             return statement_return(parser->arena, ast);
@@ -546,7 +546,7 @@ Statement* parse_statement(Parser* parser, Token t) {
             lexer_eat(parser->lexer, 1);
             AST* ast = parse_ast(parser, INIT_PRECEDENCE);
             if(!ast) {
-                eprintfln("ERROR %s: Failed to parse condition", tloc(t));
+                eprintfln("ERROR %s: Failed to parse condition", tloc(&t.loc));
                 exit(1);
             }
             Statement* body = parse_body(parser);
@@ -561,7 +561,7 @@ Statement* parse_statement(Parser* parser, Token t) {
             lexer_eat(parser->lexer, 1);
             AST* ast = parse_ast(parser, INIT_PRECEDENCE);
             if(!ast) {
-                eprintfln("ERROR %s: Failed to parse condition",tloc(t));
+                eprintfln("ERROR %s: Failed to parse condition",tloc(&t.loc));
                 exit(1);
             }
             return statement_while(parser->arena, ast, parse_body(parser));
@@ -569,7 +569,7 @@ Statement* parse_statement(Parser* parser, Token t) {
     }
     AST* ast = parse_ast(parser, INIT_PRECEDENCE);
     if(!ast) {
-        eprintfln("ERROR %s: Unknown token in statement: %s", tloc(t), tdisplay(t));
+        eprintfln("ERROR %s: Unknown token in statement: %s", tloc(&t.loc), tdisplay(t));
         exit(1);
     }
     return statement_eval(parser->arena, ast);
@@ -578,7 +578,7 @@ void parse(Parser* parser, Arena* arena) {
     Token t;
     while((t=lexer_peak_next(parser->lexer)).kind != TOKEN_EOF) {
         if(t.kind >= TOKEN_END) {
-            eprintfln("ERROR %s: Lexer: %s", tloc(t), tdisplay(t));
+            eprintfln("ERROR %s: Lexer: %s", tloc(&t.loc), tdisplay(t));
             exit(1);
         }
         switch(t.kind) {
@@ -597,7 +597,7 @@ void parse(Parser* parser, Arena* arena) {
                 sym_tab_insert(&parser->module->symtab_root.symtab, name, sym);
                 da_push(&parser->module->symbols, ((ModuleSymbol){sym, name}));
             } else {
-                eprintfln("ERROR %s: Expected signature of external function to follow the syntax:", tloc(t));
+                eprintfln("ERROR %s: Expected signature of external function to follow the syntax:", tloc(&t.loc));
                 eprintfln("  extern <func name> :: <(<Arguments>)> (-> <Output Type>)");
                 exit(1);
             }
@@ -626,7 +626,7 @@ void parse(Parser* parser, Arena* arena) {
                     if(!type) exit(1);
                 }
                 if((t=lexer_next(parser->lexer)).kind != ':') {
-                    eprintfln("ERROR %s: Expected constant to follow the syntax: ", tloc(t));
+                    eprintfln("ERROR %s: Expected constant to follow the syntax: ", tloc(&t.loc));
                     eprintfln("  <const name> : (type) : <expression>");
                     exit(1);
                 }
@@ -635,7 +635,7 @@ void parse(Parser* parser, Arena* arena) {
                 sym_tab_insert(&parser->module->symtab_root.symtab, name, sym);
                 da_push(&parser->module->symbols, ((ModuleSymbol){sym, name}));
             } else {
-                eprintfln("ERROR %s: Unexpected Atom: %s",tloc(t), t.atom->data);
+                eprintfln("ERROR %s: Unexpected Atom: %s",tloc(&t.loc), t.atom->data);
                 exit(1);
             }
         } break;
@@ -645,13 +645,13 @@ void parse(Parser* parser, Arena* arena) {
         case '#': {
             lexer_eat(parser->lexer, 1);
             if((t=lexer_next(parser->lexer)).kind != TOKEN_ATOM) {
-                eprintfln("ERROR %s: Expected atom for preprocessor directive but found: %s", tloc(t), tdisplay(t));
+                eprintfln("ERROR %s: Expected atom for preprocessor directive but found: %s", tloc(&t.loc), tdisplay(t));
                 exit(1);
             }
             Atom* directive = t.atom;
             if(strcmp(directive->data, "import") == 0) {
                 if((t=lexer_next(parser->lexer)).kind != TOKEN_STR) {
-                    eprintfln("ERROR %s: Expected string (path to file) for #import but found: %s", tloc(t), tdisplay(t));
+                    eprintfln("ERROR %s: Expected string (path to file) for #import but found: %s", tloc(&t.loc), tdisplay(t));
                     if(t.kind == TOKEN_C_STR) eprintfln("NOTE: Maybe you meant to use a string instead of a cstring?");
                     exit(1);
                 }
@@ -674,12 +674,12 @@ void parse(Parser* parser, Arena* arena) {
                 // lexer_cleanup(&child_lexer);
                 if(!modules_join(parser->module, child)) exit(1);
             } else {
-                eprintfln("ERROR %s: Unexpected top level preprocessor directive `%s`", tloc(t), directive->data);
+                eprintfln("ERROR %s: Unexpected top level preprocessor directive `%s`", tloc(&t.loc), directive->data);
                 exit(1);
             }
         } break;
         default:
-            eprintfln("ERROR %s:  Unexpected token: %s", tloc(t), tdisplay(t));
+            eprintfln("ERROR %s:  Unexpected token: %s", tloc(&t.loc), tdisplay(t));
             exit(1);
         }
     }
