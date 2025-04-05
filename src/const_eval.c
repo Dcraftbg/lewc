@@ -8,28 +8,28 @@ AST* const_eval_ast(Arena* arena, AST* ast) {
     static_assert(AST_KIND_COUNT == 10, "Update const_eval_ast");
     switch(ast->kind) {
     case AST_CALL:
-        eprintfln("ERROR Cannot call inside constant expression");
+        eprintfln("ERROR %s: Cannot call inside constant expression", tloc(&ast->loc));
         return NULL;
     case AST_UNARY:
-        eprintfln("ERROR Unary operators not supported inside constant expression");
+        eprintfln("ERROR %s: Unary operators not supported inside constant expression", tloc(&ast->loc));
         return NULL;
     case AST_C_STR:
-        eprintfln("ERROR C strings in constant expressions are currently forbidden. Sorry.");
+        eprintfln("ERROR %s: C strings in constant expressions are currently forbidden. Sorry.", tloc(&ast->loc));
         return NULL;
     case AST_NULL:
-        eprintfln("ERROR null in constant expressions is currently forbidden. Sorry.");
+        eprintfln("ERROR %s: null in constant expressions is currently forbidden. Sorry.", tloc(&ast->loc));
         return NULL;
     case AST_SUBSCRIPT:
-        eprintfln("ERROR subscription in constant expressions are currently forbidden. Sorry.");
+        eprintfln("ERROR %s: subscription in constant expressions are currently forbidden. Sorry.", tloc(&ast->loc));
         return NULL;
     case AST_CAST:
-        eprintfln("ERROR casts in constant expressions are currently forbidden. Sorry.");
+        eprintfln("ERROR %s: casts in constant expressions are currently forbidden. Sorry.", tloc(&ast->loc));
         return NULL;
     case AST_SYMBOL: {
         Symbol* sym = ast->as.symbol.sym;
         if(sym->kind != SYMBOL_CONSTANT) {
             // FIXME: String representation in here
-            eprintfln("ERROR Cannot have non-constant symbols in constant expressions");
+            eprintfln("ERROR %s: Cannot have non-constant symbols in constant expressions", tloc(&ast->loc));
             return NULL;
         }
         if(sym->evaluated) return sym->ast;
@@ -54,7 +54,7 @@ AST* const_eval_ast(Arena* arena, AST* ast) {
             return ast_new_int(arena, &loc, lhs->type, lhs->as.integer.value + rhs->as.integer.value);
         } break;
         default:
-            eprintf("ERROR Cannot have binary operation `");
+            eprintf("ERROR %s: Cannot have binary operation `", tloc(&ast->loc));
             if(ast->as.binop.op < 256) eprintf("%c", ast->as.binop.op);
             else eprintf("Unknown %08X", ast->as.binop.op);
             eprintfln("` in constant expression");
