@@ -15,6 +15,7 @@ enum {
     AST_SUBSCRIPT,
     AST_NULL,
     AST_CAST,
+    AST_STRUCT_LITERAL,
     AST_KIND_COUNT
 };
 typedef struct AST AST;
@@ -23,6 +24,17 @@ typedef struct {
     size_t len;
     size_t cap;
 } CallArgs;
+typedef struct {
+    Atom* name;
+    AST* value;
+} StructLiteralField;
+typedef struct {
+    StructLiteralField *items;
+    size_t len, cap;
+} StructLiteralFields;
+typedef struct {
+    StructLiteralFields fields;
+} StructLiteral;
 typedef struct Type Type;
 typedef struct Symbol Symbol;
 struct AST {
@@ -39,6 +51,7 @@ struct AST {
         struct { Atom* name; Symbol* sym; } symbol;
         struct { AST *what, *with; } subscript;
         struct { AST *what; Type* into; } cast;
+        StructLiteral struc_literal;
         Function* func;
     } as;
 };
@@ -56,4 +69,5 @@ AST* ast_new_func(Arena* arena, const Location* loc, Function* func);
 AST* ast_new_subscript(Arena* arena, const Location* loc, AST *what, AST* with);
 AST* ast_new_null(Arena* arena, const Location* loc);
 AST* ast_new_cast(Arena* arena, const Location* loc, AST *what, Type* into);
+AST* ast_new_struct_literal(Arena* arena, const Location* loc, Type* type, StructLiteral literal);
 void call_args_dealloc(CallArgs* args);

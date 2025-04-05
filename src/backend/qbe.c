@@ -141,11 +141,35 @@ size_t build_ptr_to(Qbe* qbe, AST* ast) {
 }
 size_t build_qbe_ast(Qbe* qbe, AST* ast) {
     size_t n=0;
-    static_assert(AST_KIND_COUNT == 10, "Update build_qbe_ast");
+    static_assert(AST_KIND_COUNT == 11, "Update build_qbe_ast");
     switch(ast->kind) {
     case AST_FUNC:
         eprintfln("ERROR TBD build function ast?");
         return 0;
+    case AST_STRUCT_LITERAL: {
+        assert(ast->type && ast->type->core == CORE_STRUCT);
+        Struct* s = &ast->type->struc;
+        size_t sz, count;
+        alloca_params(type_size(ast->type), &sz, &count);
+        nprintfln("    %%.s%zu =l alloc%zu %zu", n=qbe->inst++, sz, count);
+        StructLiteral* lit = &ast->as.struc_literal;
+        for(size_t i = 0; i < lit->fields.len; ++i) {
+            Atom* name = lit->fields.items[i].name;
+            AST* value = lit->fields.items[i].value;
+            Member* m = members_get(&s->members, name);
+            assert(m);
+            size_t f = 0;
+            nprintfln("    %%.s%zu =l add %%.s%zu, %zu", f=qbe->inst++, n, m->offset);
+            size_t v = build_qbe_ast(qbe, value);
+            if(value->type->core == CORE_STRUCT) {
+                // NOTE: blit might not always be supported by QBE. Maybe call qbe -v first?
+                nprintfln("    # If your QBE doesn't have blit. Update to the latest version");
+                nprintfln("    blit %%.s%zu, %%.s%zu, %zu", v, f, type_size(value->type));
+            } else {
+                nprintfln("    store%s %%.s%zu, %%.s%zu", type_to_qbe(qbe->arena, value->type), v, f); 
+            }
+        }
+    } break;
     case AST_NULL:
         nprintfln("    %%.s%zu =l copy 0", n=qbe->inst++);
         break;

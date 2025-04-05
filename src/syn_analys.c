@@ -24,7 +24,7 @@ SymTabNode* symtab_node_new(SymTabNode* parent, Arena* arena) {
 bool syn_analyse_func(Arena* arena, SymTabNode* node, Function* func);
 // TODO: Better error messages as AST should probably store location too
 bool syn_analyse_ast(Arena* arena, SymTabNode* node, AST* ast) {
-    static_assert(AST_KIND_COUNT == 10, "Update syn_analyse_ast");
+    static_assert(AST_KIND_COUNT == 11, "Update syn_analyse_ast");
     switch(ast->kind) {
     case AST_FUNC:
         return syn_analyse_func(arena, node, ast->as.func);
@@ -36,6 +36,12 @@ bool syn_analyse_ast(Arena* arena, SymTabNode* node, AST* ast) {
             if(!syn_analyse_ast(arena, node, ast->as.call.args.items[i])) return false;
         }
         break;
+    case AST_STRUCT_LITERAL: {
+        StructLiteral* lit = &ast->as.struc_literal;
+        for(size_t i = 0; i < lit->fields.len; ++i) {
+            if(!syn_analyse_ast(arena, node, lit->fields.items[i].value)) return false;
+        }
+    } break;
     case AST_SUBSCRIPT:
         if(!syn_analyse_ast(arena, node, ast->as.subscript.what)) return false;
         if(!syn_analyse_ast(arena, node, ast->as.subscript.with)) return false;

@@ -38,7 +38,7 @@ Type* parse_type(Parser* parser) {
                 exit(1);
             }
             if((t=lexer_next(parser->lexer)).kind != ']') {
-                eprintfln("ERROR %s Expected `]` after size to end the array (i.e. [<Type>;N] but got %s)", tloc(&t.loc), tdisplay(t));
+                eprintfln("ERROR %s: Expected `]` after size to end the array (i.e. [<Type>;N] but got %s)", tloc(&t.loc), tdisplay(t));
                 exit(1);
             }
             return type_new_const_array(parser->arena, of, len);
@@ -67,13 +67,13 @@ Type* parse_type(Parser* parser) {
         struc.alignment = 1;
         while((t=lexer_peak_next(parser->lexer)).kind != '}') {
             if(t.kind != TOKEN_ATOM) {
-                eprintfln("ERROR %s Unexpected token in structure definition %s (expected field name)", tloc(&t.loc), tdisplay(t));
+                eprintfln("ERROR %s: Unexpected token in structure definition %s (expected field name)", tloc(&t.loc), tdisplay(t));
                 exit(1);
             }
             Atom* name = t.atom;
             lexer_eat(parser->lexer, 1);
             if((t=lexer_next(parser->lexer)).kind != ':') {
-                eprintfln("ERROR %s Expected : after field name. Found %s", tloc(&t.loc), tdisplay(t));
+                eprintfln("ERROR %s: Expected : after field name. Found %s", tloc(&t.loc), tdisplay(t));
                 exit(1);
             }
             Type* type = parse_type(parser);
@@ -357,6 +357,43 @@ AST* parse_basic(Parser* parser) {
         return ast_new_cstr(parser->arena, &t.loc, t.str, t.str_len); 
     case TOKEN_INT:
         return ast_new_int(parser->arena, &t.loc, t.integer.type, t.integer.value); 
+    case TOKEN_STRUCT: {
+        Type* type = parse_type(parser);
+        if(!type) return NULL;
+        StructLiteral lit = { 0 };
+        if((t=lexer_next(parser->lexer)).kind != '{') {
+            eprintfln("ERROR %s: Unexpected `%s` at the start of structure literal. Expected '{'", tloc(&t.loc), tdisplay(t));
+            exit(1);
+        }
+        while((t=lexer_peak_next(parser->lexer)).kind != '}') {
+            if(t.kind != '.') {
+                eprintfln("ERROR %s: Unexpected token in structure literal %s (expected . plus the field name)", tloc(&t.loc), tdisplay(t));
+                exit(1);
+            }
+            lexer_eat(parser->lexer, 1);
+            if((t=lexer_next(parser->lexer)).kind != TOKEN_ATOM) {
+                eprintfln("ERROR %s: Unexpected token in structure literal %s (expected field name)", tloc(&t.loc), tdisplay(t));
+                exit(1);
+            }
+            Atom* name = t.atom;
+            if((t=lexer_next(parser->lexer)).kind != '=') {
+                eprintfln("ERROR %s: Expected = after field name. Found %s", tloc(&t.loc), tdisplay(t));
+                exit(1);
+            }
+            AST* value = parse_ast(parser, INIT_PRECEDENCE);
+            // FIXME: memory leak of `lit` (StructLiteral)
+            if(!value) return NULL;
+            da_push(&lit.fields, ((StructLiteralField){name, value}));
+            if((t=lexer_peak_next(parser->lexer)).kind != ',') break;
+            lexer_eat(parser->lexer, 1);
+        }
+        if((t=lexer_next(parser->lexer)).kind != '}') {
+            eprintfln("ERROR %s: Unexpected `%s` at the end of structure literal. Expected '}'", tloc(&t.loc), tdisplay(t));
+            exit(1);
+        }
+        loc = loc_join(&loc, &t.loc);
+        return ast_new_struct_literal(parser->arena, &loc, type, lit);
+    }
     default:
         eprintfln("ERROR %s: Unexpected token in expression: %s", tloc(&t.loc),tdisplay(t));
         exit(1);

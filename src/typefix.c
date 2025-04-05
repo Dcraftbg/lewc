@@ -3,7 +3,7 @@
 bool typefix_func(Arena* arena, Function* func);
 bool typefix_ast_nonvoid(Arena* arena, AST* ast);
 bool typefix_ast(Arena* arena, AST* ast) {
-    static_assert(AST_KIND_COUNT == 10, "Update typefix_ast");
+    static_assert(AST_KIND_COUNT == 11, "Update typefix_ast");
     Type* old = ast->type;
     switch(ast->kind) {
     case AST_FUNC:
@@ -15,6 +15,12 @@ bool typefix_ast(Arena* arena, AST* ast) {
         if(!typefix_ast_nonvoid(arena, ast->as.call.what)) return false;
         for(size_t i = 0; i < ast->as.call.args.len; ++i) {
             if(!typefix_ast_nonvoid(arena, ast->as.call.args.items[i])) return false;
+        }
+    } break;
+    case AST_STRUCT_LITERAL: {
+        StructLiteral* lit = &ast->as.struc_literal;
+        for(size_t i = 0; i < lit->fields.len; ++i) {
+            if(!typefix_ast_nonvoid(arena, lit->fields.items[i].value)) return false;
         }
     } break;
     case AST_BINOP:

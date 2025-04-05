@@ -93,6 +93,13 @@ AST* ast_new_cast(Arena* arena, const Location* loc, AST *what, Type* into) {
     ast->as.cast.into = into;
     return ast;
 }
+AST* ast_new_struct_literal(Arena* arena, const Location* loc, Type* type, StructLiteral literal) {
+    AST* ast = ast_new(arena, loc);
+    ast->kind = AST_STRUCT_LITERAL;
+    ast->type = type;
+    ast->as.struc_literal = literal;
+    return ast;
+}
 void call_args_dealloc(CallArgs* this) {
     if(this->items) free(this->items);
     this->items = NULL;

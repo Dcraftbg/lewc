@@ -80,7 +80,7 @@ bool cf_analyse_func(Arena* arena, Function* func) {
 }
 bool cf_analyse_ast(Arena* arena, AST* ast) {
     if(!ast) return true;
-    static_assert(AST_KIND_COUNT == 10, "Update syn_analyse_ast");
+    static_assert(AST_KIND_COUNT == 11, "Update syn_analyse_ast");
     switch(ast->kind) {
     case AST_FUNC:
         return cf_analyse_func(arena, ast->as.func);

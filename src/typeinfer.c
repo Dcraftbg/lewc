@@ -29,7 +29,7 @@ bool try_infer_ast(Arena* arena, AST* ast);
 void infer_down_ast(Arena* arena, AST* ast, Type* type) {
     if(ast->kind != AST_SYMBOL && try_infer_ast(arena, ast)) return;
     if(ast->type) return;
-    static_assert(AST_KIND_COUNT == 10, "Update infer_down_ast");
+    static_assert(AST_KIND_COUNT == 11, "Update infer_down_ast");
     switch(ast->kind) {
     case AST_SYMBOL: {
         if(ast->as.symbol.sym->type) {
@@ -83,14 +83,20 @@ void infer_down_ast(Arena* arena, AST* ast, Type* type) {
             eprintf("ERROR Non pointer type expected for null: "); type_dump(stderr, type); eprintf(NEWLINE);
         }
     } break;
+    case AST_STRUCT_LITERAL: {
+        todo("inference for struct literals");
+    } break;
     }
 }
 // TODO: Distinguish between errors, successful type inference and unsuccessful type inference maybe?
 // I'm not sure tho. I think this is fine
 bool try_infer_ast(Arena* arena, AST* ast) {
     if(ast->type) return true;
-    static_assert(AST_KIND_COUNT == 10, "Update try_infer_ast");
+    static_assert(AST_KIND_COUNT == 11, "Update try_infer_ast");
     switch(ast->kind) {
+    case AST_STRUCT_LITERAL: {
+        todo("inference (try_infer_ast) for struct literals");
+    } break;
     case AST_SYMBOL: {
         Symbol* s = ast->as.symbol.sym;
         if(s->type) {

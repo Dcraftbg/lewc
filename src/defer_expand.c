@@ -109,7 +109,7 @@ void defer_expand_func(Arena* arena, Function* func) {
 }
 void defer_expand_ast(Arena* arena, AST* ast) {
     if(!ast) return;
-    static_assert(AST_KIND_COUNT == 10, "Update defer_expand_ast");
+    static_assert(AST_KIND_COUNT == 11, "Update defer_expand_ast");
     switch(ast->kind) {
     case AST_FUNC:
         defer_expand_func(arena, ast->as.func);

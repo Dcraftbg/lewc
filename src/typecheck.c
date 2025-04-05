@@ -10,7 +10,7 @@ bool typecheck_get_member_of(const Location* loc, Type* type, Atom* member) {
     switch(type->core) {
     case CORE_PTR:
         if(type->ptr_count > 1) {
-            eprintf("ERROR %s: Trying to get member `%s` of ", tloc(loc), member->data); type_dump(stderr, type); eprintf(NEWLINE);
+eprintf("ERROR %s: Trying to get member `%s` of ", tloc(loc), member->data); type_dump(stderr, type); eprintf(NEWLINE);
             switch(type->inner_type->core) {
             case CORE_STRUCT:
             case CORE_CONST_ARRAY:
@@ -51,10 +51,56 @@ bool typecheck_get_member_of(const Location* loc, Type* type, Atom* member) {
 // TODO: Actually decent error reporting
 bool typecheck_ast(Arena* arena, AST* ast) {
     if(!ast) return false;
-    static_assert(AST_KIND_COUNT == 10, "Update typecheck_ast");
+    static_assert(AST_KIND_COUNT == 11, "Update typecheck_ast");
     switch(ast->kind) {
     case AST_FUNC:
         return typecheck_func(arena, ast->as.func);
+    case AST_STRUCT_LITERAL: {
+        if(!ast->type || ast->type->core != CORE_STRUCT) {
+            eprintf("ERROR %s: Trying to create structure literal of non structure type: ", tloc(&ast->loc)); type_dump(stderr, ast->type); eprintf(NEWLINE);
+            return false;
+        }
+        assert(ast->type && ast->type->core == CORE_STRUCT);
+        StructLiteral* lit = &ast->as.struc_literal;
+        Struct* struc = &ast->type->struc;
+        bool valid = true;
+        for(size_t i = 0; i < lit->fields.len; ++i) {
+            if(!typecheck_ast(arena, lit->fields.items[i].value)) return false;
+        }
+        // TODO: Here you'd fill up the fields with the 
+        // default value and typecheck that
+        if(lit->fields.len < struc->fields.len) {
+            eprintfln("ERROR %s: Too few fields in structure literal.", tloc(&ast->loc));
+            valid = false;
+        }
+        if(lit->fields.len > struc->fields.len) {
+            eprintfln("ERROR %s: Too many fields in structure literal.", tloc(&ast->loc));
+            valid = false;
+        }
+        // TODO: Check for duplicates
+        // TODO: Check for missing fields maybe?
+        for(size_t i = 0; i < lit->fields.len; ++i) {
+            Atom* name = lit->fields.items[i].name;
+            AST* value = lit->fields.items[i].value;
+            Member* m;
+            if(!(m = members_get(&struc->members, name))) {
+                // TODO: Better location pointing to field
+                eprintfln("ERROR %s: Unknown field in structure literal `%s`", tloc(&ast->loc), name->data);
+                eprintf("Structure "); type_dump(stderr, ast->type); eprintfln(" has no such field");
+                valid = false;
+                continue;
+            }
+            if(!type_eq(m->type, value->type)) {
+                // TODO: Better location pointing to field
+                eprintfln("ERROR %s: Type mismatch in field `%s` of struct literal", tloc(&ast->loc), name->data);
+                eprintf("Field Type: "); type_dump(stderr, m->type); eprintf(NEWLINE);
+                eprintf("Value Type: "); type_dump(stderr, value->type); eprintf(NEWLINE);
+                valid = false;
+                continue;
+            }
+        }
+        return valid;
+    } break;
     case AST_CAST: {
         if(!typecheck_ast(arena, ast->as.cast.what)) return false;
         if((!type_isbinary(ast->as.cast.what->type)) || (!type_isbinary(ast->as.cast.into))) {

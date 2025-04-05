@@ -5,7 +5,7 @@ bool const_eval_const(Arena* arena, Constant* c);
 // TODO: is evaluating flag for circular definition errors
 // TODO: Actual decent error reporting
 AST* const_eval_ast(Arena* arena, AST* ast) {
-    static_assert(AST_KIND_COUNT == 10, "Update const_eval_ast");
+    static_assert(AST_KIND_COUNT == 11, "Update const_eval_ast");
     switch(ast->kind) {
     case AST_CALL:
         eprintfln("ERROR %s: Cannot call inside constant expression", tloc(&ast->loc));
@@ -24,6 +24,9 @@ AST* const_eval_ast(Arena* arena, AST* ast) {
         return NULL;
     case AST_CAST:
         eprintfln("ERROR %s: casts in constant expressions are currently forbidden. Sorry.", tloc(&ast->loc));
+        return NULL;
+    case AST_STRUCT_LITERAL:
+        eprintfln("ERROR %s: struct literals not allowed in constant expressions. Sorry.", tloc(&ast->loc));
         return NULL;
     case AST_SYMBOL: {
         Symbol* sym = ast->as.symbol.sym;
