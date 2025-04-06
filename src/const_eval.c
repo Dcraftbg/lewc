@@ -1,5 +1,6 @@
 #include "const_eval.h"
 #include "token.h"
+#include "darray.h"
 
 bool const_eval_const(Arena* arena, Constant* c); 
 // TODO: is evaluating flag for circular definition errors
@@ -25,9 +26,23 @@ AST* const_eval_ast(Arena* arena, AST* ast) {
     case AST_CAST:
         eprintfln("ERROR %s: casts in constant expressions are currently forbidden. Sorry.", tloc(&ast->loc));
         return NULL;
-    case AST_STRUCT_LITERAL:
-        eprintfln("ERROR %s: struct literals not allowed in constant expressions. Sorry.", tloc(&ast->loc));
-        return NULL;
+    case AST_STRUCT_LITERAL: {
+        StructLiteral  res = { 0 };
+        StructLiteral* lit = &ast->as.struc_literal;
+        da_reserve(&res.fields, lit->fields.len);
+        for(size_t i = 0; i < lit->fields.len; ++i) {
+            Atom* name = lit->fields.items[i].name;
+            AST* value = lit->fields.items[i].value;
+            if(!(value=const_eval_ast(arena, value))) {
+                free(res.fields.items);
+                return NULL;
+            }
+            StructLiteralField* f = &res.fields.items[res.fields.len++];
+            f->name = name;
+            f->value = value;
+        }
+        return ast_new_struct_literal(arena, &ast->loc, ast->type, res);
+    }
     case AST_SYMBOL: {
         Symbol* sym = ast->as.symbol.sym;
         if(sym->kind != SYMBOL_CONSTANT) {
