@@ -444,14 +444,7 @@ size_t build_qbe_ast(Qbe* qbe, AST* ast) {
             }
             break;
         case SYMBOL_CONSTANT: {
-            AST* value = s->ast;
-            switch(value->kind) {
-            case AST_INT:
-                nprintfln("    %%.s%zu =%s copy %lu", n=qbe->inst++, type_to_qbe(qbe->arena, ast->type), value->as.integer.value);
-                break;
-            default:
-                unreachable("value->kind = %d", value->kind);
-            }
+            n = build_qbe_ast(qbe, s->ast);
         } break;
         default:
             unreachable("s->kind = %d", s->kind);
