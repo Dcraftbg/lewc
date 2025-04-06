@@ -56,6 +56,8 @@ const char* type_to_qbe_full(Arena* arena, Type* t) {
         return aprintf(arena, "%ch", t->unsign ? 'u' : 's');
     case CORE_I32:
         return aprintf(arena, "%cw", t->unsign ? 'u' : 's');
+    case CORE_I64:
+        return aprintf(arena, "%cl", t->unsign ? 'u' : 's');
     case CORE_STRUCT:
         if(!t->name) todo("Sorry. Anonymous structures aren't supported by QBE yet");
         return aprintf(arena, ":%s", t->name);
