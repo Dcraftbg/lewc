@@ -1,6 +1,10 @@
 v0.4 alpha:
 - Fix error reporting - report location in const_eval
 - struct literals - struct Foo { .a = 0, .b = 1 }
+- Global variables - Global variables!! Still no external ones tho :(
+- Fix building of load with i/u64
+- Typefix body of ifs/elze/while
+- Fix ext for offseting pointer with i/u64
 v0.3 alpha: (hash: a84bbaf)
 - Fix #import to find based on the file location instead of current directory
 - std/ffi and std/ffi/c.lew - FFI definitions for C types
