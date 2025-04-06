@@ -87,7 +87,7 @@ AST* const_eval_ast(Arena* arena, AST* ast) {
 bool const_eval_module(Module* module) {
     for(size_t i = 0; i < module->symbols.len; ++i) {
         Symbol* s = module->symbols.items[i].symbol;
-        if(s->kind != SYMBOL_CONSTANT) continue;
+        if(s->kind != SYMBOL_CONSTANT && s->kind != SYMBOL_GLOBAL) continue;
         if(s->evaluated) continue;
         AST* ast = const_eval_ast(module->arena, s->ast);
         if(!ast) return false;
