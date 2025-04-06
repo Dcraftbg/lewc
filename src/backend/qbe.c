@@ -292,8 +292,8 @@ size_t build_qbe_ast(Qbe* qbe, AST* ast) {
             if(!v0 || !v1) return 0;
             // TODO: Is integer instead
             if(ast->as.binop.lhs->type->core == CORE_PTR && type_isint(ast->as.binop.rhs->type)) {
-                size_t index = qbe->inst++;
-                nprintfln("    %%.s%zu =l ext%s %%.s%zu", index, type_to_qbe_full(qbe->arena, ast->as.binop.rhs->type), v1);
+                size_t index = v1;
+                if(type_size(ast->as.binop.rhs->type) != 8) nprintfln("    %%.s%zu =l ext%s %%.s%zu", index = qbe->inst++, type_to_qbe_full(qbe->arena, ast->as.binop.rhs->type), v1);
                 size_t offset = qbe->inst++;
                 Type* type = ast->as.binop.lhs->type->ptr_count == 1 ? ast->as.binop.lhs->type->inner_type : type_ptr(qbe->arena, ast->as.binop.lhs->type->inner_type, ast->as.binop.lhs->type->ptr_count - 1);
                 size_t byte_size = type_size(type);
