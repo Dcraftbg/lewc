@@ -91,11 +91,22 @@ void infer_down_ast(Arena* arena, AST* ast, Type* type) {
 // TODO: Distinguish between errors, successful type inference and unsuccessful type inference maybe?
 // I'm not sure tho. I think this is fine
 bool try_infer_ast(Arena* arena, AST* ast) {
-    if(ast->type) return true;
     static_assert(AST_KIND_COUNT == 11, "Update try_infer_ast");
     switch(ast->kind) {
     case AST_STRUCT_LITERAL: {
-        todo("inference (try_infer_ast) for struct literals");
+        Struct* struc = NULL;
+        if(ast->type) struc = &ast->type->struc;
+        StructLiteral* lit = &ast->as.struc_literal;
+        for(size_t i = 0; i < lit->fields.len; ++i) {
+            Atom* name = lit->fields.items[i].name;
+            AST* value = lit->fields.items[i].value;
+            Member* m;
+            if(struc && (m=members_get(&struc->members, name))) {
+                infer_down_ast(arena, value, m->type);
+                continue;
+            }
+            try_infer_ast(arena, value);
+        }
     } break;
     case AST_SYMBOL: {
         Symbol* s = ast->as.symbol.sym;
@@ -220,7 +231,7 @@ bool try_infer_ast(Arena* arena, AST* ast) {
     } break;
     default:
     }
-    return false;
+    return ast->type;
 }
 
 void typeinfer_scope(Arena* arena, Type* return_type, Statements* scope);
