@@ -92,7 +92,7 @@ size_t build_qbe_deref(Qbe* qbe, size_t what, Type* type) {
     if(type->core == CORE_STRUCT) {
         nprintfln("    # Deref on structure. Does nothing");
         n = what;
-    } else nprintfln("    %%.s%zu =%s load%s %%.s%zu", n=qbe->inst++, type_to_qbe(qbe->arena, type), type_to_qbe_full(qbe->arena, type), what);
+    } else nprintfln("    %%.s%zu =%s load%s %%.s%zu", n=qbe->inst++, type_to_qbe(qbe->arena, type), type->core == CORE_I64 ? "l" : type_to_qbe_full(qbe->arena, type), what);
     return n;
 }
 // For assignments. i.e.:
@@ -366,7 +366,7 @@ size_t build_qbe_ast(Qbe* qbe, AST* ast) {
                     nprintfln("    %%.s%zu =l add %%.s%zu, %zu", n=qbe->inst++, v0, m->offset);
                     if(m->type->core != CORE_STRUCT) {
                         size_t ptr = n;
-                        nprintfln("    %%.s%zu =%s load%s %%.s%zu", n=qbe->inst++, type_to_qbe(qbe->arena, m->type), type_to_qbe_full(qbe->arena, m->type), ptr);
+                        nprintfln("    %%.s%zu =%s load%s %%.s%zu", n=qbe->inst++, type_to_qbe(qbe->arena, m->type), m->type->core == CORE_I64 ? "l" : type_to_qbe_full(qbe->arena, m->type), ptr);
                     }
                 }
             } break;
@@ -441,7 +441,7 @@ size_t build_qbe_ast(Qbe* qbe, AST* ast) {
                 nprintfln("    %%.s%zu =l copy %%%s", n=qbe->inst++, ast->as.symbol.name->data);
                 break;
             default:
-                nprintfln("    %%.s%zu =%s load%s %%%s", n=qbe->inst++, type_to_qbe(qbe->arena, ast->type), type_to_qbe_full(qbe->arena, ast->type), ast->as.symbol.name->data);
+                nprintfln("    %%.s%zu =%s load%s %%%s", n=qbe->inst++, type_to_qbe(qbe->arena, ast->type), ast->type->core == CORE_I64 ? "l" : type_to_qbe_full(qbe->arena, ast->type), ast->as.symbol.name->data);
                 break;
             }
             break;
@@ -455,7 +455,7 @@ size_t build_qbe_ast(Qbe* qbe, AST* ast) {
                 nprintfln("    %%.s%zu =l copy $%s", n=qbe->inst++, ast->as.symbol.name->data);
                 break;
             default:
-                nprintfln("    %%.s%zu =%s load%s $%s", n=qbe->inst++, type_to_qbe(qbe->arena, ast->type), type_to_qbe_full(qbe->arena, ast->type), ast->as.symbol.name->data);
+                nprintfln("    %%.s%zu =%s load%s $%s", n=qbe->inst++, type_to_qbe(qbe->arena, ast->type), ast->type->core == CORE_I64 ? "l" : type_to_qbe_full(qbe->arena, ast->type), ast->as.symbol.name->data);
                 break;
             }
             break;
