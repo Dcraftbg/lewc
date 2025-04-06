@@ -104,9 +104,12 @@ bool typefix_statement(Arena* arena, Statement* statement) {
         break;
     case STATEMENT_IF:
         if(!typefix_ast_nonvoid(arena, statement->as.iff.cond)) return false;
+        if(!typefix_statement(arena, statement->as.iff.body)) return false;
+        if(statement->as.iff.elze && !typefix_statement(arena, statement->as.iff.elze)) return false;
         break;
     case STATEMENT_WHILE:
         if(!typefix_ast_nonvoid(arena, statement->as.whil.cond)) return false;
+        if(!typefix_statement(arena, statement->as.whil.body)) return false;
         break;
     default:
         unreachable("statement->kind=%d", statement->kind);
