@@ -10,7 +10,7 @@ bool typecheck_get_member_of(const Location* loc, Type* type, Atom* member) {
     switch(type->core) {
     case CORE_PTR:
         if(type->ptr_count > 1) {
-eprintf("ERROR %s: Trying to get member `%s` of ", tloc(loc), member->data); type_dump(stderr, type); eprintf(NEWLINE);
+            eprintf("ERROR %s: Trying to get member `%s` of ", tloc(loc), member->data); type_dump(stderr, type); eprintf(NEWLINE);
             switch(type->inner_type->core) {
             case CORE_STRUCT:
             case CORE_CONST_ARRAY:
