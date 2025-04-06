@@ -373,10 +373,11 @@ bool typecheck_module(Module* module) {
     for(size_t i = 0; i < module->symbols.len; ++i) {
         Symbol* s  = module->symbols.items[i].symbol;
         Atom* name = module->symbols.items[i].name;
-        static_assert(SYMBOL_COUNT == 2, "Update typecheck");
+        static_assert(SYMBOL_COUNT == 3, "Update typecheck");
         switch(s->kind) {
         case SYMBOL_CONSTANT:
         case SYMBOL_VARIABLE:
+        case SYMBOL_GLOBAL:
             if(!typecheck_ast(module->arena, s->ast)) return false;
             if(!type_eq(s->type, s->ast->type)) {
                 eprintfln("ERROR %s: Mismatch in definition of `%s`", tloc(&s->loc), name->data);

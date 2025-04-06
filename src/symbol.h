@@ -9,6 +9,7 @@ struct Symbol {
     enum {
         SYMBOL_CONSTANT,
         SYMBOL_VARIABLE,
+        SYMBOL_GLOBAL,
         SYMBOL_COUNT
     } kind;
     AST* ast;
@@ -17,4 +18,5 @@ struct Symbol {
 };
 
 Symbol* symbol_new_var(Arena* arena, const Location* loc, Type* type, AST* init);
+Symbol* symbol_new_global(Arena* arena, const Location* loc, Type* type, AST* init);
 Symbol* symbol_new_constant(Arena* arena, const Location* loc, Type* type, AST* init);

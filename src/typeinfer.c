@@ -289,10 +289,11 @@ void typeinfer_func(Arena* arena, Function* func) {
 bool typeinfer_module(Module* module) {
     for(size_t i = 0; i < module->symbols.len; ++i) {
         Symbol* s = module->symbols.items[i].symbol;
-        static_assert(SYMBOL_COUNT == 2, "Update typeinfer");
+        static_assert(SYMBOL_COUNT == 3, "Update typeinfer");
         switch(s->kind) {
         case SYMBOL_CONSTANT:
         case SYMBOL_VARIABLE:
+        case SYMBOL_GLOBAL:
             if(s->ast->kind == AST_FUNC) {
                 typeinfer_func(module->arena, s->ast->as.func);
             }

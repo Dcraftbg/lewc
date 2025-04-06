@@ -90,10 +90,11 @@ bool cf_analyse_ast(Arena* arena, AST* ast) {
 bool control_flow_analyse_module(Module* module) {
     for(size_t i = 0; i < module->symbols.len; ++i) {
         Symbol* s  = module->symbols.items[i].symbol;
-        static_assert(SYMBOL_COUNT == 2, "Update syn_analyse");
+        static_assert(SYMBOL_COUNT == 3, "Update syn_analyse");
         switch(s->kind) {
         case SYMBOL_VARIABLE:
         case SYMBOL_CONSTANT:
+        case SYMBOL_GLOBAL:
             if(!cf_analyse_ast(module->arena, s->ast)) return false;
             break;
         case SYMBOL_COUNT:

@@ -674,17 +674,28 @@ void parse(Parser* parser, Arena* arena) {
                 Location loc = t.loc;
                 lexer_eat(parser->lexer, 2);
                 Type* type = NULL;
-                if(lexer_peak_next(parser->lexer).kind != ':') {
+                t = lexer_peak_next(parser->lexer);
+                if(t.kind != ':' && t.kind != '=') {
                     type = parse_type(parser);
                     if(!type) exit(1);
                 }
-                if((t=lexer_next(parser->lexer)).kind != ':') {
+                Symbol* sym;
+                AST* ast;
+                switch((t=lexer_next(parser->lexer)).kind) {
+                case ':':
+                    ast = parse_ast(parser, INIT_PRECEDENCE);
+                    sym = symbol_new_constant(arena, &loc, type, ast);
+                    break;
+                case '=':
+                    ast = parse_ast(parser, INIT_PRECEDENCE);
+                    sym = symbol_new_global(arena, &loc, type, ast);
+                    break;
+                // TODO: Fix error message
+                default:
                     eprintfln("ERROR %s: Expected constant to follow the syntax: ", tloc(&t.loc));
                     eprintfln("  <const name> : (type) : <expression>");
                     exit(1);
                 }
-                AST* ast = parse_ast(parser, INIT_PRECEDENCE);
-                Symbol* sym = symbol_new_constant(arena, &loc, type, ast);
                 sym_tab_insert(&parser->module->symtab_root.symtab, name, sym);
                 da_push(&parser->module->symbols, ((ModuleSymbol){sym, name}));
             } else {

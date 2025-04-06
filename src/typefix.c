@@ -127,10 +127,11 @@ bool typefix_module(Module* module) {
     for(size_t i = 0; i < module->symbols.len; ++i) {
         Symbol* s  = module->symbols.items[i].symbol;
         Atom* name = module->symbols.items[i].name;
-        static_assert(SYMBOL_COUNT == 2, "Update typefix");
+        static_assert(SYMBOL_COUNT == 3, "Update typefix");
         switch(s->kind) {
         case SYMBOL_CONSTANT:
         case SYMBOL_VARIABLE:
+        case SYMBOL_GLOBAL:
             if(!s->type) {
                 eprintfln("ERROR %s: Failed to infer type for constant `%s`", tloc(&s->loc), name->data);
                 // NOTE: Intentionally fallthrough so that the ast will report what part needs to be inferred
