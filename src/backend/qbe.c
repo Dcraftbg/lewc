@@ -711,7 +711,6 @@ bool build_qbe(Build* build, ProgramState* state) {
     // TODO: Its more correct to call it SysV
     assert(build->target->platform == OS_LINUX);
     assert(build->target->arch == ARCH_X86_64);
-    assert(build->target->outputKind == OUTPUT_GAS);
     Qbe qbe = {
         .build = build,
         .module = state->main,
@@ -719,38 +718,63 @@ bool build_qbe(Build* build, ProgramState* state) {
         .arena = state->arena,
     };
     // Sinks:
-    FILE *ir_sink = NULL, *asm_sink = NULL;
-    asm_sink = fopen(build->options->opath, "wb");
-    if(!asm_sink) {
-        eprintfln("ERROR Failed to open output file `%s`: %s", build->options->opath, strerror(errno));
-        return false;
+    FILE                *ir_sink = NULL, *asm_sink = NULL;
+    struct subprocess_s ir_subprocess  , asm_subprocess;
+
+    OutputKind output_kind = build->target->outputKind;
+    // TODO: process cleanup... I kinda made it a little fucked up xD
+    if(output_kind > OUTPUT_IR) {
+        const char* cmdline[] = { "qbe", NULL};
+        if(subprocess_create(cmdline, subprocess_option_search_user_path, &ir_subprocess) != 0) {
+            eprintfln("ERROR Failed to spawn qbe: %s", strerror(errno));
+            return false;
+        }
+        ir_sink = subprocess_stdin(&ir_subprocess);
+    } else if(output_kind == OUTPUT_IR) {
+        ir_sink = fopen(build->options->opath, "wb");
+        if(!ir_sink) {
+            eprintfln("ERROR Failed to open output file `%s`: %s", build->options->opath, strerror(errno));
+            return false;
+        }
     }
-    const char* cmdline[] = { "qbe", NULL};
-    struct subprocess_s qbe_subprocess;
-    if(subprocess_create(cmdline, subprocess_option_search_user_path, &qbe_subprocess) != 0) {
-        eprintfln("ERROR Failed to spawn qbe: %s", strerror(errno));
+
+    if(output_kind > OUTPUT_GAS) {
+        eprintfln("TODO: start gas");
         return false;
+    } else if(output_kind == OUTPUT_GAS) {
+        asm_sink = fopen(build->options->opath, "wb");
+        if(!asm_sink) {
+            eprintfln("ERROR Failed to open output file `%s`: %s", build->options->opath, strerror(errno));
+            return false;
+        }
     }
-    ir_sink = subprocess_stdin(&qbe_subprocess);
 
     // Generation
     qbe.f = ir_sink;
     if(!build_qbe_qbe(&qbe)) {
-        subprocess_terminate(&qbe_subprocess);
+        if(output_kind > OUTPUT_IR) subprocess_terminate(&ir_subprocess);
         return false;
     }
 
-    int return_code;
-    if(subprocess_join(&qbe_subprocess, &return_code) < 0) {
-        eprintfln("ERROR Failed to join on process");
+    // Relaying and cleanup
+    if(output_kind > OUTPUT_IR) {
+        int return_code;
+        if(subprocess_join(&ir_subprocess, &return_code) < 0) {
+            eprintfln("ERROR Failed to join on process");
+            return false;
+        }
+        if(return_code != 0) {
+            eprintfln("ERROR QBE exited with: %d", return_code);
+            relay_file(subprocess_stderr(&ir_subprocess), stderr);
+            return false;
+        }
+        relay_file(subprocess_stdout(&ir_subprocess), asm_sink);
+    } else if(output_kind == OUTPUT_IR) fclose(ir_sink);
+    // Relaying and cleanup
+    if(output_kind > OUTPUT_GAS) {
+        (void)asm_subprocess;
+        eprintfln("TODO: relay gas");
         return false;
-    }
-    if(return_code != 0) {
-        eprintfln("ERROR QBE exited with: %d", return_code);
-        relay_file(subprocess_stderr(&qbe_subprocess), stderr);
-        return false;
-    }
-    relay_file(subprocess_stdout(&qbe_subprocess), asm_sink);
-    fclose(asm_sink);
+    } else if(output_kind == OUTPUT_GAS) fclose(asm_sink);
     return true;
 }

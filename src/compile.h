@@ -10,6 +10,7 @@ typedef enum {
 } Backend;
 typedef enum {
     OUTPUT_UNDEFINED=0,
+    OUTPUT_IR,
     OUTPUT_GAS,
 
     OUTPUT_COUNT

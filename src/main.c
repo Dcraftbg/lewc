@@ -66,6 +66,7 @@ int main(int argc, const char** argv) {
     const char* arch     = NULL;
     const char* platform = NULL;
     const char* backend  = NULL;
+    const char* okind    = NULL;
     while ((arg = shift_args(&argc, &argv))) {
         if (strcmp(arg, "-o") == 0) {
             if (build_options.opath) {
@@ -103,6 +104,13 @@ int main(int argc, const char** argv) {
             else {
                 eprintfln("ERROR Unknown target backend: %s", backend);
                 exit(1);
+            }
+        }
+        else if ((okind=strstrip(arg, "--okind="))) {
+            if (strcmp(okind, "asm") == 0 || strcmp(okind, "gas") == 0 || strcmp(okind, "s") == 0) target.outputKind = OUTPUT_GAS;
+            else if(strcmp(okind, "ir") == 0) target.outputKind = OUTPUT_IR;
+            else {
+                eprintfln("ERROR Unknown output kind: %s", okind);
             }
         }
         else {
