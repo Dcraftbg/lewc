@@ -718,8 +718,10 @@ bool build_qbe(Build* build, ProgramState* state) {
         .f = NULL,
         .arena = state->arena,
     };
-    FILE* gnu_s_file = fopen(build->options->opath, "wb");
-    if(!gnu_s_file) {
+    // Sinks:
+    FILE *ir_sink = NULL, *asm_sink = NULL;
+    asm_sink = fopen(build->options->opath, "wb");
+    if(!asm_sink) {
         eprintfln("ERROR Failed to open output file `%s`: %s", build->options->opath, strerror(errno));
         return false;
     }
@@ -729,7 +731,10 @@ bool build_qbe(Build* build, ProgramState* state) {
         eprintfln("ERROR Failed to spawn qbe: %s", strerror(errno));
         return false;
     }
-    qbe.f = subprocess_stdin(&qbe_subprocess);
+    ir_sink = subprocess_stdin(&qbe_subprocess);
+
+    // Generation
+    qbe.f = ir_sink;
     if(!build_qbe_qbe(&qbe)) {
         subprocess_terminate(&qbe_subprocess);
         return false;
@@ -745,7 +750,7 @@ bool build_qbe(Build* build, ProgramState* state) {
         relay_file(subprocess_stderr(&qbe_subprocess), stderr);
         return false;
     }
-    relay_file(subprocess_stdout(&qbe_subprocess), gnu_s_file);
-    fclose(gnu_s_file);
+    relay_file(subprocess_stdout(&qbe_subprocess), asm_sink);
+    fclose(asm_sink);
     return true;
 }
