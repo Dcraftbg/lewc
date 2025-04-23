@@ -718,7 +718,12 @@ bool build_qbe(Build* build, ProgramState* state) {
         .f = NULL,
         .arena = state->arena,
     };
-    const char* cmdline[] = { "qbe", "-o", build->options->opath, NULL};
+    FILE* gnu_s_file = fopen(build->options->opath, "wb");
+    if(!gnu_s_file) {
+        eprintfln("ERROR Failed to open output file `%s`: %s", build->options->opath, strerror(errno));
+        return false;
+    }
+    const char* cmdline[] = { "qbe", NULL};
     struct subprocess_s qbe_subprocess;
     if(subprocess_create(cmdline, subprocess_option_search_user_path, &qbe_subprocess) != 0) {
         eprintfln("ERROR Failed to spawn qbe: %s", strerror(errno));
@@ -740,5 +745,7 @@ bool build_qbe(Build* build, ProgramState* state) {
         relay_file(subprocess_stderr(&qbe_subprocess), stderr);
         return false;
     }
+    relay_file(subprocess_stdout(&qbe_subprocess), gnu_s_file);
+    fclose(gnu_s_file);
     return true;
 }
