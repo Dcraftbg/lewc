@@ -697,6 +697,16 @@ bool build_qbe_qbe(Qbe* qbe) {
     }
     return true;
 }
+#include "subprocess.h"
+void relay_file(FILE *in, FILE *out) {
+    char buffer[1024];
+    size_t bytesRead;
+    while ((bytesRead = fread(buffer, 1, sizeof(buffer), in)) > 0) {
+        fwrite(buffer, 1, bytesRead, out);
+    }
+    if (ferror(in)) perror("Error reading file");
+    if (ferror(out)) perror("Error writing file");
+}
 bool build_qbe(Build* build, ProgramState* state) {
     // TODO: Its more correct to call it SysV
     assert(build->target->platform == OS_LINUX);
@@ -708,35 +718,26 @@ bool build_qbe(Build* build, ProgramState* state) {
         .f = NULL,
         .arena = state->arena,
     };
-    char ssa_path[1024];
-    size_t opath_len = strlen(build->options->opath);
-    assert((opath_len + 4 + 1) <= sizeof(ssa_path));
-    memcpy(ssa_path, build->options->opath, opath_len);
-    strcpy(ssa_path+opath_len, ".ssa");
-    qbe.f = fopen(ssa_path, "wb");
-    if(!qbe.f) {
-        eprintfln("ERROR Could not open output file %s: %s", ssa_path, strerror(errno));
+    const char* cmdline[] = { "qbe", "-o", build->options->opath, NULL};
+    struct subprocess_s qbe_subprocess;
+    if(subprocess_create(cmdline, subprocess_option_search_user_path, &qbe_subprocess) != 0) {
+        eprintfln("ERROR Failed to spawn qbe: %s", strerror(errno));
         return false;
     }
+    qbe.f = subprocess_stdin(&qbe_subprocess);
     if(!build_qbe_qbe(&qbe)) {
-        fclose(qbe.f);
+        subprocess_terminate(&qbe_subprocess);
         return false;
     }
-    fclose(qbe.f);
-    // More than enough for everyone
-    char* cmd = malloc(4096);
-    if(!cmd) {
-        eprintfln("ERROR Not enough memory for cmd");
+
+    int return_code;
+    if(subprocess_join(&qbe_subprocess, &return_code) < 0) {
+        eprintfln("ERROR Failed to join on process");
         return false;
     }
-    strcpy(cmd, "qbe ");
-    strcat(cmd, ssa_path);
-    strcat(cmd, " -o ");
-    strcat(cmd, build->options->opath);
-    int e = system(cmd);
-    free(cmd);
-    if(e != 0) {
-        eprintfln("ERROR Failed to build with qbe");
+    if(return_code != 0) {
+        eprintfln("ERROR QBE exited with: %d", return_code);
+        relay_file(subprocess_stderr(&qbe_subprocess), stderr);
         return false;
     }
     return true;
