@@ -1,13 +1,6 @@
-:i count 4
+:i count 3
 :b shell 52
-./bin/lewc examples/deref.lew -o ./int/tests/deref.s
-:i returncode 0
-:b stdout 0
-
-:b stderr 0
-
-:b shell 45
-as ./int/tests/deref.s -o ./int/tests/deref.o
+./bin/lewc examples/deref.lew -o ./int/tests/deref.o
 :i returncode 0
 :b stdout 0
 

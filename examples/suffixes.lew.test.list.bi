@@ -1,6 +1,6 @@
 :i count 1
 :b shell 58
-./bin/lewc examples/suffixes.lew -o ./int/tests/suffixes.s
+./bin/lewc examples/suffixes.lew -o ./int/tests/suffixes.o
 :i returncode 1
 :b stdout 0
 

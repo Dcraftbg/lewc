@@ -1,1 +1,1 @@
-./bin/lewc examples/nested.lew -o int/tests/nested.s
+./bin/lewc examples/nested.lew -o int/tests/nested.o

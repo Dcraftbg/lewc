@@ -1,13 +1,6 @@
-:i count 4
+:i count 3
 :b shell 58
-./bin/lewc examples/find_str.lew -o ./int/tests/find_str.s
-:i returncode 0
-:b stdout 0
-
-:b stderr 0
-
-:b shell 51
-as ./int/tests/find_str.s -o ./int/tests/find_str.o
+./bin/lewc examples/find_str.lew -o ./int/tests/find_str.o
 :i returncode 0
 :b stdout 0
 

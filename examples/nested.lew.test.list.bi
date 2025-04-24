@@ -1,6 +1,6 @@
 :i count 1
 :b shell 52
-./bin/lewc examples/nested.lew -o int/tests/nested.s
+./bin/lewc examples/nested.lew -o int/tests/nested.o
 :i returncode 1
 :b stdout 0
 

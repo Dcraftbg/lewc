@@ -1,13 +1,6 @@
-:i count 4
+:i count 3
 :b shell 62
-./bin/lewc examples/local_vars.lew -o ./int/tests/local_vars.s
-:i returncode 0
-:b stdout 0
-
-:b stderr 0
-
-:b shell 55
-as ./int/tests/local_vars.s -o ./int/tests/local_vars.o
+./bin/lewc examples/local_vars.lew -o ./int/tests/local_vars.o
 :i returncode 0
 :b stdout 0
 

@@ -1,13 +1,6 @@
-:i count 4
+:i count 3
 :b shell 56
-./bin/lewc examples/rule110.lew -o ./int/tests/rule110.s
-:i returncode 0
-:b stdout 0
-
-:b stderr 0
-
-:b shell 49
-as ./int/tests/rule110.s -o ./int/tests/rule110.o
+./bin/lewc examples/rule110.lew -o ./int/tests/rule110.o
 :i returncode 0
 :b stdout 0
 

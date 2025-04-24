@@ -1,13 +1,6 @@
-:i count 4
+:i count 3
 :b shell 52
-./bin/lewc examples/scope.lew -o ./int/tests/scope.s
-:i returncode 0
-:b stdout 0
-
-:b stderr 0
-
-:b shell 45
-as ./int/tests/scope.s -o ./int/tests/scope.o
+./bin/lewc examples/scope.lew -o ./int/tests/scope.o
 :i returncode 0
 :b stdout 0
 

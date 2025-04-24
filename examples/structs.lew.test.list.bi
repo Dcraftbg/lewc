@@ -1,13 +1,6 @@
-:i count 4
+:i count 3
 :b shell 56
-./bin/lewc examples/structs.lew -o ./int/tests/structs.s
-:i returncode 0
-:b stdout 0
-
-:b stderr 0
-
-:b shell 49
-as ./int/tests/structs.s -o ./int/tests/structs.o
+./bin/lewc examples/structs.lew -o ./int/tests/structs.o
 :i returncode 0
 :b stdout 0
 

@@ -1,13 +1,6 @@
-:i count 4
+:i count 3
 :b shell 46
-./bin/lewc examples/if.lew -o ./int/tests/if.s
-:i returncode 0
-:b stdout 0
-
-:b stderr 0
-
-:b shell 39
-as ./int/tests/if.s -o ./int/tests/if.o
+./bin/lewc examples/if.lew -o ./int/tests/if.o
 :i returncode 0
 :b stdout 0
 

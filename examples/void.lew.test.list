@@ -1,4 +1,3 @@
-./bin/lewc examples/void.lew -o ./int/tests/void.s
-as ./int/tests/void.s -o ./int/tests/void.o
+./bin/lewc examples/void.lew -o ./int/tests/void.o
 gcc -static ./examples/void.c ./int/tests/void.o -o ./bin/tests/void
 ./bin/tests/void

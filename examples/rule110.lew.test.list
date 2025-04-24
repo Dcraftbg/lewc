@@ -1,4 +1,3 @@
-./bin/lewc examples/rule110.lew -o ./int/tests/rule110.s
-as ./int/tests/rule110.s -o ./int/tests/rule110.o
+./bin/lewc examples/rule110.lew -o ./int/tests/rule110.o
 gcc -static ./int/tests/rule110.o -o ./bin/tests/rule110
 ./bin/tests/rule110

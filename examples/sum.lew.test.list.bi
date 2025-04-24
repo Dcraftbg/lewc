@@ -1,13 +1,6 @@
-:i count 4
+:i count 3
 :b shell 48
-./bin/lewc examples/sum.lew -o ./int/tests/sum.s
-:i returncode 0
-:b stdout 0
-
-:b stderr 0
-
-:b shell 41
-as ./int/tests/sum.s -o ./int/tests/sum.o
+./bin/lewc examples/sum.lew -o ./int/tests/sum.o
 :i returncode 0
 :b stdout 0
 

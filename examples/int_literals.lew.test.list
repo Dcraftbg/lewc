@@ -1,4 +1,3 @@
-./bin/lewc examples/int_literals.lew -o ./int/tests/int_literals.s
-as ./int/tests/int_literals.s -o ./int/tests/int_literals.o
+./bin/lewc examples/int_literals.lew -o ./int/tests/int_literals.o
 gcc ./examples/int_literals.c ./int/tests/int_literals.o -o ./bin/tests/int_literals
 ./bin/tests/int_literals

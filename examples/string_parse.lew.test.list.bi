@@ -1,13 +1,6 @@
-:i count 4
+:i count 3
 :b shell 66
-./bin/lewc examples/string_parse.lew -o ./int/tests/string_parse.s
-:i returncode 0
-:b stdout 0
-
-:b stderr 0
-
-:b shell 59
-as ./int/tests/string_parse.s -o ./int/tests/string_parse.o
+./bin/lewc examples/string_parse.lew -o ./int/tests/string_parse.o
 :i returncode 0
 :b stdout 0
 

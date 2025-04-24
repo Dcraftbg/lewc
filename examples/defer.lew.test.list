@@ -1,4 +1,3 @@
-./bin/lewc examples/defer.lew -o ./int/tests/defer.s
-as ./int/tests/defer.s -o ./int/tests/defer.o
+./bin/lewc examples/defer.lew -o ./int/tests/defer.o
 gcc -static ./int/tests/defer.o -o ./bin/tests/defer
 ./bin/tests/defer

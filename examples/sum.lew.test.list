@@ -1,4 +1,3 @@
-./bin/lewc examples/sum.lew -o ./int/tests/sum.s
-as ./int/tests/sum.s -o ./int/tests/sum.o
+./bin/lewc examples/sum.lew -o ./int/tests/sum.o
 gcc ./examples/sum.c ./int/tests/sum.o -o ./bin/tests/sum
 ./bin/tests/sum

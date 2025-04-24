@@ -1,1 +1,1 @@
-./bin/lewc examples/suffixes.lew -o ./int/tests/suffixes.s
+./bin/lewc examples/suffixes.lew -o ./int/tests/suffixes.o

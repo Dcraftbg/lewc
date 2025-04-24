@@ -1,13 +1,6 @@
-:i count 4
+:i count 3
 :b shell 50
-./bin/lewc examples/void.lew -o ./int/tests/void.s
-:i returncode 0
-:b stdout 0
-
-:b stderr 0
-
-:b shell 43
-as ./int/tests/void.s -o ./int/tests/void.o
+./bin/lewc examples/void.lew -o ./int/tests/void.o
 :i returncode 0
 :b stdout 0
 

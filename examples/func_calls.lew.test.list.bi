@@ -1,13 +1,6 @@
-:i count 4
+:i count 3
 :b shell 62
-./bin/lewc examples/func_calls.lew -o ./int/tests/func_calls.s
-:i returncode 0
-:b stdout 0
-
-:b stderr 0
-
-:b shell 55
-as ./int/tests/func_calls.s -o ./int/tests/func_calls.o
+./bin/lewc examples/func_calls.lew -o ./int/tests/func_calls.o
 :i returncode 0
 :b stdout 0
 

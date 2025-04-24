@@ -1,1 +1,1 @@
-./bin/lewc examples/typedef.lew -o ./int/tests/typedef.s
+./bin/lewc examples/typedef.lew -o ./int/tests/typedef.o
