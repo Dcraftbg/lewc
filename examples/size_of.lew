@@ -1,0 +1,10 @@
+#import "../std/libc/stdio.lew"
+Foo :: typedef struct {
+    a: i32,
+    b: u8, 
+    c: u64
+};
+main :: () -> i32 {
+    printf(c"size_of(Foo) => %zu\n", size_of(Foo));
+    return 0;
+}

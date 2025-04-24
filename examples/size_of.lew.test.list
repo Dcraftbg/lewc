@@ -1,0 +1,3 @@
+./bin/lewc examples/size_of.lew -o ./int/tests/size_of.o
+gcc -static ./int/tests/size_of.o -o ./bin/tests/size_of
+./bin/tests/size_of
