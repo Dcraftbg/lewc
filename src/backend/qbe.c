@@ -724,7 +724,14 @@ bool build_qbe(Build* build, ProgramState* state) {
     OutputKind output_kind = build->target->outputKind;
     // TODO: process cleanup... I kinda made it a little fucked up xD
     if(output_kind > OUTPUT_IR) {
-        const char* cmdline[] = { "qbe", NULL};
+        const char* cmdline[4];
+        cmdline[0] = "qbe";
+        cmdline[1] = NULL;
+        if(output_kind == OUTPUT_GAS) {
+            cmdline[1] = "-o";
+            cmdline[2] = build->options->opath;
+            cmdline[3] = NULL;
+        }
         if(subprocess_create(cmdline, subprocess_option_search_user_path, &ir_subprocess) != 0) {
             eprintfln("ERROR Failed to spawn qbe: %s", strerror(errno));
             return false;
@@ -741,12 +748,6 @@ bool build_qbe(Build* build, ProgramState* state) {
     if(output_kind > OUTPUT_GAS) {
         eprintfln("TODO: start gas");
         return false;
-    } else if(output_kind == OUTPUT_GAS) {
-        asm_sink = fopen(build->options->opath, "wb");
-        if(!asm_sink) {
-            eprintfln("ERROR Failed to open output file `%s`: %s", build->options->opath, strerror(errno));
-            return false;
-        }
     }
 
     // Generation
@@ -768,13 +769,13 @@ bool build_qbe(Build* build, ProgramState* state) {
             relay_file(subprocess_stderr(&ir_subprocess), stderr);
             return false;
         }
-        relay_file(subprocess_stdout(&ir_subprocess), asm_sink);
     } else if(output_kind == OUTPUT_IR) fclose(ir_sink);
     // Relaying and cleanup
     if(output_kind > OUTPUT_GAS) {
+        relay_file(subprocess_stdout(&ir_subprocess), asm_sink);
         (void)asm_subprocess;
         eprintfln("TODO: relay gas");
         return false;
-    } else if(output_kind == OUTPUT_GAS) fclose(asm_sink);
+    }
     return true;
 }
