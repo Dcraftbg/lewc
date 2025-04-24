@@ -20,6 +20,7 @@
 #include "strutils.h"
 #include "build.h"
 #include "version.h"
+#include "darray.h"
 
 const char* shift_args(int *argc, const char ***argv) {
     if((*argc) <= 0) return NULL;
@@ -39,6 +40,7 @@ void usage() {
     UPRINTF(" --platform=<platform> - Specify output platform [Linux]\n");
     UPRINTF(" --backend=<backend>   - Specify backend [qbe]\n");
     UPRINTF(" --okind=<output kind> - Specify output kind [ir, [gas, s, asm], [obj, o]]\n");
+    UPRINTF(" -I<include directory> - Specify include directory\n");
     UPRINTF(" -v|--version          - Get lewc version\n");
     // UPRINTF("Assembler: `"LEW_ASSEMBLER"`\n");
 }
@@ -70,6 +72,7 @@ int main(int argc, const char** argv) {
     const char* platform = NULL;
     const char* backend  = NULL;
     const char* okind    = NULL;
+    const char* includedir = NULL;
     while ((arg = shift_args(&argc, &argv))) {
         if (strcmp(arg, "-o") == 0) {
             if (build_options.opath) {
@@ -116,6 +119,9 @@ int main(int argc, const char** argv) {
             else {
                 eprintfln("ERROR Unknown output kind: %s", okind);
             }
+        }
+        else if ((includedir=strstrip(arg, "-I"))) {
+            da_push(&build_options.includedirs, includedir);
         }
         else {
             if (build_options.ipath == NULL) {

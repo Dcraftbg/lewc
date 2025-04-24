@@ -623,6 +623,27 @@ Statement* parse_statement(Parser* parser, Token t) {
     }
     return statement_eval(parser->arena, ast);
 }
+
+
+
+#include <sys/stat.h>
+#include <unistd.h>
+// RETURNS:
+//  0 - file does not exists
+//  1 - file exists
+// -1 - error while checking if file exists. The error is logged
+int nob_file_exists(const char *file_path)
+{
+#if _WIN32
+    // TODO: distinguish between "does not exists" and other errors
+    DWORD dwAttrib = GetFileAttributesA(file_path);
+    return dwAttrib != INVALID_FILE_ATTRIBUTES;
+#else
+    struct stat statbuf;
+    if (stat(file_path, &statbuf) < 0) return errno == ENOENT ? 0 : -1;
+    return 1;
+#endif
+}
 void parse(Parser* parser, Arena* arena) {
     Token t;
     while((t=lexer_peak_next(parser->lexer)).kind != TOKEN_EOF) {
@@ -720,11 +741,32 @@ void parse(Parser* parser, Arena* arena) {
                     exit(1);
                 }
                 const char* file_path = t.str;
-                char path[1024];
-                size_t n = path_name(parser->lexer->path) - parser->lexer->path;
+                #define PATH_BUF_SIZE 8196
+                char* path = arena_alloc(parser->arena, PATH_BUF_SIZE);
+                bool found = false;
+                size_t n;
+                n = path_name(parser->lexer->path) - parser->lexer->path;
                 memcpy(path, parser->lexer->path, n);
-                assert(sizeof(path)-n >= strlen(file_path));
+                assert(PATH_BUF_SIZE-n >= strlen(file_path));
                 strcpy(path + n, file_path);
+                if(nob_file_exists(path) == 1) found = true;
+                for(size_t i = 0; i < build_options.includedirs.len && !found; ++i) {
+                    const char* include_dir = build_options.includedirs.items[i];
+                    n = strlen(include_dir);
+                    if(include_dir[0] && include_dir[n-1] == '/') n--;
+                    memcpy(path, include_dir, n);
+                    path[n] = '/';
+                    strcpy(path + n + 1, file_path);
+                    if(nob_file_exists(path) == 1) {
+                        found = true;
+                        break;
+                    }
+                }
+                if(!found) {
+                    eprintfln("ERROR %s: Could not find import file `%s`", tloc(&t.loc), file_path);
+                    exit(1);
+                }
+
                 Lexer child_lexer;
                 lexer_create(&child_lexer, path, parser->lexer->atom_table, parser->lexer->arena);
                     Module* child = module_new(parser->arena, path);
