@@ -35,8 +35,10 @@ void usage() {
     UPRINTF("Usage %s: (v"VERSION_STR" "VERSION_STABLE")\n", build_options.exe);
     UPRINTF(" -o <path>             - Specify output path\n");
     UPRINTF(" <path>                - Specify input path\n");
-    UPRINTF(" --arch=<arch>         - Specify output architecture\n");
-    UPRINTF(" --platform=<platform> - Specify output platform\n");
+    UPRINTF(" --arch=<arch>         - Specify output architecture [x86_64]\n");
+    UPRINTF(" --platform=<platform> - Specify output platform [Linux]\n");
+    UPRINTF(" --backend=<backend>   - Specify backend [qbe]\n");
+    UPRINTF(" --okind=<output kind> - Specify output kind [ir, [gas, s, asm]]\n");
     UPRINTF(" -v|--version          - Get lewc version\n");
 }
 
