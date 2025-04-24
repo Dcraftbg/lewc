@@ -60,7 +60,7 @@ void infer_down_ast(Arena* arena, AST* ast, Type* type) {
                 eprintf("ERROR not pointer");
                 return;
             }
-            infer_down_ast(arena, ast->as.unary.rhs, ast->type->ptr_count == 1 ? ast->type : type_ptr(arena, ast->type->inner_type, ast->type->ptr_count - 1));
+            infer_down_ast(arena, ast->as.unary.rhs, ast->type->ptr_count == 1 ? ast->type->inner_type : type_ptr(arena, ast->type->inner_type, ast->type->ptr_count - 1));
             return;
         }
     } break;
@@ -208,6 +208,9 @@ bool try_infer_ast(Arena* arena, AST* ast) {
                 //                                            Cuz I don't really know how else to report this error currently
                 if(ast->as.unary.rhs->type->core != CORE_PTR) ast->type = NULL;
                 else ast->type = ast->as.unary.rhs->type->ptr_count == 1 ? ast->as.unary.rhs->type->inner_type : type_ptr(arena, ast->as.unary.rhs->type->inner_type, ast->as.unary.rhs->type->ptr_count-1);
+                return true;
+            } else if (ast->as.unary.op == '&') {
+                ast->type = type_ptr(arena, ast->as.unary.rhs->type, ast->as.unary.rhs->type->ptr_count+1);
                 return true;
             }
         }
