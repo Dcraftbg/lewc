@@ -1,3 +1,5 @@
+v0.5.1 alpha: (hash: 65e71f7)
+- Include directories (-I flag)
 v0.5 alpha: (hash: ad8018e)
 - Added --okind flag
 - Added --okind=ir, --okind=s/asm/gas, --okind=obj/o
