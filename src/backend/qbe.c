@@ -707,6 +707,10 @@ void relay_file(FILE *in, FILE *out) {
     if (ferror(in)) perror("Error reading file");
     if (ferror(out)) perror("Error writing file");
 }
+
+// Definition for LEW_ASSEMBLER
+#include "../../config.h"
+
 bool build_qbe(Build* build, ProgramState* state) {
     // TODO: Its more correct to call it SysV
     assert(build->target->platform == OS_LINUX);
@@ -727,7 +731,7 @@ bool build_qbe(Build* build, ProgramState* state) {
         const char* cmdline[4];
         cmdline[0] = "qbe";
         cmdline[1] = NULL;
-        if(output_kind == OUTPUT_GAS) {
+        if(output_kind == OUTPUT_IR + 1) {
             cmdline[1] = "-o";
             cmdline[2] = build->options->opath;
             cmdline[3] = NULL;
@@ -745,17 +749,13 @@ bool build_qbe(Build* build, ProgramState* state) {
         }
     }
 
-    if(output_kind > OUTPUT_GAS) {
-        eprintfln("TODO: start gas");
-        return false;
-    }
-
     // Generation
     qbe.f = ir_sink;
     if(!build_qbe_qbe(&qbe)) {
         if(output_kind > OUTPUT_IR) subprocess_terminate(&ir_subprocess);
         return false;
     }
+
 
     // Relaying and cleanup
     if(output_kind > OUTPUT_IR) {
@@ -770,12 +770,38 @@ bool build_qbe(Build* build, ProgramState* state) {
             return false;
         }
     } else if(output_kind == OUTPUT_IR) fclose(ir_sink);
+
+    // This library fucking sucks
+    if(output_kind > OUTPUT_GAS) {
+        const char* cmdline[4];
+        cmdline[0] = LEW_ASSEMBLER;
+        cmdline[1] = NULL;
+        if(output_kind == OUTPUT_GAS + 1) {
+            cmdline[1] = "-o";
+            cmdline[2] = build->options->opath;
+            cmdline[3] = NULL;
+        }
+        if(subprocess_create(cmdline, subprocess_option_search_user_path, &asm_subprocess) != 0) {
+            eprintfln("ERROR Failed to spawn assembler: %s", strerror(errno));
+            return false;
+        }
+        asm_sink = subprocess_stdin(&asm_subprocess);
+    }
+
     // Relaying and cleanup
     if(output_kind > OUTPUT_GAS) {
         relay_file(subprocess_stdout(&ir_subprocess), asm_sink);
-        (void)asm_subprocess;
-        eprintfln("TODO: relay gas");
-        return false;
+        assert(output_kind == OUTPUT_OBJ);
+        int return_code;
+        if(subprocess_join(&asm_subprocess, &return_code) < 0) {
+            eprintfln("ERROR Failed to join on process");
+            return false;
+        }
+        if(return_code != 0) {
+            eprintfln("ERROR Assembler exited with: %d", return_code);
+            relay_file(subprocess_stderr(&asm_subprocess), stderr);
+            return false;
+        }
     }
     return true;
 }

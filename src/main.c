@@ -38,8 +38,9 @@ void usage() {
     UPRINTF(" --arch=<arch>         - Specify output architecture [x86_64]\n");
     UPRINTF(" --platform=<platform> - Specify output platform [Linux]\n");
     UPRINTF(" --backend=<backend>   - Specify backend [qbe]\n");
-    UPRINTF(" --okind=<output kind> - Specify output kind [ir, [gas, s, asm]]\n");
+    UPRINTF(" --okind=<output kind> - Specify output kind [ir, [gas, s, asm], [obj, o]]\n");
     UPRINTF(" -v|--version          - Get lewc version\n");
+    // UPRINTF("Assembler: `"LEW_ASSEMBLER"`\n");
 }
 
 static Platform default_platform = 
@@ -109,8 +110,9 @@ int main(int argc, const char** argv) {
             }
         }
         else if ((okind=strstrip(arg, "--okind="))) {
-            if (strcmp(okind, "asm") == 0 || strcmp(okind, "gas") == 0 || strcmp(okind, "s") == 0) target.outputKind = OUTPUT_GAS;
-            else if(strcmp(okind, "ir") == 0) target.outputKind = OUTPUT_IR;
+                 if (strcmp(okind, "obj") == 0 || strcmp(okind, "o") == 0) target.outputKind = OUTPUT_OBJ;
+            else if (strcmp(okind, "asm") == 0 || strcmp(okind, "gas") == 0 || strcmp(okind, "s") == 0) target.outputKind = OUTPUT_GAS;
+            else if (strcmp(okind, "ir") == 0) target.outputKind = OUTPUT_IR;
             else {
                 eprintfln("ERROR Unknown output kind: %s", okind);
             }

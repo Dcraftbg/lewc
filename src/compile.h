@@ -12,6 +12,7 @@ typedef enum {
     OUTPUT_UNDEFINED=0,
     OUTPUT_IR,
     OUTPUT_GAS,
+    OUTPUT_OBJ,
 
     OUTPUT_COUNT
 } OutputKind;

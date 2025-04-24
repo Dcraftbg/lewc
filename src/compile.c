@@ -12,11 +12,12 @@ const char* backend_str(Backend backend) {
     return backend_map[backend];
 }
 
-static_assert(OUTPUT_COUNT == 3, "Update outputkind_map");
+static_assert(OUTPUT_COUNT == 4, "Update outputkind_map");
 const char* outputkind_map[OUTPUT_COUNT] = {
     "Undefined",
     [OUTPUT_IR]  = "Intermediate Representation",
     [OUTPUT_GAS] = "GNU Assembly",
+    [OUTPUT_OBJ] = "Object File",
 };
 const char* outputkind_str(OutputKind kind) {
     assert(kind >= 0 && kind < ARRAY_LEN(outputkind_map));
