@@ -1,3 +1,10 @@
+v0.5 alpha: (hash: ad8018e)
+- Added --okind flag
+- Added --okind=ir, --okind=s/asm/gas, --okind=obj/o
+- No longer output intermediate .ssa file when generating assembly
+- Help for options (--okind, --arch, --platform, --backend) specifying what things you can set to them
+- Support output to object file
+- Make --okind=obj the default option
 v0.4 alpha:
 - Fix error reporting - report location in const_eval
 - struct literals - struct Foo { .a = 0, .b = 1 }
