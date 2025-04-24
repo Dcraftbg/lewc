@@ -61,7 +61,7 @@ int main(int argc, const char** argv) {
     target.platform   = default_platform;
     target.arch       = default_arch;
     target.backend    = default_backend;
-    target.outputKind = OUTPUT_GAS;
+    target.outputKind = OUTPUT_OBJ;
 
     build_options.exe = shift_args(&argc, &argv);
     assert(build_options.exe);
