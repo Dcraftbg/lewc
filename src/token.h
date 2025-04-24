@@ -26,6 +26,8 @@ enum {
     TOKEN_NULL,
     TOKEN_CAST,
     TOKEN_DEFER,
+    TOKEN_TRUE,
+    TOKEN_FALSE,
 
     TOKEN_IF,
     TOKEN_ELSE,

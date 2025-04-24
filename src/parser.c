@@ -357,6 +357,10 @@ AST* parse_basic(Parser* parser) {
         return ast_new_cstr(parser->arena, &t.loc, t.str, t.str_len); 
     case TOKEN_INT:
         return ast_new_int(parser->arena, &t.loc, t.integer.type, t.integer.value); 
+    case TOKEN_TRUE:
+        return ast_new_int(parser->arena, &t.loc, &type_bool, 1);
+    case TOKEN_FALSE:
+        return ast_new_int(parser->arena, &t.loc, &type_bool, 0);
     case TOKEN_STRUCT: {
         Type* type = parse_type(parser);
         if(!type) return NULL;
