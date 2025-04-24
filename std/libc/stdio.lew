@@ -6,3 +6,14 @@ extern printf :: (fmt: *c_char, ... #c);
 extern fprintf :: (f: *FILE, fmt: *c_char, ... #c);
 extern puts :: (cstr: *c_char);
 extern putchar :: (c: c_char);
+extern fopen :: (path: *c_char, mode: *c_char) -> *FILE;
+SEEK_SET :: 0_i32;
+SEEK_CUR :: 1_i32;
+SEEK_END :: 2_i32;
+extern fseek :: (f: *FILE, offset: c_long, whence: c_int);
+extern ftell :: (f: *FILE) -> c_long;
+extern fread :: (data: *c_void, sz: size_t, count: size_t, f: *FILE) -> c_long;
+extern ferror :: (f: *FILE) -> bool;
+extern rewind :: (f: *FILE);
+extern fclose :: (f: *FILE);
+
