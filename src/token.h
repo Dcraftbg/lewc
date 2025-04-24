@@ -28,6 +28,7 @@ enum {
     TOKEN_DEFER,
     TOKEN_TRUE,
     TOKEN_FALSE,
+    TOKEN_SIZE_OF,
 
     TOKEN_IF,
     TOKEN_ELSE,

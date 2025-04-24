@@ -331,7 +331,7 @@ AST* parse_basic(Parser* parser) {
         loc = loc_join(&loc, &t2.loc);
         return v;
     } break;
-    case TOKEN_CAST:
+    case TOKEN_CAST: {
         if((t=lexer_next(parser->lexer)).kind != '(') {
             eprintfln("ERROR %s: Expected '(' after cast keyword but got %s", tloc(&t.loc), tdisplay(t));
             return NULL;
@@ -349,6 +349,21 @@ AST* parse_basic(Parser* parser) {
         }
         loc = loc_join(&loc, &t.loc);
         return ast_new_cast(parser->arena, &loc, what, into);
+    }
+    case TOKEN_SIZE_OF: {
+        if((t=lexer_next(parser->lexer)).kind != '(') {
+            eprintfln("ERROR %s: Expected '(' after size_of keyword but got %s", tloc(&t.loc), tdisplay(t));
+            return NULL;
+        }
+        Type* into = parse_type(parser);
+        if((t=lexer_next(parser->lexer)).kind != ')') {
+            eprintfln("ERROR %s: Expected ')' at the end of size_of but got %s", tloc(&t.loc), tdisplay(t));
+            return NULL;
+        }
+        loc = loc_join(&loc, &t.loc);
+        // TODO: usize type
+        return ast_new_int(parser->arena, &loc, &type_u64, type_size(into));
+    }
     case TOKEN_NULL:
         return ast_new_null(parser->arena, &t.loc);
     case TOKEN_ATOM:

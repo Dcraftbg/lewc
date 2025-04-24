@@ -396,6 +396,7 @@ Token lexer_next(Lexer* lexer) {
             else if (wordeq(word, "defer"  )) return MAKE_TOKEN(TOKEN_DEFER);
             else if (wordeq(word, "true"   )) return MAKE_TOKEN(TOKEN_TRUE);
             else if (wordeq(word, "false"  )) return MAKE_TOKEN(TOKEN_FALSE);
+            else if (wordeq(word, "size_of")) return MAKE_TOKEN(TOKEN_SIZE_OF);
             return MAKE_TOKEN(TOKEN_ATOM, .atom = atom_alloc(lexer->atom_table,word.start, (size_t)(word.end-word.start)));
         }
     }
