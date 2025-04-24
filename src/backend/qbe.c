@@ -538,7 +538,7 @@ bool build_qbe_statement(Qbe* qbe, Statement* statement) {
         if(!statement->as.loop.body->terminal) {
             nprintfln("    jmp @loop%zu", n);
         }
-        nprintfln("@loop_end_%zu", n);
+        if(!statement->terminal) nprintfln("@loop_end_%zu", n);
     } break;
     case STATEMENT_IF: {
         n = qbe->inst++;
@@ -558,7 +558,7 @@ bool build_qbe_statement(Qbe* qbe, Statement* statement) {
             if(!build_qbe_statement(qbe, statement->as.iff.elze)) return false;
             // NOTE: Here its not necessary cuz QBE is cool and has automatic fallthrough
         }
-        nprintfln("%s", end);
+        if(!statement->terminal) nprintfln("%s", end);
     } break;
     case STATEMENT_WHILE: {
         n = qbe->inst++;

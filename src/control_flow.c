@@ -11,10 +11,12 @@ bool cf_analyse_statement(Arena* arena, Statement* statement) {
         break;
     case STATEMENT_RETURN:
         if(!cf_analyse_ast(arena, statement->as.ast)) return false;
-        // fallthrough
+        statement->terminal = true;
+        break;
     // TODO: Not true for things like continue/break which can change the control flow
     case STATEMENT_LOOP:
         statement->terminal = true;
+        if(!cf_analyse_statement(arena, statement->as.loop.body)) return false;
         break;
     case STATEMENT_WHILE:
         if(!cf_analyse_ast(arena, statement->as.whil.cond)) return false;
