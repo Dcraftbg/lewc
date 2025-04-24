@@ -1,6 +1,6 @@
 " Vim syntax file
 " Language: Lew
-" Version: 0.1.2
+" Version: 0.1.3
 
 " Usage
 " Put this in $VIMRUNTIME/syntax/lew.vim
@@ -19,7 +19,7 @@ let s:lew_preproc_pattern     = '(' . join(s:lew_preproc, '|') . ')'
 " Its a pretty dumb hack but it works I guess :D
 execute 'syn match lewPreprocDirective /\v#\s*' . s:lew_preproc_pattern . '>/'
 execute 'syn match lewPreprocError     /\v#\s*(' . s:lew_preproc_pattern . '>)@!\w*>/'
-syn keyword lewKeywords         return extern if else while loop typedef struct null cast defer 
+syn keyword lewKeywords         return extern if else while loop typedef struct null cast defer true false
 syn region  lewComment          start="//" keepend end="$"
 syn keyword lewType             u8 u16 u32 u64 usize i8 i16 i32 i64 isize bool
 " TODO: these large comments are incorrect as we match /*/**/*/ correctly
