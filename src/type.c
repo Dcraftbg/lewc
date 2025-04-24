@@ -72,7 +72,9 @@ size_t type_alignment(Type* type) {
 void struct_add_field(Struct* me, Atom* name, Type* type) {
     size_t align = type_alignment(type);
     if(align > me->alignment) me->alignment = align;
-    me->offset += me->offset % align;
+    if(me->offset % align != 0) {
+        me->offset = (me->offset + (align-1)) / align * align;
+    }
     Member member = {
         MEMBER_FIELD,
         type,
