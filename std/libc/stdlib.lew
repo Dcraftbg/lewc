@@ -1,5 +1,7 @@
 #import "../ffi/c.lew"
-extern malloc :: (sz: i32) -> *c_void;
+#import "stddef.lew"
+extern malloc :: (sz: size_t) -> *c_void;
+extern realloc :: (data: *c_void, size: size_t) -> *c_void;
 extern free   :: (data: *c_void);
 extern getenv :: (name: *c_char) -> *c_char;
-
+extern exit :: (status: i32);
