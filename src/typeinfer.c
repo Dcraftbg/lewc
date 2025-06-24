@@ -298,6 +298,7 @@ bool typeinfer_module(Module* module) {
         case SYMBOL_VARIABLE:
         case SYMBOL_GLOBAL:
             if(s->ast->kind == AST_FUNC) {
+                s->type = s->ast->as.func->type;
                 typeinfer_func(module->arena, s->ast->as.func);
             }
             // fallthrough
