@@ -1,3 +1,23 @@
+v0.6 alpha: (hash: )
+- Fix recursion bug :O
+- Add `size_of`
+- Add true/false
+- More to std/libc/stdio.lew
+    - fopen, fseek, ftell, fread, ferror, rewind, fclose
+    - `SEEK_SET`, `SEEK_CUR`, `SEEK_END`
+- More to std/libc/stdlib.lew
+    - free
+    - realloc
+    - exit
+    - Change size on malloc from i32 to `size_t`
+- More to std/libc/string.lew
+    - strdup
+- Fix bugs with `if` generating unnecessary labels when terminal
+- Fix bugs with `loop` not control flow analysing its body 
+- Fix bugs with `loop` not generating correct IR when terminal
+- Fix struct alignment (and comply with C)
+- Fix typeinference issue with &
+- Add `true`, `false` and `size_of` to editor/lew.vim
 v0.5.1 alpha: (hash: 65e71f7)
 - Include directories (-I flag)
 v0.5 alpha: (hash: ad8018e)
@@ -8,7 +28,7 @@ v0.5 alpha: (hash: ad8018e)
 - Support output to object file
 - Make --okind=obj the default option
 v0.4 alpha:
-- Fix error reporting - report location in const_eval
+- Fix error reporting - report location in `const_eval`
 - struct literals - struct Foo { .a = 0, .b = 1 }
 - Global variables - Global variables!! Still no external ones tho :(
 - Fix building of load with i/u64
@@ -17,7 +37,7 @@ v0.4 alpha:
 v0.3 alpha: (hash: a84bbaf)
 - Fix #import to find based on the file location instead of current directory
 - std/ffi and std/ffi/c.lew - FFI definitions for C types
-- std/libc/stddef.lew - (s)size_t, ptrdiff_t
+- std/libc/stddef.lew - `(s)size_t`, `ptrdiff_t`
 - std/libc - Changes to use stddef.lew definitions
 - c"" is now `*i8` instead of `*u8` - Changed cstrings to match `*c_char` (which is `*i8`)
 - Fix error reporting - for most things errors should now print location. Report if you see any missing locations 
