@@ -1,4 +1,4 @@
-v0.6 alpha: (hash: )
+v0.6 alpha: (hash: dc1a707)
 - Fix recursion bug :O
 - Add `size_of`
 - Add true/false
